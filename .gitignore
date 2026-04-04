@@ -9,7 +9,9 @@ docs/phase_plan.md
 instructions/
 examples/
 
+.claude
 CLAUDE.md
+
 settings.local.json
 
 # Ignore bundler config.

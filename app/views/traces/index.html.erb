@@ -36,7 +36,7 @@
             <td><%= trace.agent_id %></td>
             <td><%= trace.task_name %></td>
             <td><%= trace.start_time.strftime("%Y-%m-%d %H:%M:%S UTC") %></td>
-            <td><%= format_duration(trace.duration) %></td>
+            <td><%= format_duration(@durations[trace.trace_id]) %></td>
             <td>
               <span class="status-badge status-badge--<%= trace.status %>">
                 <%= trace.status.tr("_", " ") %>

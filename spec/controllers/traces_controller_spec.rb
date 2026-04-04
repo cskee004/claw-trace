@@ -48,12 +48,15 @@ RSpec.describe TracesController, type: :controller do
       expect(assigns(:traces)).to be_empty
     end
 
-    it 'eager-loads spans to avoid N+1 queries' do
-      create_trace(trace_id: "c" * 16)
+    it 'assigns @durations as a hash of trace_id => milliseconds' do
+      trace = create_trace(trace_id: "c" * 16)
+      t0 = Time.utc(2026, 4, 2, 12, 0, 0)
+      create_span(trace, span_id: "sp1", span_type: "agent_run_started", timestamp: t0)
+      create_span(trace, span_id: "sp2", span_type: "run_completed",     timestamp: t0 + 4)
 
       get :index
 
-      expect(assigns(:traces).first.association(:spans)).to be_loaded
+      expect(assigns(:durations)[trace.trace_id]).to eq(4000.0)
     end
   end
 
@@ -87,7 +90,7 @@ RSpec.describe TracesController, type: :controller do
         expect(assigns(:spans).to_a).to eq([s1, s2, s3])
       end
 
-      it 'assigns @span_latencies keyed by span_id with correct values' do
+      it 'assigns @span_latencies keyed by span_id in milliseconds' do
         t0 = Time.utc(2026, 4, 2, 12, 0, 0)
         s1 = create_span(trace, span_id: "sp1", span_type: "agent_run_started", timestamp: t0)
         s2 = create_span(trace, span_id: "sp2", span_type: "model_call",        timestamp: t0 + 3)
@@ -96,24 +99,24 @@ RSpec.describe TracesController, type: :controller do
         get :show, params: { id: trace.trace_id }
 
         latencies = assigns(:span_latencies)
-        expect(latencies[s1.span_id]).to eq(3.0)
-        expect(latencies[s2.span_id]).to eq(4.0)
+        expect(latencies[s1.span_id]).to eq(3000.0)
+        expect(latencies[s2.span_id]).to eq(4000.0)
         expect(latencies).not_to have_key(s3.span_id)
       end
 
-      it 'assigns nil @total_duration when there are no spans' do
+      it 'assigns nil @total_duration_ms when there are no spans' do
         get :show, params: { id: trace.trace_id }
-        expect(assigns(:total_duration)).to be_nil
+        expect(assigns(:total_duration_ms)).to be_nil
       end
 
-      it 'assigns @total_duration as elapsed seconds across all spans' do
+      it 'assigns @total_duration_ms as elapsed milliseconds across all spans' do
         t0 = Time.utc(2026, 4, 2, 12, 0, 0)
         create_span(trace, span_id: "sp1", span_type: "agent_run_started", timestamp: t0)
         create_span(trace, span_id: "sp2", span_type: "run_completed",     timestamp: t0 + 9)
 
         get :show, params: { id: trace.trace_id }
 
-        expect(assigns(:total_duration)).to eq(9.0)
+        expect(assigns(:total_duration_ms)).to eq(9000.0)
       end
     end
 

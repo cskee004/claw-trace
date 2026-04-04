@@ -20,24 +20,6 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_02_185617) do
     t.index ["token"], name: "index_api_keys_on_token", unique: true
   end
 
-  create_table "events", force: :cascade do |t|
-    t.string "event_type", null: false
-    t.string "date"
-    t.string "time"
-    t.string "pid"
-    t.string "message"
-    t.string "user"
-    t.string "source_ip"
-    t.string "source_port"
-    t.string "directory"
-    t.string "command"
-    t.string "key"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "host"
-    t.string "line_number"
-  end
-
   create_table "spans", force: :cascade do |t|
     t.string "trace_id", null: false
     t.string "span_id", null: false
