@@ -1,6 +1,9 @@
 source "https://rubygems.org"
 
-gemspec
+# clawtrace.gemspec defines gem metadata and distribution dependencies.
+# Not referenced here via `gemspec` to prevent Bundler from auto-requiring
+# lib/clawtrace.rb (which loads the Rails::Engine and causes double route
+# drawing in standalone app mode).
 
 gem 'pg', group: :production, platforms: :ruby
 
