@@ -1,4 +1,0 @@
-<div>
-    <% top = top_ips.to_h { |item| [item[:name], item[:data]] } %>
-    <%= bar_chart(top, {width: 700, colors: light_contrasting_colors, title: 'Top 10 Offending IPs', xtitle: 'Occurrences', ytitle: 'IP', theme: 'palette2', stacked: false}) %>
-</div>

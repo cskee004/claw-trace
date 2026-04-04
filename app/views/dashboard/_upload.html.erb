@@ -1,8 +1,0 @@
-<div class="upload-modal">
-    <p>Please upload a file to begin</p>
-    <%= form_with url: upload_path, method: :post, data: { turbo_frame: 'frame_panel' }, local: false do |f| %>
-        <%= f.label :log_file, 'Choose a log.auth file' %> <br>
-        <%= f.file_field :log_file %> <br>
-        <%= f.submit 'Submit'%>
-    <% end %>
-</div>
