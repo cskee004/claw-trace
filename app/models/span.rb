@@ -10,5 +10,5 @@ class Span < ApplicationRecord
   validates :span_type, presence: true, inclusion: { in: SPAN_TYPES }
   validates :timestamp, presence: true
   validates :agent_id,  presence: true
-  validates :metadata,  presence: true
+  validates :metadata,  exclusion: { in: [nil], message: "can't be nil" }
 end

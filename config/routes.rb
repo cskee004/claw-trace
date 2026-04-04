@@ -14,4 +14,8 @@ Rails.application.routes.draw do
       post "keys",       to: "keys#create"
     end
   end
+
+  scope "/v1" do
+    post "/traces", to: "api/v1/otlp#create"
+  end
 end
