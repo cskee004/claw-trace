@@ -57,7 +57,9 @@ class OtlpNormalizer
 
     rs           = resource_spans.first
     resource_attrs = attrs_to_hash(rs.dig("resource", "attributes") || [])
-    agent_id     = resource_attrs["openclaw.session.key"]
+    agent_id     = resource_attrs["openclaw.session.key"] ||
+                   resource_attrs["service.name"] ||
+                   "unknown"
 
     all_spans = (rs["scopeSpans"] || []).flat_map { |ss| ss["spans"] || [] }
     raise Error, "resourceSpans contains no spans" if all_spans.empty?

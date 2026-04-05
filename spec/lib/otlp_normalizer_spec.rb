@@ -131,6 +131,38 @@ RSpec.describe OtlpNormalizer do
       expect(lines[0]["agent_id"]).to eq("support-agent")
     end
 
+    it "falls back to service.name when openclaw.session.key is absent" do
+      payload = JSON.generate({
+        "resourceSpans" => [{
+          "resource" => {
+            "attributes" => [
+              { "key" => "service.name", "value" => { "stringValue" => "my-openai-agent" } }
+            ]
+          },
+          "scopeSpans" => [{ "spans" => [
+            otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",
+                      timestamp_ns: 1_000_000_000_000_000_000)
+          ] }]
+        }]
+      })
+      lines = normalize_and_parse(payload)
+      expect(lines[0]["agent_id"]).to eq("my-openai-agent")
+    end
+
+    it "falls back to 'unknown' when neither openclaw.session.key nor service.name is present" do
+      payload = JSON.generate({
+        "resourceSpans" => [{
+          "resource" => { "attributes" => [] },
+          "scopeSpans" => [{ "spans" => [
+            otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",
+                      timestamp_ns: 1_000_000_000_000_000_000)
+          ] }]
+        }]
+      })
+      lines = normalize_and_parse(payload)
+      expect(lines[0]["agent_id"]).to eq("unknown")
+    end
+
     it "sets task_name from the root span (no parentSpanId)" do
       payload = otlp_payload(spans: [
         otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",

@@ -39,16 +39,8 @@ RSpec.describe Trace, type: :model do
         expect(Trace.new(valid_attrs(agent_id: nil))).not_to be_valid
       end
 
-      it "rejects unknown agent types" do
-        expect(Trace.new(valid_attrs(agent_id: "unknown-agent"))).not_to be_valid
-      end
-
-      it "accepts all valid agent types" do
-        Trace::AGENT_TYPES.each_with_index do |agent_type, i|
-          trace_id = format("%016x", i + 1)
-          attrs = valid_attrs(trace_id: trace_id, agent_id: agent_type)
-          expect(Trace.new(attrs)).to be_valid, "expected #{agent_type} to be valid"
-        end
+      it "accepts any non-blank agent_id" do
+        expect(Trace.new(valid_attrs(agent_id: "my-custom-agent"))).to be_valid
       end
     end
 
