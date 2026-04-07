@@ -32,11 +32,11 @@ RSpec.describe OtlpNormalizer do
     span
   end
 
-  # Returns parsed lines from OtlpNormalizer output as an array of hashes.
+  # Returns OtlpNormalizer output as an array: [trace_hash, *span_hashes].
+  # Index 0 is the trace record; index 1+ are span records.
   def normalize_and_parse(json_string)
-    OtlpNormalizer.call(json_string)
-      .split("\n")
-      .map { |line| JSON.parse(line) }
+    result = OtlpNormalizer.call(json_string)
+    [result[:trace]] + result[:spans]
   end
 
   # ── Span type mapping ──────────────────────────────────────────────────────
@@ -336,32 +336,32 @@ RSpec.describe OtlpNormalizer do
   # ── Output structure ───────────────────────────────────────────────────────
 
   describe "output structure" do
-    it "returns valid NDJSON (one JSON object per line)" do
+    it "returns a hash with :trace and :spans keys" do
       payload = otlp_payload(spans: [
         otlp_span(name: "openclaw.request",    span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000),
         otlp_span(name: "openclaw.agent.turn", span_id: "bbbb0000bbbb0000",
                   parent_span_id: "aaaa0000aaaa0000", timestamp_ns: 2_000_000_000_000_000_000)
       ])
       result = OtlpNormalizer.call(payload)
-      lines  = result.split("\n")
-      expect(lines.length).to eq(3) # 1 trace + 2 spans
-      expect { lines.each { |l| JSON.parse(l) } }.not_to raise_error
+      expect(result).to be_a(Hash)
+      expect(result[:trace]).to be_a(Hash)
+      expect(result[:spans]).to be_an(Array).and have_attributes(length: 2)
     end
 
-    it "line 1 has trace fields" do
+    it "trace has the expected fields" do
       payload = otlp_payload(spans: [
         otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000)
       ])
-      trace_line = normalize_and_parse(payload).first
-      expect(trace_line.keys).to include("trace_id", "agent_id", "task_name", "start_time", "status")
+      trace = OtlpNormalizer.call(payload)[:trace]
+      expect(trace.keys).to include("trace_id", "agent_id", "task_name", "start_time", "status")
     end
 
-    it "lines 2+ have span fields" do
+    it "each span has the expected fields" do
       payload = otlp_payload(spans: [
         otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000)
       ])
-      span_line = normalize_and_parse(payload)[1]
-      expect(span_line.keys).to include("trace_id", "span_id", "span_type", "timestamp", "agent_id", "metadata")
+      span = OtlpNormalizer.call(payload)[:spans].first
+      expect(span.keys).to include("trace_id", "span_id", "span_type", "timestamp", "agent_id", "metadata")
     end
   end
 end

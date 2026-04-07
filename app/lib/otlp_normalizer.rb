@@ -1,4 +1,4 @@
-# Translates an OTLP JSON payload (ResourceSpans format) into the NDJSON format
+# Translates an OTLP JSON payload (ResourceSpans format) into structured hashes
 # accepted by TelemetryIngester.
 #
 # OTLP input (single resource / single trace):
@@ -10,9 +10,11 @@
 #     }]
 #   }
 #
-# NDJSON output (matches TelemetryIngester contract):
-#   Line 1:   { trace_id, agent_id, task_name, start_time, status }
-#   Lines 2+: { trace_id, span_id, parent_span_id, span_type, timestamp, agent_id, metadata }
+# Output:
+#   {
+#     trace: { "trace_id", "agent_id", "task_name", "start_time", "status" },
+#     spans: [{ "trace_id", "span_id", "parent_span_id", "span_type", "timestamp", "agent_id", "metadata" }, ...]
+#   }
 #
 # Span type mapping:
 #   openclaw.request      → agent_run_started
@@ -27,8 +29,8 @@
 # agent_id is read from the openclaw.session.key resource attribute.
 #
 # Usage:
-#   ndjson = OtlpNormalizer.call(otlp_json_string)
-#   TelemetryIngester.call(ndjson)
+#   result = OtlpNormalizer.call(otlp_json_string)
+#   TelemetryIngester.call(**result)
 #
 # Raises OtlpNormalizer::Error on malformed input.
 class OtlpNormalizer
@@ -70,7 +72,7 @@ class OtlpNormalizer
     trace_line = build_trace_record(all_spans, trace_id, agent_id, final_span)
     span_lines = all_spans.map { |span| build_span_record(span, trace_id, agent_id, final_span) }
 
-    ([trace_line] + span_lines).map { |rec| JSON.generate(rec) }.join("\n")
+    { trace: trace_line, spans: span_lines }
   end
 
   private

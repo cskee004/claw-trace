@@ -24,8 +24,9 @@ class SimulatorSeeder
     errors = []
 
     @count.times do
-      ndjson = AgentSimulator.new.emit
-      TelemetryIngester.call(ndjson)
+      lines = AgentSimulator.new.emit.split("\n").map(&:strip).reject(&:empty?)
+      trace_data, *span_data = lines.map { |l| JSON.parse(l) }
+      TelemetryIngester.call(trace: trace_data, spans: span_data)
       traces_created += 1
     rescue TelemetryIngester::Error => e
       errors << e.message

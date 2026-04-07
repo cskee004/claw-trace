@@ -11,8 +11,8 @@ module Api
 
         return render json: {}, status: :ok if data["resourceSpans"].blank?
 
-        ndjson = OtlpNormalizer.call(body)
-        TelemetryIngester.call(ndjson)
+        result = OtlpNormalizer.call(body)
+        TelemetryIngester.call(**result)
         render json: {}, status: :ok
       rescue JSON::ParserError => e
         render json: { error: "invalid JSON: #{e.message}" }, status: :bad_request

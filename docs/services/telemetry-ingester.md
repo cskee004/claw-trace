@@ -2,14 +2,14 @@
 
 `app/lib/telemetry_ingester.rb`
 
-Parses NDJSON telemetry payloads and persists them to the database as `Trace` + `Span` records. All writes are atomic — the full payload succeeds or nothing is stored.
+Persists telemetry data to the database as `Trace` + `Span` records. All writes are atomic — the full payload succeeds or nothing is stored.
 
 ---
 
 ## Interface
 
 ```ruby
-result = TelemetryIngester.call(ndjson_string)
+result = TelemetryIngester.call(trace: trace_hash, spans: span_array)
 # => { trace_id: "a1b2c3d4e5f60708", spans_ingested: 4 }
 ```
 
@@ -17,22 +17,30 @@ result = TelemetryIngester.call(ndjson_string)
 
 ---
 
-## Input Format
+## Input
 
-NDJSON — one JSON object per line (matches `AgentSimulator#emit` output):
+**`trace:`** — a Hash with string keys:
 
-```
-{"trace_id":"a1b2c3d4e5f60708","agent_id":"support-agent","task_name":"classify_customer_ticket","start_time":"2026-04-04T10:00:00Z","status":"success"}
-{"trace_id":"a1b2c3d4e5f60708","span_id":"s1","parent_span_id":null,"span_type":"agent_run_started",...}
-{"trace_id":"a1b2c3d4e5f60708","span_id":"s2","parent_span_id":"s1","span_type":"model_call",...}
-```
+| Key | Type | Description |
+|-----|------|-------------|
+| `"trace_id"` | String | 16-char hex trace identifier |
+| `"agent_id"` | String | Agent type (e.g. `"support-agent"`) |
+| `"task_name"` | String | Human-readable task description |
+| `"start_time"` | String | ISO 8601 timestamp |
+| `"status"` | String | `"success"`, `"error"`, or `"in_progress"` (default) |
 
-- Line 1 is always the trace record
-- Lines 2+ are span records
-- Blank lines are ignored
-- At least one span is required
+**`spans:`** — an Array of Hashes, each with string keys:
 
-For full field specifications, see [telemetry.md](../api/telemetry.md).
+| Key | Type | Description |
+|-----|------|-------------|
+| `"span_id"` | String | Unique span identifier |
+| `"parent_span_id"` | String \| nil | Parent span ID, or nil for root spans |
+| `"span_type"` | String | One of the defined span types |
+| `"timestamp"` | String | ISO 8601 timestamp |
+| `"agent_id"` | String | Agent type |
+| `"metadata"` | Hash | Arbitrary key-value pairs |
+
+An empty `spans:` array is valid — only the trace record is persisted.
 
 ---
 
@@ -55,37 +63,37 @@ Raises `TelemetryIngester::Error` (a subclass of `StandardError`) for:
 
 | Scenario | Error message |
 |----------|---------------|
-| Empty payload | `"payload is empty"` |
-| No spans in payload | `"payload must contain at least one span"` |
-| Malformed JSON on any line | `"invalid JSON: ..."` |
+| `trace:` is nil or not a Hash | `"trace is missing or invalid"` |
+| `spans:` is nil or not an Array | `"spans must be an array"` |
 | Model validation failure | `"Validation failed: ..."` (wrapped `ActiveRecord::RecordInvalid`) |
 
 ```ruby
 begin
-  result = TelemetryIngester.call(ndjson)
+  result = TelemetryIngester.call(trace: trace_hash, spans: span_array)
 rescue TelemetryIngester::Error => e
   # e.message contains the specific failure reason
 end
 ```
 
-The `Api::V1::TelemetryController` rescues `TelemetryIngester::Error` and returns a `422 Unprocessable Entity` response.
-
 ---
 
 ## Transaction Semantics
 
-All database writes (one `Trace` + N `Span` records) are wrapped in a single `ActiveRecord::Base.transaction`. If any record fails to save — including the trace or any individual span — all writes are rolled back.
-
-This means a partial payload is never stored. Either the full trace is ingested or nothing is.
+All database writes (one `Trace` + N `Span` records) are wrapped in a single `ActiveRecord::Base.transaction`. If any record fails to save, all writes are rolled back.
 
 ---
 
 ## Usage in Controllers
 
 ```ruby
-# app/controllers/api/v1/telemetry_controller.rb
-result = TelemetryIngester.call(request.raw_post)
-render json: result, status: :created
+# app/controllers/api/v1/telemetry_controller.rb — Bearer token API
+lines = request.raw_post.split("\n").map(&:strip).reject(&:empty?)
+trace_data, *span_data = lines.map { |l| JSON.parse(l) }
+result = TelemetryIngester.call(trace: trace_data, spans: span_data)
+
+# app/controllers/api/v1/otlp_controller.rb — OTLP path
+result = OtlpNormalizer.call(request.raw_post)
+TelemetryIngester.call(**result)
 ```
 
 ---
@@ -93,9 +101,26 @@ render json: result, status: :created
 ## Usage in Tests
 
 ```ruby
-ndjson = AgentSimulator.new(seed: 42).emit
-result = TelemetryIngester.call(ndjson)
+result = TelemetryIngester.call(
+  trace: {
+    "trace_id"   => "a1b2c3d4e5f6a7b8",
+    "agent_id"   => "support-agent",
+    "task_name"  => "classify_customer_ticket",
+    "start_time" => "2026-04-02T12:00:00Z",
+    "status"     => "success"
+  },
+  spans: [
+    {
+      "span_id"        => "s1",
+      "parent_span_id" => nil,
+      "span_type"      => "agent_run_started",
+      "timestamp"      => "2026-04-02T12:00:01Z",
+      "agent_id"       => "support-agent",
+      "metadata"       => {}
+    }
+  ]
+)
 
-expect(result[:spans_ingested]).to eq(7)
+expect(result[:spans_ingested]).to eq(1)
 expect(Trace.find_by(trace_id: result[:trace_id])).to be_present
 ```
