@@ -26,7 +26,6 @@ This project is part of a personal portfolio and demonstrates experience with Ru
 │   └── ...                  # Rails MVC components
 ├── config                   # Environment settings
 ├── db                       # Database setup and schema
-├── simulator                # Synthetic agent telemetry generator
 ├── spec                     # RSpec test files
 ├── data                     # Test log files
 ```
@@ -55,7 +54,6 @@ This project is part of a personal portfolio and demonstrates experience with Ru
 #### Agent Observability Platform
 * Trace → Span data model inspired by OpenTelemetry
 * Canonical span types: `agent_run_started`, `model_call`, `model_response`, `tool_call`, `tool_result`, `decision`, `error`, `run_completed`
-* Synthetic telemetry simulator for generating realistic agent traces without live agents
 * REST API for agent registration and telemetry ingestion (see [API](#api))
 * Database-backed `traces` and `spans` tables with referential integrity
 
@@ -72,7 +70,6 @@ This project is part of a personal portfolio and demonstrates experience with Ru
 #### Agent Telemetry
 - Data model: **Trace** (one complete agent run) → **Spans** (individual steps within a trace)
 - Ingestion logic lives in `TelemetryIngester` (`app/lib/`)
-- Simulator components live in `simulator/`: `agent_simulator`, `trace_generator`, `span_generator`
 - API controllers live in `app/controllers/api/v1/`
 
 ---
@@ -177,7 +174,6 @@ Test coverage includes:
 * Unit tests for parsing, utility, and analysis classes
 * Model specs for `Trace`, `Span`, and `ApiKey`
 * Request specs for all API endpoints
-* Simulator specs use fixed seeds for deterministic output
 
 ---
 
@@ -204,7 +200,6 @@ Test coverage includes:
 
 #### Agent Observability Platform
 - [x] `traces` and `spans` database tables and models
-- [x] Agent telemetry simulator (`trace_generator`, `span_generator`, `agent_simulator`)
 - [x] Ingestion API with key registration and Bearer token auth
 - [ ] Agent observability dashboard (trace viewer, span timeline)
 

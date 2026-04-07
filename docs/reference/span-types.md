@@ -14,14 +14,14 @@ Eight span types are recognized. Any other value is rejected at ingestion.
 | `tool_call` | Tool invocation begins | Agent calls an external tool |
 | `tool_result` | Tool response received | Tool returns its result |
 | `decision` | Agent reasoning step | Agent evaluates output and chooses next action |
-| `error` | Failure event | An error occurs during execution (injected by simulator at 15% rate) |
+| `error` | Failure event | An error occurs during execution |
 | `run_completed` | Terminal span — closes the trace | Execution finishes (success or error) |
 
 ---
 
 ## Span Tree
 
-The default 7-step sequence follows this parent–child topology (based on `SpanGenerator::PARENT_INDICES`):
+A typical 7-step trace follows this parent–child topology:
 
 ```
 agent_run_started (s1, root)
@@ -33,7 +33,7 @@ agent_run_started (s1, root)
 └── run_completed (s7)
 ```
 
-On failure (15% of simulated runs), an `error` span (`s8`) is injected between `decision` and `run_completed`, parented to `s6`:
+On failure, an `error` span may appear before `run_completed`:
 
 ```
 agent_run_started (s1, root)
@@ -42,7 +42,7 @@ agent_run_started (s1, root)
 │       ├── tool_call (s4)
 │       │   └── tool_result (s5)
 │       └── decision (s6)
-│           └── error (s8)          ← injected on failure
+│           └── error (s8)
 └── run_completed (s7, status=error)
 ```
 
@@ -85,7 +85,6 @@ See [metadata-schemas.md](metadata-schemas.md) for the expected metadata shape f
 ## Extending Span Types
 
 Adding a new span type requires:
-1. Add the value to `SPAN_TYPES` in `simulator/telemetry_event.rb`
-2. Add it to `Span::SPAN_TYPES` in `app/models/span.rb`
-3. Add a metadata schema entry to `METADATA_SCHEMA` in `telemetry_event.rb`
-4. Add a `build_metadata` branch in `simulator/span_generator.rb`
+1. Add the value to `Span::SPAN_TYPES` in `app/models/span.rb`
+2. Update `OtlpNormalizer#map_span_name` in `app/lib/otlp_normalizer.rb` if it has a distinct OTLP name
+3. Document the expected metadata shape in `docs/reference/metadata-schemas.md`

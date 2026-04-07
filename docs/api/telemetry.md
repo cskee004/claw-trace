@@ -18,8 +18,6 @@ The body is plain text with one JSON object per line:
 - **Line 1:** trace record
 - **Lines 2+:** span records (at least one required)
 
-This format matches the output of `AgentSimulator#emit` exactly.
-
 **Content-Type:** `text/plain` (raw POST body — no `application/json` wrapper)
 
 ---
@@ -117,26 +115,6 @@ This format matches the output of `AgentSimulator#emit` exactly.
 - `span_type` must be one of the 8 canonical types (see [span-types.md](../reference/span-types.md))
 - Each `(trace_id, span_id)` pair must be unique across the database
 - All writes are wrapped in a single transaction — if any record fails validation, the entire payload is rolled back
-
----
-
-## Generating Valid Payloads
-
-The simulator produces correctly structured NDJSON out of the box:
-
-```ruby
-# In Rails console or a script
-AgentSimulator.new.emit
-# => valid NDJSON string ready to POST
-
-# With a fixed seed (for reproducible output)
-AgentSimulator.new(seed: 42).emit
-
-# Seed the database directly (bypasses HTTP)
-SimulatorSeeder.call(count: 10)
-```
-
-Or trigger seeding via the web UI: `POST /traces/seed`
 
 ---
 

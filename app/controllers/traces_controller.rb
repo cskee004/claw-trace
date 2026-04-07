@@ -11,15 +11,6 @@ class TracesController < ApplicationController
     @total_duration_ms = TraceDurationCalculator.call(@trace)
   end
 
-  def seed
-    result = SimulatorSeeder.call
-    if result.errors.empty?
-      redirect_to traces_path, notice: "Generated #{result.traces_created} traces."
-    else
-      redirect_to traces_path, alert: "Generated #{result.traces_created} traces (#{result.errors.size} failed)."
-    end
-  end
-
   private
 
   def compute_latencies_ms(spans)

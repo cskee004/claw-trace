@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.0"
 
   spec.files = Dir.chdir(File.expand_path(__dir__)) do
-    Dir["{app,config,db,lib,simulator}/**/*", "Rakefile", "README.md"]
+    Dir["{app,config,db,lib}/**/*", "Rakefile", "README.md"]
       .reject { |f| File.directory?(f) }
   end
 
