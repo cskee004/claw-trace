@@ -118,4 +118,75 @@ RSpec.describe "POST /v1/traces", type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
+
+  # ── Protobuf payload ──────────────────────────────────────────────────────────
+
+  describe "protobuf payload" do
+    let(:pb_headers) { { "Content-Type" => "application/x-protobuf" } }
+
+    # Minimal valid ExportTraceServiceRequest binary
+    def otlp_protobuf_payload
+      trace_id_bytes = [OTLP_REQUEST_TRACE_ID].pack("H*")
+      span_id_bytes  = ["aaaa0000aaaa0000"].pack("H*")
+
+      pb_varint = ->(int) {
+        bytes = []
+        loop do
+          byte = int & 0x7F
+          int >>= 7
+          byte |= 0x80 if int > 0
+          bytes << byte
+          break if int.zero?
+        end
+        bytes.pack("C*")
+      }
+
+      pb_tag  = ->(field, wire) { pb_varint.call((field << 3) | wire) }
+      pb_len  = ->(field, bytes) {
+        bytes = bytes.b
+        pb_tag.call(field, 2) + pb_varint.call(bytes.bytesize) + bytes
+      }
+      pb_str  = ->(field, str) { pb_len.call(field, str.b) }
+      pb_f64  = ->(field, val) { pb_tag.call(field, 1) + [val].pack("Q<") }
+      av_str  = ->(s) { pb_str.call(1, s) }
+      kv_pair = ->(k, v_bytes) { pb_str.call(1, k) + pb_len.call(2, v_bytes) }
+
+      span = pb_len.call(1, trace_id_bytes) +
+             pb_len.call(2, span_id_bytes) +
+             pb_str.call(5, "openclaw.request") +
+             pb_f64.call(7, 1_000_000_000_000_000_000) +
+             pb_f64.call(8, 2_000_000_000_000_000_000)
+
+      resource = pb_len.call(1, pb_len.call(1, kv_pair.call("openclaw.session.key", av_str.call("support-agent"))))
+      scope    = pb_len.call(2, pb_len.call(2, span))
+      pb_len.call(1, resource + scope)
+    end
+
+    it "returns 200 with {} for a valid protobuf payload" do
+      post "/v1/traces", params: otlp_protobuf_payload, headers: pb_headers
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq({})
+    end
+
+    it "persists a trace and span from a valid protobuf payload" do
+      expect {
+        post "/v1/traces", params: otlp_protobuf_payload, headers: pb_headers
+      }.to change(Trace, :count).by(1).and change(Span, :count).by(1)
+    end
+
+    it "stores the correct trace_id (first 16 chars of decoded hex traceId)" do
+      post "/v1/traces", params: otlp_protobuf_payload, headers: pb_headers
+      expect(Trace.last.trace_id).to eq(OTLP_REQUEST_TRACE_ID.first(16))
+    end
+
+    it "returns 400 for malformed protobuf (truncated varint)" do
+      post "/v1/traces", params: "\x8A".b, headers: pb_headers
+      expect(response).to have_http_status(:bad_request)
+    end
+
+    it "returns an error key in the JSON body for malformed protobuf" do
+      post "/v1/traces", params: "\x8A".b, headers: pb_headers
+      expect(JSON.parse(response.body)).to have_key("error")
+    end
+  end
 end
