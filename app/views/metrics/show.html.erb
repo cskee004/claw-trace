@@ -1,0 +1,25 @@
+<%# app/views/metrics/show.html.erb %>
+<% content_for(:title) { @metric_name } %>
+
+<div class="metrics-show">
+  <div class="metrics-show__header">
+    <%= link_to "← All Metrics", metrics_path, class: "metrics-show__back" %>
+    <div class="metrics-show__title-row">
+      <h1 class="page-title"><%= @metric_name %></h1>
+      <% if @metric_type %>
+        <span class="metric-type-badge metric-type-badge--<%= @metric_type %>">
+          <%= @metric_type %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @has_data %>
+    <div class="metrics-show__chart-wrapper"
+         data-controller="chart"
+         data-chart-options-value="<%= @chart_options.to_json %>">
+    </div>
+  <% else %>
+    <p class="metrics-empty">No data recorded for this metric.</p>
+  <% end %>
+</div>
