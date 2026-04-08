@@ -24,10 +24,10 @@ module Api
 
         TelemetryIngester.call(**result)
         render json: {}, status: :ok
-      rescue JSON::ParserError => e
-        render json: { error: "invalid JSON: #{e.message}" }, status: :bad_request
       rescue OtlpProtobufDecoder::Error => e
         render json: { error: e.message }, status: :bad_request
+      rescue JSON::ParserError => e
+        render json: { error: "invalid JSON: #{e.message}" }, status: :bad_request
       rescue OtlpNormalizer::Error, TelemetryIngester::Error => e
         render json: { error: e.message }, status: :bad_request
       end
