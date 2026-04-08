@@ -68,11 +68,11 @@ class OtlpProtobufDecoder
     def skip_field(wire_type)
       case wire_type
       when 0 then read_varint
-      when 1 then self.pos += 8
+      when 1 then read_fixed64_bytes
       when 2
         len = read_varint
-        self.pos += len
-      when 5 then self.pos += 4
+        read_bytes(len)
+      when 5 then read_fixed32_bytes
       else raise OtlpProtobufDecoder::Error, "unknown wire type #{wire_type}"
       end
     end
