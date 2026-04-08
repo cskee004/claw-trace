@@ -189,4 +189,96 @@ RSpec.describe OtlpProtobufDecoder do
       expect(value).to be_within(0.0001).of(3.14)
     end
   end
+
+  describe ".decode_traces" do
+    let(:trace_id_bytes)  { ["a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"].pack("H*") }  # 16 bytes
+    let(:span_id_bytes)   { ["aaaa0000aaaa0000"].pack("H*") }                    # 8 bytes
+    let(:parent_id_bytes) { ["bbbb0000bbbb0000"].pack("H*") }                    # 8 bytes
+
+    def minimal_span_bytes
+      pb_len(1, trace_id_bytes) +
+        pb_len(2, span_id_bytes) +
+        pb_str(5, "openclaw.request") +
+        pb_fixed64(7, 1_000_000_000_000_000_000) +
+        pb_fixed64(8, 2_000_000_000_000_000_000)
+    end
+
+    def wrap_in_export_traces(span_bytes, session_key: "test-agent")
+      resource = pb_len(1, pb_len(1, kv("openclaw.session.key", av_string(session_key))))
+      scope    = pb_len(2, pb_len(2, span_bytes))
+      pb_len(1, resource + scope)
+    end
+
+    let(:binary) { wrap_in_export_traces(minimal_span_bytes) }
+
+    it "returns a hash with resourceSpans key" do
+      result = described_class.decode_traces(binary)
+      expect(result).to have_key("resourceSpans")
+    end
+
+    it "decodes traceId as lowercase hex string" do
+      result = described_class.decode_traces(binary)
+      expect(result.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0, "traceId"))
+        .to eq("a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6")
+    end
+
+    it "decodes spanId as lowercase hex string" do
+      result = described_class.decode_traces(binary)
+      expect(result.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0, "spanId"))
+        .to eq("aaaa0000aaaa0000")
+    end
+
+    it "decodes startTimeUnixNano as a decimal nanosecond string" do
+      result = described_class.decode_traces(binary)
+      expect(result.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0, "startTimeUnixNano"))
+        .to eq("1000000000000000000")
+    end
+
+    it "decodes parentSpanId as hex when present" do
+      span = minimal_span_bytes + pb_len(4, parent_id_bytes)
+      result = described_class.decode_traces(wrap_in_export_traces(span))
+      expect(result.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0, "parentSpanId"))
+        .to eq("bbbb0000bbbb0000")
+    end
+
+    it "omits parentSpanId key when field is absent" do
+      result = described_class.decode_traces(binary)
+      span = result.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0)
+      expect(span).not_to have_key("parentSpanId")
+    end
+
+    it "decodes span name" do
+      result = described_class.decode_traces(binary)
+      expect(result.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0, "name"))
+        .to eq("openclaw.request")
+    end
+
+    it "decodes status code 2 (ERROR)" do
+      status_bytes = pb_int(3, 2)  # Status { code = 2 }
+      span = minimal_span_bytes + pb_len(15, status_bytes)
+      result = described_class.decode_traces(wrap_in_export_traces(span))
+      expect(result.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0, "status", "code"))
+        .to eq(2)
+    end
+
+    it "decodes resource attributes" do
+      result = described_class.decode_traces(binary)
+      attrs = result.dig("resourceSpans", 0, "resource", "attributes")
+      expect(attrs).to include({ "key" => "openclaw.session.key", "value" => { "stringValue" => "test-agent" } })
+    end
+
+    it "returns { 'resourceSpans' => [] } for empty binary" do
+      expect(described_class.decode_traces("")).to eq({ "resourceSpans" => [] })
+    end
+
+    it "raises Error on truncated varint" do
+      expect { described_class.decode_traces("\x8A".b) }.to raise_error(OtlpProtobufDecoder::Error, /truncated/)
+    end
+
+    it "raises Error on truncated length-delimited field" do
+      # Tag for field 1 wire 2, then length 100, but only 3 bytes of data
+      buf = pb_tag(1, 2) + pb_varint(100) + "abc".b
+      expect { described_class.decode_traces(buf) }.to raise_error(OtlpProtobufDecoder::Error, /truncated/)
+    end
+  end
 end
