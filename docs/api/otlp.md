@@ -9,9 +9,12 @@ ClawTrace accepts OpenTelemetry Protocol (OTLP) trace payloads natively. OpenCla
 ```
 POST /v1/traces
 Content-Type: application/json
+         or: application/x-protobuf
 ```
 
 No authentication required — OTLP endpoints are unauthenticated by convention.
+
+Both `application/json` (OTLP/JSON) and `application/x-protobuf` (OTLP/proto3) are accepted.
 
 ---
 
