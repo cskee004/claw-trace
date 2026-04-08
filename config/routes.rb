@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   end
 
   scope "/v1" do
-    post "/traces", to: "api/v1/otlp#create"
+    post "/traces",  to: "api/v1/otlp#create"
+    post "/metrics", to: "api/v1/metrics#create"
   end
 end
