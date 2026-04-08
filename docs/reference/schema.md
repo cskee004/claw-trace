@@ -1,6 +1,6 @@
 # Database Schema
 
-ClawTrace uses three tables. Two store telemetry data (`traces`, `spans`); one manages API authentication (`api_keys`).
+ClawTrace uses four tables. Two store telemetry data (`traces`, `spans`); one stores OTLP metrics (`metrics`); one manages API authentication (`api_keys`).
 
 **Relationship:** `spans.trace_id` is a string foreign key referencing `traces.trace_id` — not the integer `id`. Rails URL helpers use `trace_id` via `Trace#to_param`.
 
@@ -43,6 +43,27 @@ One row per span event within a trace.
 | `updated_at` | datetime | NOT NULL | Rails timestamp |
 
 **Indexes:** `(trace_id, span_id)` composite unique, `trace_id`, `agent_id`, `span_type`
+
+---
+
+## `metrics`
+
+One row per OTLP metric data point.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `id` | integer | PK, auto-increment | Internal row ID |
+| `trace_id` | string | nullable, indexed | Links to a trace if present in the resource attributes |
+| `metric_name` | string | NOT NULL, indexed | e.g. `"gen_ai.client.token.usage"` |
+| `metric_type` | string | NOT NULL | `"sum"` or `"histogram"` |
+| `metric_attributes` | JSON | NOT NULL, default `{}` | Flattened OTLP data point attributes (model, provider, channel, etc.) |
+| `data_points` | JSON | NOT NULL, default `{}` | Type-specific: sum `{ value, start_time }`; histogram `{ count, sum, min, max, bucket_counts, explicit_bounds }` |
+| `timestamp` | datetime | NOT NULL, indexed | Converted from `timeUnixNano` |
+| `created_at` | datetime | NOT NULL | Rails timestamp |
+
+**Indexes:** `trace_id`, `metric_name`, `timestamp`
+
+> **Note:** The column is `metric_attributes` (not `attributes`) because ActiveRecord reserves the `attributes` method name.
 
 ---
 
