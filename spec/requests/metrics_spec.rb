@@ -109,4 +109,64 @@ RSpec.describe "POST /v1/metrics", type: :request do
       expect(response).to have_http_status(:ok)
     end
   end
+
+  # ── Protobuf payload ──────────────────────────────────────────────────────────
+
+  describe "protobuf payload" do
+    let(:pb_headers) { { "Content-Type" => "application/x-protobuf" } }
+
+    # Minimal valid ExportMetricsServiceRequest binary — one sum data point with asInt
+    def metrics_protobuf_payload
+      pb_varint = ->(int) {
+        bytes = []
+        loop do
+          byte = int & 0x7F
+          int >>= 7
+          byte |= 0x80 if int > 0
+          bytes << byte
+          break if int.zero?
+        end
+        bytes.pack("C*")
+      }
+
+      pb_tag  = ->(field, wire) { pb_varint.call((field << 3) | wire) }
+      pb_len  = ->(field, bytes) {
+        bytes = bytes.b
+        pb_tag.call(field, 2) + pb_varint.call(bytes.bytesize) + bytes
+      }
+      pb_str  = ->(field, str) { pb_len.call(field, str.b) }
+      pb_f64  = ->(field, val) { pb_tag.call(field, 1) + [val].pack("Q<") }
+
+      # NumberDataPoint with timeUnixNano (field 3) and asInt (field 6, sfixed64 wire_type 1)
+      dp = pb_f64.call(3, METRICS_ENDPOINT_BASE_TS) +
+           pb_tag.call(6, 1) + [1200].pack("q<")   # asInt as sfixed64
+
+      sum    = pb_len.call(2, dp)                            # Sum.data_points = field 2
+      metric = pb_str.call(1, "gen_ai.client.token.usage") + pb_len.call(7, sum)
+      scope  = pb_len.call(3, metric)                        # ScopeMetrics.metrics = field 3
+      pb_len.call(1, pb_len.call(2, scope))                  # ResourceMetrics.scope_metrics = field 2, ExportMetricsServiceRequest.resource_metrics = field 1
+    end
+
+    it "returns 200 with {} for a valid protobuf payload" do
+      post "/v1/metrics", params: metrics_protobuf_payload, headers: pb_headers
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq({})
+    end
+
+    it "persists a Metric record from a valid protobuf payload" do
+      expect {
+        post "/v1/metrics", params: metrics_protobuf_payload, headers: pb_headers
+      }.to change(Metric, :count).by(1)
+    end
+
+    it "returns 400 for malformed protobuf (truncated varint)" do
+      post "/v1/metrics", params: "\x8A".b, headers: pb_headers
+      expect(response).to have_http_status(:bad_request)
+    end
+
+    it "returns an error key in the JSON body for malformed protobuf" do
+      post "/v1/metrics", params: "\x8A".b, headers: pb_headers
+      expect(JSON.parse(response.body)).to have_key("error")
+    end
+  end
 end
