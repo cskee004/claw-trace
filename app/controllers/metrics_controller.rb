@@ -5,7 +5,7 @@ class MetricsController < ApplicationController
 
   def show
     @metric_name = params[:metric_name]
-    records      = Metric.where(metric_name: @metric_name).order(:timestamp)
+    records      = Metric.where(metric_name: @metric_name).order(:timestamp).to_a
     @metric_type = records.first&.metric_type
     @has_data    = records.any?
     @chart_options = @has_data ? build_chart_options(records, @metric_type) : {}
@@ -46,7 +46,9 @@ class MetricsController < ApplicationController
   end
 
   def histogram_chart_options(records)
-    p50_data = []; p95_data = []; p99_data = []
+    p50_data = []
+    p95_data = []
+    p99_data = []
 
     records.each do |r|
       dp   = r.data_points
