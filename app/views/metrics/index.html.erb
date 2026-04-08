@@ -1,0 +1,50 @@
+<%# app/views/metrics/index.html.erb %>
+<% content_for(:title) { "Metrics" } %>
+
+<div class="metrics-page">
+  <div class="metrics-header">
+    <h1 class="page-title">Metrics</h1>
+  </div>
+
+  <%= form_with url: metrics_path, method: :get, local: true, class: "metrics-filter" do |f| %>
+    <%= f.text_field :q,        value: params[:q],        placeholder: "Name…",     class: "metrics-filter__input" %>
+    <%= f.text_field :model,    value: params[:model],    placeholder: "Model…",    class: "metrics-filter__input" %>
+    <%= f.text_field :provider, value: params[:provider], placeholder: "Provider…", class: "metrics-filter__input" %>
+    <%= f.text_field :channel,  value: params[:channel],  placeholder: "Channel…",  class: "metrics-filter__input" %>
+    <%= f.submit "Filter", class: "metrics-filter__submit" %>
+    <% if [params[:q], params[:model], params[:provider], params[:channel]].any?(&:present?) %>
+      <%= link_to "Clear", metrics_path, class: "reset-link" %>
+    <% end %>
+  <% end %>
+
+  <% if @metrics_summary.empty? %>
+    <p class="metrics-empty">No metrics recorded yet.</p>
+  <% else %>
+    <table class="metrics-table">
+      <thead>
+        <tr>
+          <th>Metric Name</th>
+          <th>Type</th>
+          <th>Data Points</th>
+          <th>Latest</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @metrics_summary.each do |m| %>
+          <tr>
+            <td class="metrics-table__name">
+              <%= link_to m.metric_name, metric_path(m.metric_name), class: "metrics-table__link" %>
+            </td>
+            <td>
+              <span class="metric-type-badge metric-type-badge--<%= m.metric_type %>">
+                <%= m.metric_type %>
+              </span>
+            </td>
+            <td><%= m.data_point_count %></td>
+            <td><%= m.latest_timestamp.to_s.first(19) %> UTC</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>
