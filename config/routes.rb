@@ -4,6 +4,8 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   resources :traces, only: [:index, :show]
+  resources :metrics, only: [:index, :show], param: :metric_name,
+            constraints: { metric_name: /[^\/]+/ }, format: false
 
   namespace :api do
     namespace :v1 do
