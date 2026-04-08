@@ -281,4 +281,118 @@ RSpec.describe OtlpProtobufDecoder do
       expect { described_class.decode_traces(buf) }.to raise_error(OtlpProtobufDecoder::Error, /truncated/)
     end
   end
+
+  describe ".decode_metrics" do
+    def wrap_in_export_metrics(metric_bytes)
+      scope = pb_len(3, metric_bytes)   # ScopeMetrics.metrics = field 3
+      pb_len(1, pb_len(2, scope))       # ResourceMetrics.scope_metrics = field 2, ExportMetricsServiceRequest.resource_metrics = field 1
+    end
+
+    # ── Sum metric ────────────────────────────────────────────────────────────
+
+    describe "sum metric with asInt" do
+      let(:dp_bytes) do
+        pb_fixed64(2, 1_712_345_678_000_000_000) +  # startTimeUnixNano
+          pb_fixed64(3, 1_712_345_678_500_000_000) +  # timeUnixNano
+          pb_sfixed64(6, 1200)                          # asInt (sfixed64, wire_type 1)
+      end
+
+      let(:metric_bytes) do
+        pb_str(1, "gen_ai.client.token.usage") +  # Metric.name = field 1
+          pb_len(7, pb_len(2, dp_bytes))            # Metric.sum = field 7, Sum.data_points = field 2
+      end
+
+      let(:binary) { wrap_in_export_metrics(metric_bytes) }
+
+      it "decodes the metric name" do
+        result = described_class.decode_metrics(binary)
+        expect(result.dig("resourceMetrics", 0, "scopeMetrics", 0, "metrics", 0, "name"))
+          .to eq("gen_ai.client.token.usage")
+      end
+
+      it "decodes sum dataPoint with asInt" do
+        result = described_class.decode_metrics(binary)
+        dp = result.dig("resourceMetrics", 0, "scopeMetrics", 0, "metrics", 0, "sum", "dataPoints", 0)
+        expect(dp["asInt"]).to eq(1200)
+      end
+
+      it "decodes timeUnixNano as a decimal string" do
+        result = described_class.decode_metrics(binary)
+        dp = result.dig("resourceMetrics", 0, "scopeMetrics", 0, "metrics", 0, "sum", "dataPoints", 0)
+        expect(dp["timeUnixNano"]).to eq("1712345678500000000")
+      end
+    end
+
+    describe "sum metric with asDouble" do
+      let(:dp_bytes) do
+        pb_fixed64(3, 1_712_345_678_500_000_000) +  # timeUnixNano
+          pb_fixed64(4, 99.5)                           # asDouble (double field, wire_type 1)
+      end
+
+      let(:metric_bytes) do
+        pb_str(1, "gen_ai.client.token.usage") +
+          pb_len(7, pb_len(2, dp_bytes))
+      end
+
+      it "decodes asDouble" do
+        result = described_class.decode_metrics(wrap_in_export_metrics(metric_bytes))
+        dp = result.dig("resourceMetrics", 0, "scopeMetrics", 0, "metrics", 0, "sum", "dataPoints", 0)
+        expect(dp["asDouble"]).to be_within(0.001).of(99.5)
+      end
+    end
+
+    # ── Histogram metric ──────────────────────────────────────────────────────
+
+    describe "histogram metric" do
+      let(:dp_bytes) do
+        pb_fixed64(3, 1_712_345_678_500_000_000) +          # timeUnixNano
+          pb_int(6, 150) +                                     # count (varint/uint64)
+          pb_fixed64(7, 45_230.0) +                           # sum (double)
+          pb_packed_varints(8, [10, 40, 60, 30, 10]) +        # bucketCounts
+          pb_packed_doubles(10, [100.0, 300.0, 500.0, 700.0]) + # explicitBounds
+          pb_fixed64(11, 12.0) +                              # min (double)
+          pb_fixed64(12, 890.0)                               # max (double)
+      end
+
+      let(:metric_bytes) do
+        pb_str(1, "gen_ai.client.operation.duration") +
+          pb_len(9, pb_len(2, dp_bytes))  # Metric.histogram = field 9, Histogram.data_points = field 2
+      end
+
+      let(:binary) { wrap_in_export_metrics(metric_bytes) }
+
+      def histogram_dp
+        described_class.decode_metrics(binary)
+          .dig("resourceMetrics", 0, "scopeMetrics", 0, "metrics", 0, "histogram", "dataPoints", 0)
+      end
+
+      it "decodes count" do
+        expect(histogram_dp["count"]).to eq(150)
+      end
+
+      it "decodes sum as a float" do
+        expect(histogram_dp["sum"]).to be_within(0.01).of(45_230.0)
+      end
+
+      it "decodes bucketCounts as an array" do
+        expect(histogram_dp["bucketCounts"]).to eq([10, 40, 60, 30, 10])
+      end
+
+      it "decodes explicitBounds as an array of floats" do
+        expect(histogram_dp["explicitBounds"]).to eq([100.0, 300.0, 500.0, 700.0])
+      end
+
+      it "decodes min" do
+        expect(histogram_dp["min"]).to be_within(0.01).of(12.0)
+      end
+
+      it "decodes max" do
+        expect(histogram_dp["max"]).to be_within(0.01).of(890.0)
+      end
+    end
+
+    it "returns { 'resourceMetrics' => [] } for empty binary" do
+      expect(described_class.decode_metrics("")).to eq({ "resourceMetrics" => [] })
+    end
+  end
 end

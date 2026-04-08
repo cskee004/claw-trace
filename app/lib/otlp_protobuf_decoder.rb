@@ -208,9 +208,122 @@ class OtlpProtobufDecoder
     status
   end
 
-  # ── Metrics (stub — implemented in Task 4) ────────────────────────────────────
+  # ── Metrics ───────────────────────────────────────────────────────────────────
 
-  def parse_export_metrics(_cur)
-    { "resourceMetrics" => [] }
+  def parse_export_metrics(cur)
+    resource_metrics = []
+    while (field, wire = cur.read_tag)
+      if field == 1 && wire == 2
+        resource_metrics << parse_resource_metrics(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "resourceMetrics" => resource_metrics }
+  end
+
+  def parse_resource_metrics(cur)
+    result = {}
+    scope_metrics = []
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [1, 2] then result["resource"] = parse_resource(cur.sub_cursor)
+      when [2, 2] then scope_metrics << parse_scope_metrics(cur.sub_cursor)
+      else cur.skip_field(wire)
+      end
+    end
+    result["scopeMetrics"] = scope_metrics
+    result
+  end
+
+  def parse_scope_metrics(cur)
+    metrics = []
+    while (field, wire = cur.read_tag)
+      if field == 3 && wire == 2
+        metrics << parse_metric(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "metrics" => metrics }
+  end
+
+  def parse_metric(cur)
+    metric = {}
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [1, 2] then metric["name"] = cur.sub_cursor.buf.force_encoding("UTF-8")
+      when [7, 2] then metric["sum"] = parse_sum(cur.sub_cursor)
+      when [9, 2] then metric["histogram"] = parse_histogram(cur.sub_cursor)
+      else cur.skip_field(wire)
+      end
+    end
+    metric
+  end
+
+  def parse_sum(cur)
+    data_points = []
+    while (field, wire = cur.read_tag)
+      if field == 2 && wire == 2
+        data_points << parse_number_data_point(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "dataPoints" => data_points }
+  end
+
+  def parse_number_data_point(cur)
+    dp = {}
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [2, 1] then dp["startTimeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
+      when [3, 1] then dp["timeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
+      when [4, 1] then dp["asDouble"] = cur.read_fixed64_bytes.unpack1("E")
+      when [6, 1] then dp["asInt"] = cur.read_fixed64_bytes.unpack1("q<")  # sfixed64 signed
+      when [7, 2] then (dp["attributes"] ||= []) << parse_key_value(cur.sub_cursor)
+      else cur.skip_field(wire)
+      end
+    end
+    dp
+  end
+
+  def parse_histogram(cur)
+    data_points = []
+    while (field, wire = cur.read_tag)
+      if field == 2 && wire == 2
+        data_points << parse_histogram_data_point(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "dataPoints" => data_points }
+  end
+
+  def parse_histogram_data_point(cur)
+    dp = {}
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [2, 1] then dp["startTimeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
+      when [3, 1] then dp["timeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
+      when [6, 0] then dp["count"] = cur.read_varint           # uint64 — varint wire type
+      when [7, 1] then dp["sum"] = cur.read_fixed64_bytes.unpack1("E")
+      when [8, 2]
+        inner = cur.sub_cursor
+        counts = []
+        counts << inner.read_varint while inner.pos < inner.buf.bytesize
+        dp["bucketCounts"] = counts
+      when [9, 2] then (dp["attributes"] ||= []) << parse_key_value(cur.sub_cursor)
+      when [10, 2]
+        inner = cur.sub_cursor
+        bounds = []
+        bounds << inner.read_fixed64_bytes.unpack1("E") while inner.pos < inner.buf.bytesize
+        dp["explicitBounds"] = bounds
+      when [11, 1] then dp["min"] = cur.read_fixed64_bytes.unpack1("E")
+      when [12, 1] then dp["max"] = cur.read_fixed64_bytes.unpack1("E")
+      else cur.skip_field(wire)
+      end
+    end
+    dp
   end
 end
