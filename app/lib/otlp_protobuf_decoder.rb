@@ -94,9 +94,121 @@ class OtlpProtobufDecoder
 
   private
 
-  def parse_export_traces(_cur)
-    { "resourceSpans" => [] }
+  # ── Shared ────────────────────────────────────────────────────────────────────
+
+  def parse_any_value(cur)
+    result = {}
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [1, 2] then result["stringValue"] = cur.sub_cursor.buf.force_encoding("UTF-8")
+      when [2, 0] then result["boolValue"] = cur.read_varint != 0
+      when [3, 0] then result["intValue"] = cur.read_varint
+      when [4, 1] then result["doubleValue"] = cur.read_fixed64_bytes.unpack1("E")
+      else cur.skip_field(wire)
+      end
+    end
+    result
   end
+
+  def parse_key_value(cur)
+    kv = {}
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [1, 2] then kv["key"] = cur.sub_cursor.buf.force_encoding("UTF-8")
+      when [2, 2] then kv["value"] = parse_any_value(cur.sub_cursor)
+      else cur.skip_field(wire)
+      end
+    end
+    kv
+  end
+
+  def parse_resource(cur)
+    attributes = []
+    while (field, wire = cur.read_tag)
+      if field == 1 && wire == 2
+        attributes << parse_key_value(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "attributes" => attributes }
+  end
+
+  # ── Traces ────────────────────────────────────────────────────────────────────
+
+  def parse_export_traces(cur)
+    resource_spans = []
+    while (field, wire = cur.read_tag)
+      if field == 1 && wire == 2
+        resource_spans << parse_resource_spans(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "resourceSpans" => resource_spans }
+  end
+
+  def parse_resource_spans(cur)
+    result = {}
+    scope_spans = []
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [1, 2] then result["resource"] = parse_resource(cur.sub_cursor)
+      when [2, 2] then scope_spans << parse_scope_spans(cur.sub_cursor)
+      else cur.skip_field(wire)
+      end
+    end
+    result["scopeSpans"] = scope_spans
+    result
+  end
+
+  def parse_scope_spans(cur)
+    spans = []
+    while (field, wire = cur.read_tag)
+      if field == 2 && wire == 2
+        spans << parse_span(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "spans" => spans }
+  end
+
+  def parse_span(cur)
+    span = {}
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [1, 2]  then span["traceId"] = cur.sub_cursor.buf.unpack1("H*")
+      when [2, 2]  then span["spanId"] = cur.sub_cursor.buf.unpack1("H*")
+      when [4, 2]
+        hex = cur.sub_cursor.buf.unpack1("H*")
+        span["parentSpanId"] = hex unless hex.empty?
+      when [5, 2]  then span["name"] = cur.sub_cursor.buf.force_encoding("UTF-8")
+      when [6, 0]  then cur.read_varint  # kind — not used by normalizer
+      when [7, 1]  then span["startTimeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
+      when [8, 1]  then span["endTimeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
+      when [9, 2]  then (span["attributes"] ||= []) << parse_key_value(cur.sub_cursor)
+      when [15, 2] then span["status"] = parse_status(cur.sub_cursor)
+      when [16, 5] then cur.read_fixed32_bytes  # flags — skip
+      else cur.skip_field(wire)
+      end
+    end
+    span
+  end
+
+  def parse_status(cur)
+    status = {}
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [2, 2] then status["message"] = cur.sub_cursor.buf.force_encoding("UTF-8")
+      when [3, 0] then status["code"] = cur.read_varint
+      else cur.skip_field(wire)
+      end
+    end
+    status
+  end
+
+  # ── Metrics (stub — implemented in Task 4) ────────────────────────────────────
 
   def parse_export_metrics(_cur)
     { "resourceMetrics" => [] }

@@ -138,4 +138,55 @@ RSpec.describe OtlpProtobufDecoder do
       end
     end
   end
+
+  # ── AnyValue and KeyValue ─────────────────────────────────────────────────────
+
+  describe ".decode_traces — AnyValue types in span attributes" do
+    def span_with_attr(any_value_bytes)
+      trace_id_bytes = ["a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"].pack("H*")
+      span_id_bytes  = ["aaaa0000aaaa0000"].pack("H*")
+
+      span = pb_len(1, trace_id_bytes) +
+             pb_len(2, span_id_bytes) +
+             pb_str(5, "openclaw.request") +
+             pb_fixed64(7, 1_000_000_000_000_000_000) +
+             pb_fixed64(8, 2_000_000_000_000_000_000) +
+             pb_len(9, kv("the_key", any_value_bytes))  # attributes field 9
+
+      resource = pb_len(1, pb_len(1, kv("openclaw.session.key", av_string("agent"))))
+      scope    = pb_len(2, pb_len(2, span))
+      pb_len(1, resource + scope)
+    end
+
+    def decoded_attr(any_value_bytes)
+      result = described_class.decode_traces(span_with_attr(any_value_bytes))
+      result.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0, "attributes", 0)
+    end
+
+    it "decodes stringValue" do
+      attr = decoded_attr(av_string("hello"))
+      expect(attr).to eq({ "key" => "the_key", "value" => { "stringValue" => "hello" } })
+    end
+
+    it "decodes boolValue true" do
+      attr = decoded_attr(av_bool(true))
+      expect(attr).to eq({ "key" => "the_key", "value" => { "boolValue" => true } })
+    end
+
+    it "decodes boolValue false" do
+      attr = decoded_attr(av_bool(false))
+      expect(attr).to eq({ "key" => "the_key", "value" => { "boolValue" => false } })
+    end
+
+    it "decodes intValue" do
+      attr = decoded_attr(av_int(42))
+      expect(attr).to eq({ "key" => "the_key", "value" => { "intValue" => 42 } })
+    end
+
+    it "decodes doubleValue" do
+      attr = decoded_attr(av_double(3.14))
+      value = attr.dig("value", "doubleValue")
+      expect(value).to be_within(0.0001).of(3.14)
+    end
+  end
 end
