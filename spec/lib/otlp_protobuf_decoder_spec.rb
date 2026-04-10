@@ -395,4 +395,78 @@ RSpec.describe OtlpProtobufDecoder do
       expect(described_class.decode_metrics("")).to eq({ "resourceMetrics" => [] })
     end
   end
+
+  describe ".decode_logs" do
+    let(:trace_id_bytes) { ["a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"].pack("H*") }
+    let(:span_id_bytes)  { ["aaaa0000aaaa0000"].pack("H*") }
+    let(:ts_ns)          { 1_712_345_678_500_000_000 }
+
+    def minimal_log_record_bytes
+      pb_fixed64(1, ts_ns) +
+        pb_int(2, 9) +
+        pb_str(3, "INFO") +
+        pb_len(5, av_string("agent turn completed")) +
+        pb_len(9, trace_id_bytes) +
+        pb_len(10, span_id_bytes)
+    end
+
+    # Wraps log_record_bytes in ScopeLogs → ResourceLogs → ExportLogsServiceRequest.
+    # resource_logs = field 1, scope_logs = field 2, log_records = field 2.
+    def wrap_in_export_logs(log_record_bytes)
+      scope        = pb_len(2, log_record_bytes)   # ScopeLogs: log_records = field 2
+      resource_log = pb_len(2, scope)              # ResourceLogs: scope_logs = field 2
+      pb_len(1, resource_log)                      # ExportLogsServiceRequest: resource_logs = field 1
+    end
+
+    let(:binary) { wrap_in_export_logs(minimal_log_record_bytes) }
+
+    def log_record(bin = binary)
+      described_class.decode_logs(bin)
+        .dig("resourceLogs", 0, "scopeLogs", 0, "logRecords", 0)
+    end
+
+    it "returns a hash with resourceLogs key" do
+      expect(described_class.decode_logs(binary)).to have_key("resourceLogs")
+    end
+
+    it "decodes timeUnixNano as a decimal nanosecond string" do
+      expect(log_record["timeUnixNano"]).to eq("1712345678500000000")
+    end
+
+    it "decodes severityNumber as an integer" do
+      expect(log_record["severityNumber"]).to eq(9)
+    end
+
+    it "decodes severityText as a string" do
+      expect(log_record["severityText"]).to eq("INFO")
+    end
+
+    it "decodes body as an AnyValue hash" do
+      expect(log_record["body"]).to eq({ "stringValue" => "agent turn completed" })
+    end
+
+    it "decodes traceId as a lowercase hex string" do
+      expect(log_record["traceId"]).to eq("a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6")
+    end
+
+    it "decodes spanId as a lowercase hex string" do
+      expect(log_record["spanId"]).to eq("aaaa0000aaaa0000")
+    end
+
+    it "omits traceId and spanId keys when fields are absent" do
+      bytes_without_ids = pb_fixed64(1, ts_ns) + pb_int(2, 9) + pb_str(3, "WARN")
+      lr = log_record(wrap_in_export_logs(bytes_without_ids))
+      expect(lr).not_to have_key("traceId")
+      expect(lr).not_to have_key("spanId")
+    end
+
+    it "returns { 'resourceLogs' => [] } for empty binary" do
+      expect(described_class.decode_logs("")).to eq({ "resourceLogs" => [] })
+    end
+
+    it "raises Error on truncated binary" do
+      expect { described_class.decode_logs("\x8A".b) }
+        .to raise_error(OtlpProtobufDecoder::Error, /truncated/)
+    end
+  end
 end

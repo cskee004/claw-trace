@@ -92,6 +92,10 @@ class OtlpProtobufDecoder
     new.send(:parse_export_metrics, Cursor.new(binary.b, 0))
   end
 
+  def self.decode_logs(binary)
+    new.send(:parse_export_logs, Cursor.new(binary.b, 0))
+  end
+
   private
 
   # ── Shared ────────────────────────────────────────────────────────────────────
@@ -330,5 +334,66 @@ class OtlpProtobufDecoder
       end
     end
     dp
+  end
+
+  # ── Logs ──────────────────────────────────────────────────────────────────────
+
+  def parse_export_logs(cur)
+    resource_logs = []
+    while (field, wire = cur.read_tag)
+      if field == 1 && wire == 2
+        resource_logs << parse_resource_logs(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "resourceLogs" => resource_logs }
+  end
+
+  def parse_resource_logs(cur)
+    result = {}
+    scope_logs = []
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [1, 2] then result["resource"] = parse_resource(cur.sub_cursor)
+      when [2, 2] then scope_logs << parse_scope_logs(cur.sub_cursor)
+      else cur.skip_field(wire)
+      end
+    end
+    result["scopeLogs"] = scope_logs
+    result
+  end
+
+  def parse_scope_logs(cur)
+    log_records = []
+    while (field, wire = cur.read_tag)
+      if field == 2 && wire == 2
+        log_records << parse_log_record(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "logRecords" => log_records }
+  end
+
+  def parse_log_record(cur)
+    lr = {}
+    while (field, wire = cur.read_tag)
+      case [field, wire]
+      when [1, 1]  then lr["timeUnixNano"]   = cur.read_fixed64_bytes.unpack1("Q<").to_s
+      when [2, 0]  then lr["severityNumber"] = cur.read_varint
+      when [3, 2]  then lr["severityText"]   = cur.sub_cursor.buf.force_encoding("UTF-8")
+      when [5, 2]  then lr["body"]           = parse_any_value(cur.sub_cursor)
+      when [6, 2]  then (lr["attributes"] ||= []) << parse_key_value(cur.sub_cursor)
+      when [9, 2]
+        hex = cur.sub_cursor.buf.unpack1("H*")
+        lr["traceId"] = hex unless hex.empty?
+      when [10, 2]
+        hex = cur.sub_cursor.buf.unpack1("H*")
+        lr["spanId"] = hex unless hex.empty?
+      else cur.skip_field(wire)
+      end
+    end
+    lr
   end
 end
