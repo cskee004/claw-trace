@@ -41,6 +41,7 @@ hash = OtlpProtobufDecoder.decode_metrics(binary_string)
 hash = OtlpProtobufDecoder.decode_logs(binary_string)
 # => {
 #   "resourceLogs" => [{
+#     "resource" => { "attributes" => [{ "key" => "...", "value" => { "stringValue" => "..." } }] },
 #     "scopeLogs" => [{
 #       "logRecords" => [{
 #         "timeUnixNano"   => "1712345678500000000",             # decimal nanosecond string
