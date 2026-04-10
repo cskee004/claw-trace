@@ -85,9 +85,9 @@ RSpec.describe "POST /v1/logs", type: :request do
       expect(response).to have_http_status(:bad_request)
     end
 
-    it "returns an error key in the JSON body" do
+    it "returns an error message in the JSON body" do
       post "/v1/logs", params: "not json at all", headers: headers
-      expect(JSON.parse(response.body)).to have_key("error")
+      expect(JSON.parse(response.body)["error"]).to match(/invalid JSON/i)
     end
   end
 
