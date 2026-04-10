@@ -2,15 +2,16 @@
 
 # Pure-Ruby decoder for OTLP proto3 binary payloads.
 #
-# Implements only the wire-format fields needed for ExportTraceServiceRequest
-# and ExportMetricsServiceRequest. No gems, no native extensions.
+# Implements only the wire-format fields needed for ExportTraceServiceRequest,
+# ExportMetricsServiceRequest, and ExportLogsServiceRequest. No gems, no native extensions.
 #
-# Output is structurally identical to what OtlpNormalizer and MetricsNormalizer
-# accept — same camelCase keys, same nesting, same value types.
+# Output is structurally identical to what OtlpNormalizer, MetricsNormalizer, and
+# LogsNormalizer accept — same camelCase keys, same nesting, same value types.
 #
 # Usage:
 #   hash = OtlpProtobufDecoder.decode_traces(binary_string)
 #   hash = OtlpProtobufDecoder.decode_metrics(binary_string)
+#   hash = OtlpProtobufDecoder.decode_logs(binary_string)
 #
 # Raises OtlpProtobufDecoder::Error on truncated or malformed binary.
 # Unknown fields are skipped silently.
