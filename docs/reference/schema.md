@@ -1,6 +1,6 @@
 # Database Schema
 
-ClawTrace uses four tables. Two store telemetry data (`traces`, `spans`); one stores OTLP metrics (`metrics`); one manages API authentication (`api_keys`).
+ClawTrace uses five tables. Two store telemetry data (`traces`, `spans`); one stores OTLP log records (`logs`); one stores OTLP metrics (`metrics`); one manages API authentication (`api_keys`).
 
 **Relationship:** `spans.trace_id` is a string foreign key referencing `traces.trace_id` — not the integer `id`. Rails URL helpers use `trace_id` via `Trace#to_param`.
 
@@ -64,6 +64,31 @@ One row per OTLP metric data point.
 **Indexes:** `trace_id`, `metric_name`, `timestamp`
 
 > **Note:** The column is `metric_attributes` (not `attributes`) because ActiveRecord reserves the `attributes` method name.
+
+---
+
+## `logs`
+
+One row per OTLP log record.
+
+| Column | Type | Constraints | Notes |
+|--------|------|-------------|-------|
+| `id` | integer | PK, auto-increment | Internal row ID |
+| `trace_id` | string | nullable, indexed | Correlates to a trace when present; logs may arrive without a trace |
+| `span_id` | string | nullable, indexed | Correlates to a span when present |
+| `severity_text` | string | nullable | Human-readable severity label (e.g. `"INFO"`, `"WARN"`, `"ERROR"`) |
+| `severity_number` | integer | nullable | OTLP numeric severity level (1–24); nil when absent |
+| `body` | text | nullable | Log message body; nil when absent |
+| `log_attributes` | JSON | NOT NULL, default `{}` | Flattened OTLP log record attributes |
+| `timestamp` | datetime | NOT NULL, indexed | Converted from `timeUnixNano` |
+| `created_at` | datetime | NOT NULL | Rails timestamp |
+| `updated_at` | datetime | NOT NULL | Rails timestamp |
+
+**Indexes:** `trace_id`, `span_id`, `timestamp`
+
+> **Note:** No DB-level foreign key on `trace_id` — logs may arrive before or without a corresponding trace. The `Log` model uses `belongs_to :trace, optional: true` for optional in-memory association.
+
+> **Note:** The column is `log_attributes` (not `attributes`) because ActiveRecord reserves the `attributes` method name.
 
 ---
 
