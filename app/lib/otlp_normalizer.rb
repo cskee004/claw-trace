@@ -97,6 +97,11 @@ class OtlpNormalizer
     Time.at(nano.to_i / 1_000_000_000.0).utc.iso8601(3)
   end
 
+  def nano_to_iso8601_or_nil(nano)
+    return nil if nano.nil? || nano.to_i.zero?
+    nano_to_iso8601(nano)
+  end
+
   def find_final_span(spans)
     spans.max_by { |s| s["startTimeUnixNano"].to_i }
   end
@@ -127,6 +132,7 @@ class OtlpNormalizer
       "parent_span_id" => span["parentSpanId"].presence,
       "span_type"      => resolve_span_type(span, final_span),
       "timestamp"      => nano_to_iso8601(span["startTimeUnixNano"]),
+      "end_time"       => nano_to_iso8601_or_nil(span["endTimeUnixNano"]),
       "agent_id"       => agent_id,
       "metadata"       => attrs_to_hash(span["attributes"] || [])
     }

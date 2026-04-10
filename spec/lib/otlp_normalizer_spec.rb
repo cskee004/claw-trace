@@ -19,7 +19,8 @@ RSpec.describe OtlpNormalizer do
     })
   end
 
-  def otlp_span(name:, span_id:, timestamp_ns:, parent_span_id: nil, status_code: nil, attributes: [])
+  def otlp_span(name:, span_id:, timestamp_ns:, parent_span_id: nil, status_code: nil,
+                attributes: [], end_timestamp_ns: nil)
     span = {
       "traceId"            => OTLP_TRACE_ID,
       "spanId"             => span_id,
@@ -27,8 +28,9 @@ RSpec.describe OtlpNormalizer do
       "startTimeUnixNano"  => timestamp_ns.to_s,
       "attributes"         => attributes
     }
-    span["parentSpanId"] = parent_span_id if parent_span_id
-    span["status"] = { "code" => status_code } if status_code
+    span["parentSpanId"]    = parent_span_id            if parent_span_id
+    span["status"]          = { "code" => status_code } if status_code
+    span["endTimeUnixNano"] = end_timestamp_ns.to_s     if end_timestamp_ns
     span
   end
 
@@ -255,6 +257,38 @@ RSpec.describe OtlpNormalizer do
       ])
       lines = normalize_and_parse(payload)
       expect(lines[1]["metadata"]).to eq({})
+    end
+
+    describe "end_time field" do
+      it "sets end_time to ISO8601 when endTimeUnixNano is present" do
+        payload = otlp_payload(spans: [
+          otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",
+                    timestamp_ns: 1_000_000_000_000_000_000,
+                    end_timestamp_ns: 1_000_000_001_500_000_000)
+        ])
+        span = OtlpNormalizer.call(payload)[:spans].first
+        expected = Time.at(1_000_000_001.5).utc.iso8601(3)
+        expect(span["end_time"]).to eq(expected)
+      end
+
+      it "sets end_time to nil when endTimeUnixNano is absent" do
+        payload = otlp_payload(spans: [
+          otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",
+                    timestamp_ns: 1_000_000_000_000_000_000)
+        ])
+        span = OtlpNormalizer.call(payload)[:spans].first
+        expect(span["end_time"]).to be_nil
+      end
+
+      it "sets end_time to nil when endTimeUnixNano is zero (protobuf default)" do
+        payload = otlp_payload(spans: [
+          otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",
+                    timestamp_ns: 1_000_000_000_000_000_000,
+                    end_timestamp_ns: 0)
+        ])
+        span = OtlpNormalizer.call(payload)[:spans].first
+        expect(span["end_time"]).to be_nil
+      end
     end
   end
 
