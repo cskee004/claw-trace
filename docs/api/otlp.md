@@ -152,3 +152,96 @@ diagnostics:
 ```
 
 For production, replace `localhost:3000` with your ClawTrace deployment URL.
+
+---
+
+## POST /v1/logs
+
+```
+POST /v1/logs
+Content-Type: application/json
+         or: application/x-protobuf
+```
+
+No authentication required — OTLP endpoints are unauthenticated by convention.
+
+Both `application/json` (OTLP/JSON) and `application/x-protobuf` (OTLP/proto3) are accepted.
+
+### Request
+
+The body must conform to the OTLP `ExportLogsServiceRequest` format:
+
+```json
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": []
+      },
+      "scopeLogs": [
+        {
+          "logRecords": [
+            {
+              "timeUnixNano": "1712345678500000000",
+              "severityText": "INFO",
+              "severityNumber": 9,
+              "body": { "stringValue": "agent turn completed" },
+              "traceId": "a1b2c3d4e5f6a7b8",
+              "spanId": "ab12cd34ef56a1b2",
+              "attributes": [
+                { "key": "service.name", "value": { "stringValue": "openclaw" } }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+All fields are optional — log records without `traceId` or `spanId` are accepted and stored.
+
+### Responses
+
+**200 OK** — always returned on success (per OTLP spec)
+
+```json
+{}
+```
+
+**200 OK** — also returned for empty or missing `resourceLogs` (no-op, nothing persisted)
+
+**400 Bad Request** — malformed JSON or malformed protobuf
+
+```json
+{ "error": "..." }
+```
+
+### Correlation
+
+`traceId` and `spanId` in the log record correlate logs to traces and spans in ClawTrace. Both are optional — logs are stored without them. No DB-level foreign key is enforced; logs may arrive before or without a corresponding trace.
+
+### Log Attributes
+
+Log record attributes use the same OTLP typed value format as span attributes:
+
+```json
+{ "key": "service.name", "value": { "stringValue": "openclaw" } }
+```
+
+Supported value types: `stringValue`, `intValue`, `doubleValue`, `boolValue`.
+
+Attributes are flattened and stored in the `log_attributes` JSON column.
+
+### OpenClaw Configuration
+
+Point OpenClaw's OTLP logs exporter at ClawTrace:
+
+```yaml
+diagnostics:
+  otel:
+    logs_endpoint: "http://localhost:3000/v1/logs"
+```
+
+For production, replace `localhost:3000` with your ClawTrace deployment URL.
