@@ -56,6 +56,8 @@ class MetricsNormalizer
       normalize_data_points(metric["sum"]["dataPoints"] || [], name, "sum", trace_id)
     elsif metric["histogram"]
       normalize_data_points(metric["histogram"]["dataPoints"] || [], name, "histogram", trace_id)
+    elsif metric["gauge"]
+      normalize_data_points(metric["gauge"]["dataPoints"] || [], name, "gauge", trace_id)
     else
       []
     end
@@ -76,7 +78,7 @@ class MetricsNormalizer
 
   def extract_data_points(dp, type)
     case type
-    when "sum"
+    when "sum", "gauge"
       {
         "value"      => dp["asInt"] || dp["asDouble"],
         "start_time" => nano_to_iso8601(dp["startTimeUnixNano"])

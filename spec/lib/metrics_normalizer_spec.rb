@@ -20,6 +20,10 @@ RSpec.describe MetricsNormalizer do
     { "name" => name, "histogram" => { "dataPoints" => data_points } }
   end
 
+  def gauge_metric(name:, data_points:)
+    { "name" => name, "gauge" => { "dataPoints" => data_points } }
+  end
+
   def sum_point(value:, timestamp_ns:, start_ns: nil, attrs: [])
     pt = {
       "attributes"    => attrs,
@@ -174,6 +178,58 @@ RSpec.describe MetricsNormalizer do
     end
   end
 
+  # ── Gauge metrics ──────────────────────────────────────────────────────────
+
+  describe "gauge metric" do
+    let(:payload) do
+      otlp_metrics_payload(metrics: [
+        gauge_metric(name: "cache.hit_ratio", data_points: [
+          {
+            "attributes"   => [string_attr("service.name", "openclaw")],
+            "timeUnixNano" => BASE_TS.to_s,
+            "asDouble"     => 0.87
+          }
+        ])
+      ])
+    end
+
+    subject(:result) { MetricsNormalizer.call(payload) }
+
+    it "returns one hash per data point" do
+      expect(result.length).to eq(1)
+    end
+
+    it "sets metric_name" do
+      expect(result[0]["metric_name"]).to eq("cache.hit_ratio")
+    end
+
+    it "sets metric_type to gauge" do
+      expect(result[0]["metric_type"]).to eq("gauge")
+    end
+
+    it "sets timestamp from timeUnixNano" do
+      expected = Time.at(BASE_TS / 1_000_000_000.0).utc.iso8601(3)
+      expect(result[0]["timestamp"]).to eq(expected)
+    end
+
+    it "sets data_points value from asInt (scalar)" do
+      payload = otlp_metrics_payload(metrics: [
+        gauge_metric(name: "deploy.replicas.ready", data_points: [
+          { "attributes" => [], "timeUnixNano" => BASE_TS.to_s, "asInt" => 3 }
+        ])
+      ])
+      expect(MetricsNormalizer.call(payload)[0]["data_points"]["value"]).to eq(3)
+    end
+
+    it "sets data_points value from asDouble (scalar)" do
+      expect(result[0]["data_points"]["value"]).to eq(0.87)
+    end
+
+    it "flattens data point attributes into metric_attributes" do
+      expect(result[0]["metric_attributes"]).to eq("service.name" => "openclaw")
+    end
+  end
+
   # ── Multiple metrics ───────────────────────────────────────────────────────
 
   describe "multiple metrics and data points" do
@@ -233,8 +289,8 @@ RSpec.describe MetricsNormalizer do
       expect(MetricsNormalizer.call(payload)).to eq([])
     end
 
-    it "skips metrics with unrecognised type (not sum or histogram)" do
-      payload = otlp_metrics_payload(metrics: [{ "name" => "m", "gauge" => {} }])
+    it "skips metrics with unrecognised type (not sum, histogram, or gauge)" do
+      payload = otlp_metrics_payload(metrics: [{ "name" => "m", "exponential_histogram" => {} }])
       expect(MetricsNormalizer.call(payload)).to eq([])
     end
   end
