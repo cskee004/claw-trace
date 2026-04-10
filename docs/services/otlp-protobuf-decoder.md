@@ -2,7 +2,7 @@
 
 `app/lib/otlp_protobuf_decoder.rb`
 
-Pure-Ruby proto3 binary decoder for OTLP trace and metrics payloads. No gems, no native extensions. Implements only the wire-format fields needed for ClawTrace.
+Pure-Ruby proto3 binary decoder for OTLP trace, metrics, and log payloads. No gems, no native extensions. Implements only the wire-format fields needed for ClawTrace.
 
 ---
 
@@ -37,11 +37,28 @@ hash = OtlpProtobufDecoder.decode_metrics(binary_string)
 #     }]
 #   }]
 # }
+
+hash = OtlpProtobufDecoder.decode_logs(binary_string)
+# => {
+#   "resourceLogs" => [{
+#     "scopeLogs" => [{
+#       "logRecords" => [{
+#         "timeUnixNano"   => "1712345678500000000",             # decimal nanosecond string
+#         "severityNumber" => 9,                                 # integer
+#         "severityText"   => "INFO",
+#         "body"           => { "stringValue" => "agent turn completed" },
+#         "traceId"        => "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",  # lowercase hex; omitted if absent
+#         "spanId"         => "ab12cd34ef56a1b2",                    # lowercase hex; omitted if absent
+#         "attributes"     => [{ "key" => "service.name", "value" => { "stringValue" => "openclaw" } }]
+#       }]
+#     }]
+#   }]
+# }
 ```
 
 **Input:** Raw binary string (`application/x-protobuf` request body).
 
-**Output:** Ruby Hash with string keys — structurally identical to what `OtlpNormalizer` and `MetricsNormalizer` accept as JSON.
+**Output:** Ruby Hash with string keys — structurally identical to what `OtlpNormalizer`, `MetricsNormalizer`, and `LogsNormalizer` accept as JSON.
 
 **Raises `OtlpProtobufDecoder::Error`** on truncated or malformed binary. Unknown fields are skipped silently.
 
@@ -101,6 +118,10 @@ result = OtlpNormalizer.call(data.to_json)
 # MetricsController
 body = OtlpProtobufDecoder.decode_metrics(request.raw_post).to_json
 rows = MetricsNormalizer.call(body)
+
+# LogsController
+body = OtlpProtobufDecoder.decode_logs(request.raw_post).to_json
+rows = LogsNormalizer.call(body)
 ```
 
 ---
