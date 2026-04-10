@@ -5,7 +5,7 @@
 #   {
 #     "resourceMetrics": [{
 #       "resource": { "attributes": [{key, value}] },
-#       "scopeMetrics": [{ "metrics": [{ "name": "...", "sum"|"histogram": { "dataPoints": [...] } }] }]
+#       "scopeMetrics": [{ "metrics": [{ "name": "...", "sum"|"histogram"|"gauge": { "dataPoints": [...] } }] }]
 #     }]
 #   }
 #
