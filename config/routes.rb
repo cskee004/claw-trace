@@ -18,5 +18,6 @@ Rails.application.routes.draw do
   scope "/v1" do
     post "/traces",  to: "api/v1/otlp#create"
     post "/metrics", to: "api/v1/metrics#create"
+    post "/logs",    to: "api/v1/logs#create", format: false
   end
 end
