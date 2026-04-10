@@ -96,6 +96,11 @@ class OtlpProtobufDecoder
 
   # ── Shared ────────────────────────────────────────────────────────────────────
 
+  # Decodes an OTLP AnyValue message. Only scalar types (string, bool, int, double)
+  # are extracted. Non-scalar types (arrayValue field 5, kvlistValue field 6,
+  # bytesValue field 7) are skipped at the wire level via skip_field — they produce
+  # no key in the result hash. OpenClaw attributes were validated as scalar-only
+  # on 2026-04-10, so silent omission is intentional, not a gap.
   def parse_any_value(cur)
     result = {}
     while (field, wire = cur.read_tag)
