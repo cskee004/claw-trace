@@ -63,9 +63,9 @@ rows = LogsNormalizer.call(json_string)
 | `severityText` | `severity_text` | Passed through as-is; nil when absent |
 | `severityNumber` | `severity_number` | Integer; nil when absent |
 | `body.stringValue` | `body` | Nil when `body` is absent or not a `stringValue` |
-| `traceId` | `trace_id` | Lowercased; nil when absent |
-| `spanId` | `span_id` | Lowercased; nil when absent |
-| `attributes` | `log_attributes` | Flattened OTLP typed attributes (see below) |
+| `traceId` | `trace_id` | Lowercased; nil when absent or blank |
+| `spanId` | `span_id` | Lowercased; nil when absent or blank |
+| `attributes` | `log_attributes` | Flattened OTLP typed attributes (see below); always a hash, `{}` when key is absent |
 
 All fields are nullable — the normalizer never fails on missing data.
 
