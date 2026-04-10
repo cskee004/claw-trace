@@ -70,5 +70,19 @@ RSpec.describe TelemetryIngester do
         described_class.call(trace: trace_data, spans: [span_data, bad_span]) rescue nil
       }.not_to change { Trace.count }
     end
+
+    it "persists end_time when provided in span data" do
+      span_with_end_time = span_data("end_time" => "2026-04-02T12:00:02.500Z")
+      described_class.call(trace: trace_data, spans: [span_with_end_time])
+      saved = Span.find_by(span_id: "s1")
+      expect(saved.end_time).to be_present
+      expect(saved.end_time.utc.iso8601(3)).to eq("2026-04-02T12:00:02.500Z")
+    end
+
+    it "persists end_time as nil when absent from span data" do
+      described_class.call(trace: trace_data, spans: [span_data])
+      saved = Span.find_by(span_id: "s1")
+      expect(saved.end_time).to be_nil
+    end
   end
 end

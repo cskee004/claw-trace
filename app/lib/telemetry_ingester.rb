@@ -54,6 +54,7 @@ class TelemetryIngester
       parent_span_id: data["parent_span_id"],
       span_type:      data["span_type"],
       timestamp:      data["timestamp"],
+      end_time:       data["end_time"],
       agent_id:       data["agent_id"],
       metadata:       data["metadata"] || {}
     )
