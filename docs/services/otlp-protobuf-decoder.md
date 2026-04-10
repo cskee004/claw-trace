@@ -134,7 +134,7 @@ OtlpProtobufDecoder.decode_traces("\x8A")
 # raises OtlpProtobufDecoder::Error, "truncated protobuf message"
 ```
 
-Controllers rescue this and return HTTP 400. Error messages are encoded to UTF-8 before JSON serialization (`safe_message` in `MetricsController`) to prevent `JSON::GeneratorError` on binary input.
+Controllers rescue this and return HTTP 400. Error messages are encoded to UTF-8 before JSON serialization (`safe_message` in `MetricsController` and `LogsController`) to prevent `JSON::GeneratorError` on binary input.
 
 ---
 
