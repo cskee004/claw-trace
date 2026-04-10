@@ -175,9 +175,7 @@ The body must conform to the OTLP `ExportLogsServiceRequest` format:
 {
   "resourceLogs": [
     {
-      "resource": {
-        "attributes": []
-      },
+      "resource": {},
       "scopeLogs": [
         {
           "logRecords": [
@@ -212,10 +210,16 @@ All fields are optional — log records without `traceId` or `spanId` are accept
 
 **200 OK** — also returned for empty or missing `resourceLogs` (no-op, nothing persisted)
 
-**400 Bad Request** — malformed JSON or malformed protobuf
+**400 Bad Request** — malformed JSON body
 
 ```json
-{ "error": "..." }
+{ "error": "invalid JSON: ..." }
+```
+
+**400 Bad Request** — malformed protobuf body
+
+```json
+{ "error": "truncated protobuf message" }
 ```
 
 ### Correlation
