@@ -10,12 +10,16 @@ module Api
     class LogsController < ActionController::API
       def create
         body = if request.content_type == "application/x-protobuf"
-          OtlpProtobufDecoder.decode_logs(request.raw_post).to_json
+          decoded = OtlpProtobufDecoder.decode_logs(request.raw_post)
+          Rails.logger.debug("[LogsController] protobuf decoded: #{decoded.inspect}")
+          decoded.to_json
         else
+          Rails.logger.debug("[LogsController] json body (#{request.raw_post.bytesize} bytes)")
           request.raw_post
         end
 
         rows = LogsNormalizer.call(body)
+        Rails.logger.debug("[LogsController] normalized #{rows.size} rows")
         Log.insert_all!(rows) if rows.any?
         render json: {}, status: :ok
       rescue OtlpProtobufDecoder::Error => e
