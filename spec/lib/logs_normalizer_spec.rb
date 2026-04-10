@@ -2,8 +2,8 @@
 require "rails_helper"
 
 RSpec.describe LogsNormalizer do
-  BASE_TS      = 1_712_345_678_500_000_000
-  EXPECTED_TS  = Time.at(BASE_TS / 1_000_000_000.0).utc.iso8601(3)
+  LOGS_BASE_TS     = 1_712_345_678_500_000_000
+  LOGS_EXPECTED_TS = Time.at(LOGS_BASE_TS / 1_000_000_000.0).utc.iso8601(3)
 
   # ── Fixture helpers ──────────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ RSpec.describe LogsNormalizer do
     })
   end
 
-  def log_record(timestamp_ns: BASE_TS, severity_text: nil, severity_number: nil,
+  def log_record(timestamp_ns: LOGS_BASE_TS, severity_text: nil, severity_number: nil,
                  body: nil, trace_id: nil, span_id: nil, attrs: [])
     record = {
       "timeUnixNano" => timestamp_ns.to_s,
@@ -57,7 +57,7 @@ RSpec.describe LogsNormalizer do
     end
 
     it "sets timestamp from timeUnixNano" do
-      expect(result[0]["timestamp"]).to eq(EXPECTED_TS)
+      expect(result[0]["timestamp"]).to eq(LOGS_EXPECTED_TS)
     end
 
     it "sets severity_text" do
@@ -114,7 +114,7 @@ RSpec.describe LogsNormalizer do
     end
 
     it "returns empty hash for log_attributes when attributes key is absent" do
-      record  = { "timeUnixNano" => BASE_TS.to_s }
+      record  = { "timeUnixNano" => LOGS_BASE_TS.to_s }
       payload = JSON.generate("resourceLogs" => [{ "resource" => { "attributes" => [] },
                                                    "scopeLogs" => [{ "logRecords" => [record] }] }])
       expect(LogsNormalizer.call(payload)[0]["log_attributes"]).to eq({})
