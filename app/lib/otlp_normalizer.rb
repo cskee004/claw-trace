@@ -79,13 +79,14 @@ class OtlpNormalizer
 
   # Flattens OTLP's [{key, value: {stringValue|intValue|doubleValue|boolValue}}]
   # into a plain {"key" => scalar} hash. Uses key? to correctly handle boolValue: false.
+  # Non-scalar types (arrayValue, kvlistValue, bytesValue) are deliberately omitted —
+  # OpenClaw attributes were validated as scalar-only on 2026-04-10.
   def attrs_to_hash(attrs)
     attrs.each_with_object({}) do |attr, hash|
       key   = attr["key"]
       value = attr["value"] || {}
-      hash[key] = %w[stringValue intValue doubleValue boolValue]
-                    .find { |type| value.key?(type) }
-                    .then { |type| type ? value[type] : nil }
+      type  = %w[stringValue intValue doubleValue boolValue].find { |t| value.key?(t) }
+      hash[key] = value[type] if type
     end
   end
 

@@ -340,6 +340,17 @@ RSpec.describe OtlpNormalizer do
       lines = normalize_and_parse(payload_with_span_attrs(attrs))
       expect(lines[1]["metadata"]).to eq("model" => "claude-3", "tokens" => 256)
     end
+
+    it "skips attributes with unknown value types — no crash, no nil key" do
+      attrs = [
+        { "key" => "model",   "value" => { "stringValue" => "gpt-4o" } },
+        { "key" => "history", "value" => { "arrayValue"  => { "values" => [] } } }
+      ]
+      lines = normalize_and_parse(payload_with_span_attrs(attrs))
+      metadata = lines[1]["metadata"]
+      expect(metadata["model"]).to eq("gpt-4o")
+      expect(metadata).not_to have_key("history")
+    end
   end
 
   # ── Error handling ─────────────────────────────────────────────────────────
