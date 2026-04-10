@@ -1,3 +1,6 @@
+# Analyzes tool call frequency and success rates across a set of Span records.
+# Only spans with span_type "tool_result" are considered — these carry both
+# tool_name and success in their metadata hash.
 class ToolCallAnalyzer
   # spans — Array or ActiveRecord::Relation of Span records
   # Returns { "tool_name" => { calls: Integer, successes: Integer, success_rate: Float } }

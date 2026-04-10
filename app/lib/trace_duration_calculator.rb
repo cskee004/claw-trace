@@ -1,3 +1,6 @@
+# Calculates elapsed duration in milliseconds for one or many Trace records.
+# Use .call for a single trace (spans must be eager-loaded) or .call_many for
+# a collection (issues one grouped SQL query regardless of collection size).
 class TraceDurationCalculator
   # Single trace → elapsed milliseconds as Float, or nil if the trace has no spans.
   # Assumes spans are eager-loaded on the trace; does not issue additional queries.

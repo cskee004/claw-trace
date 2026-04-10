@@ -10,12 +10,16 @@ module Api
     class MetricsController < ActionController::API
       def create
         body = if request.content_type == "application/x-protobuf"
-          OtlpProtobufDecoder.decode_metrics(request.raw_post).to_json
+          decoded = OtlpProtobufDecoder.decode_metrics(request.raw_post)
+          Rails.logger.debug("[MetricsController] protobuf decoded: #{decoded.inspect}")
+          decoded.to_json
         else
+          Rails.logger.debug("[MetricsController] json body (#{request.raw_post.bytesize} bytes)")
           request.raw_post
         end
 
         rows = MetricsNormalizer.call(body)
+        Rails.logger.debug("[MetricsController] normalized #{rows.size} rows: #{rows.map { |r| r['metric_name'] }.inspect}")
         Metric.insert_all!(rows) if rows.any?
         render json: {}, status: :ok
       rescue OtlpProtobufDecoder::Error => e

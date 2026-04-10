@@ -1,3 +1,11 @@
+# Represents a complete agent run from start to finish.
+#
+# Columns:
+#   trace_id   (string)   16-char hex identifier (truncated from OTLP's 32-char ID)
+#   agent_id   (string)   agent session key from OTLP resource attributes
+#   task_name  (string)   name of the root span
+#   start_time (datetime) timestamp of the earliest span
+#   status     (integer)  enum — in_progress, success, error
 class Trace < ApplicationRecord
   enum :status, { in_progress: 0, success: 1, error: 2 }
 

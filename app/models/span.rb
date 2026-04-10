@@ -1,3 +1,13 @@
+# Represents a single instrumented operation within a Trace.
+#
+# Columns:
+#   trace_id       (string)   foreign key matching Trace#trace_id
+#   span_id        (string)   unique identifier for this span within its trace
+#   parent_span_id (string)   span_id of the parent span; nil for root spans
+#   span_type      (string)   one of SPAN_TYPES
+#   timestamp      (datetime) when this span started
+#   agent_id       (string)   agent session key
+#   metadata       (json)     arbitrary key-value pairs from OTLP span attributes
 class Span < ApplicationRecord
   SPAN_TYPES = %w[
     agent_run_started model_call model_response tool_call
