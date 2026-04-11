@@ -5,6 +5,10 @@
     <h1 class="page-title">Agent Traces</h1>
   </div>
 
+  <%= button_to "Reset All Data", reset_path,
+        data: { turbo_confirm: "Delete ALL traces, spans, logs, and metrics?" },
+        class: "btn btn--danger" %>
+
   <form class="traces-filter" action="<%= traces_path %>" method="get">
     <label for="session_id">Session ID</label>
     <input type="text" id="session_id" name="session_id"

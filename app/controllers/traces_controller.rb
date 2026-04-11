@@ -4,6 +4,14 @@ class TracesController < ApplicationController
     @durations = TraceDurationCalculator.call_many(@traces)
   end
 
+  def reset
+    Span.delete_all
+    Log.delete_all
+    Metric.delete_all
+    Trace.delete_all
+    redirect_to traces_path, notice: "All data cleared."
+  end
+
   def show
     @trace = Trace.find_by!(trace_id: params[:id])
     @spans = @trace.spans.order(:timestamp)
