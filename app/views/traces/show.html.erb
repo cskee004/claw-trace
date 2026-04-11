@@ -48,6 +48,9 @@
               <span class="span-type-badge span-type-badge--<%= span.span_type %>">
                 <%= span.span_type.tr("_", " ") %>
               </span>
+              <% if span.name.present? %>
+                <span class="timeline__span-name"><%= span.name %></span>
+              <% end %>
               <span class="timeline__timestamp">
                 <%= span.timestamp.strftime("%H:%M:%S.%3N") %>
               </span>
