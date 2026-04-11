@@ -7,6 +7,7 @@
 #   span_type      (string)   one of SPAN_TYPES
 #   timestamp      (datetime) when this span started
 #   end_time       (datetime) when this span ended; nil for Bearer-token-ingested spans
+#   name           (string)   OTLP span operation name (e.g. "agent.turn.process"); nil for Bearer-token spans
 #   agent_id       (string)   agent session key
 #   metadata       (json)     arbitrary key-value pairs from OTLP span attributes
 class Span < ApplicationRecord
