@@ -290,6 +290,15 @@ RSpec.describe OtlpNormalizer do
         expect(span["end_time"]).to be_nil
       end
     end
+
+    it "includes the OTLP span name in the span record" do
+      payload = otlp_payload(spans: [
+        otlp_span(name: "tool.web_search", span_id: "aaaa0000aaaa0000",
+                  timestamp_ns: 1_000_000_000_000_000_000)
+      ])
+      span = OtlpNormalizer.call(payload)[:spans].first
+      expect(span["name"]).to eq("tool.web_search")
+    end
   end
 
   # ── attrs_to_hash ──────────────────────────────────────────────────────────
@@ -406,7 +415,7 @@ RSpec.describe OtlpNormalizer do
         otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000)
       ])
       span = OtlpNormalizer.call(payload)[:spans].first
-      expect(span.keys).to include("trace_id", "span_id", "span_type", "timestamp", "agent_id", "metadata")
+      expect(span.keys).to include("trace_id", "span_id", "span_type", "name", "timestamp", "agent_id", "metadata")
     end
   end
 end

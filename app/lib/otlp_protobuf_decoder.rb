@@ -99,6 +99,129 @@ class OtlpProtobufDecoder
 
   private
 
+  # ============================================================================
+  # PATTERNS GUIDE — for me, not you. This is a reference for how to read the code below, not a comment on
+  # the code itself. The methods below are straightforward implementations of the
+  # proto3 wire format; they don't need comments, but I do.
+  # ============================================================================
+  #
+  # This decoder translates raw proto3 binary into Ruby hashes that look exactly
+  # like the JSON OTLP format. Because proto3 messages share the same binary
+  # encoding rules everywhere, the same small set of patterns appears over and
+  # over throughout this file. Learn them once and you can read any method here.
+  #
+  # ── Pattern 1: The Parse Loop ───────────────────────────────────────────────
+  #
+  # Nearly every `parse_*` method has this skeleton:
+  #
+  #   def parse_something(cur)
+  #     result = {}                          # 1. start with an empty container
+  #     while (field, wire = cur.read_tag)   # 2. read next field tag (nil = done)
+  #       case [field, wire]                 # 3. dispatch on [field_number, wire_type]
+  #       when [1, 2] then result["foo"] = ...
+  #       when [3, 0] then result["bar"] = ...
+  #       else cur.skip_field(wire)          # 4. skip ANYTHING we don't recognise
+  #       end
+  #     end
+  #     result                               # 5. return the populated hash
+  #   end
+  #
+  # `field` is the proto field number (matches the `.proto` schema definition).
+  # `wire` is the wire type — a 3-bit encoding hint (see Pattern 3 below).
+  # The `else cur.skip_field(wire)` is critical: proto3 allows senders to add new
+  # fields at any time; silently skipping unknown ones keeps the decoder forwards-
+  # compatible without ever raising an error.
+  #
+  # ── Pattern 2: Collect-Into-Array (a parse-loop variant) ────────────────────
+  #
+  # When a proto message only contains one repeated sub-message field, the parse
+  # loop simplifies to:
+  #
+  #   def parse_container(cur)
+  #     items = []
+  #     while (field, wire = cur.read_tag)
+  #       if field == N && wire == 2
+  #         items << parse_item(cur.sub_cursor)   # accumulate into an array
+  #       else
+  #         cur.skip_field(wire)
+  #       end
+  #     end
+  #     { "items" => items }
+  #   end
+  #
+  # Examples in this file: `parse_export_traces`, `parse_scope_spans`,
+  # `parse_sum`, `parse_histogram`, `parse_resource`.
+  #
+  # ── Pattern 3: Wire Type → Reader Method ────────────────────────────────────
+  #
+  # The second element of `[field, wire]` tells you HOW the value was encoded.
+  # Only four wire types appear in OTLP payloads:
+  #
+  #   wire == 0  →  read_varint            integers, booleans, enums
+  #   wire == 1  →  read_fixed64_bytes     64-bit timestamps, doubles
+  #   wire == 2  →  sub_cursor  (or .buf)  strings, bytes, nested messages,
+  #                                         and packed repeated fields
+  #   wire == 5  →  read_fixed32_bytes     32-bit values (rare; usually skipped)
+  #
+  # That pairing is how you read `[field, wire]` tuples at a glance: the first
+  # number identifies WHAT to read; the second tells you HOW to read it.
+  #
+  # ── Pattern 4: Nested Message Decoding via sub_cursor ───────────────────────
+  #
+  # When wire == 2 and the field contains another message (not a plain string),
+  # the convention is:
+  #
+  #   when [N, 2] then result["child"] = parse_child(cur.sub_cursor)
+  #
+  # `sub_cursor` reads the length-prefix from the outer cursor and returns a
+  # brand-new Cursor that sees only the bytes of that nested message. The inner
+  # parse method then runs its own parse loop against those bytes, completely
+  # independent of the outer stream. This is how the tree of proto messages maps
+  # to a tree of Ruby hashes.
+  #
+  # ── Pattern 5: Lazy Array Accumulation for Repeated Fields ──────────────────
+  #
+  # Some fields (like `attributes`) can appear multiple times in the same message
+  # — proto3 represents repetition by emitting the same field number again rather
+  # than wrapping everything in one block. The pattern for collecting these is:
+  #
+  #   when [N, 2] then (result["attributes"] ||= []) << parse_key_value(cur.sub_cursor)
+  #
+  # `||= []` initialises the array only on the first occurrence; `<<` appends
+  # every subsequent one. You'll see this on `attributes` fields in `parse_span`,
+  # `parse_number_data_point`, `parse_histogram_data_point`, and `parse_log_record`.
+  #
+  # ── Pattern 6: Packed Repeated Scalar Fields ─────────────────────────────────
+  #
+  # Proto3 packs repeated primitive values (numbers, floats) into a single
+  # length-delimited blob instead of emitting one field tag per value. To unpack
+  # them, get a sub-cursor and loop until its bytes are exhausted:
+  #
+  #   when [N, 2]
+  #     inner = cur.sub_cursor
+  #     values = []
+  #     values << inner.read_varint while inner.pos < inner.buf.bytesize
+  #     result["values"] = values
+  #
+  # Examples: `bucketCounts` (varints) and `explicitBounds` (doubles) in
+  # `parse_histogram_data_point`.
+  #
+  # ── Value Extraction Quick-Reference ────────────────────────────────────────
+  #
+  # Once you have the raw bytes, the unpack format string tells you the type:
+  #
+  #   cur.sub_cursor.buf.force_encoding("UTF-8")   → UTF-8 string
+  #   cur.sub_cursor.buf.unpack1("H*")             → hex string  (traceId, spanId)
+  #   cur.read_fixed64_bytes.unpack1("Q<")         → uint64 integer (timestamps)
+  #   cur.read_fixed64_bytes.unpack1("E")          → 64-bit double (floats)
+  #   cur.read_fixed64_bytes.unpack1("q<")         → int64 signed integer
+  #   cur.read_varint != 0                         → boolean (varint 0 = false)
+  #
+  # Timestamps always end in `.to_s` because the OTLP JSON spec represents
+  # nanosecond counters as strings to avoid JavaScript integer overflow.
+  #
+  # ============================================================================
+
   # ── Shared ────────────────────────────────────────────────────────────────────
 
   # Decodes an OTLP AnyValue message. Only scalar types (string, bool, int, double)
@@ -197,7 +320,7 @@ class OtlpProtobufDecoder
       when [6, 0]  then cur.read_varint  # kind — not used by normalizer
       when [7, 1]  then span["startTimeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
       when [8, 1]  then span["endTimeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
-      when [9, 2]  then (span["attributes"] ||= []) << parse_key_value(cur.sub_cursor)
+      when [9, 2]  then (span["attributes"] ||= []) << parse_key_value(cur.sub_cursor)  # Pattern 5 — lazy array accumulation for a repeated field
       when [15, 2] then span["status"] = parse_status(cur.sub_cursor)
       when [16, 5] then cur.read_fixed32_bytes  # flags — skip
       else cur.skip_field(wire)
@@ -318,7 +441,7 @@ class OtlpProtobufDecoder
       when [3, 1] then dp["timeUnixNano"] = cur.read_fixed64_bytes.unpack1("Q<").to_s
       when [6, 0] then dp["count"] = cur.read_varint           # uint64 — varint wire type
       when [7, 1] then dp["sum"] = cur.read_fixed64_bytes.unpack1("E")
-      when [8, 2]
+      when [8, 2]  # Pattern 6 — packed repeated varints; loop until sub-cursor is exhausted
         inner = cur.sub_cursor
         counts = []
         counts << inner.read_varint while inner.pos < inner.buf.bytesize
