@@ -13,7 +13,7 @@
 # Output:
 #   {
 #     trace: { "trace_id", "agent_id", "task_name", "start_time", "status" },
-#     spans: [{ "trace_id", "span_id", "parent_span_id", "span_type", "name", "timestamp", "agent_id", "metadata" }, ...]
+#     spans: [{ "trace_id", "span_id", "parent_span_id", "span_type", "span_name", "timestamp", "agent_id", "metadata" }, ...]
 #   }
 #
 # Span type mapping:
@@ -132,7 +132,7 @@ class OtlpNormalizer
       "span_id"        => span["spanId"],
       "parent_span_id" => span["parentSpanId"].presence,
       "span_type"      => resolve_span_type(span, final_span),
-      "name"           => span["name"],
+      "span_name"      => span["name"],
       "timestamp"      => nano_to_iso8601(span["startTimeUnixNano"]),
       "end_time"       => nano_to_iso8601_or_nil(span["endTimeUnixNano"]),
       "agent_id"       => agent_id,
