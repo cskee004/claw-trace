@@ -5,6 +5,17 @@
     <h1 class="page-title">Agent Traces</h1>
   </div>
 
+  <form class="traces-filter" action="<%= traces_path %>" method="get">
+    <label for="session_id">Session ID</label>
+    <input type="text" id="session_id" name="session_id"
+           value="<%= params[:session_id] %>"
+           placeholder="Filter by agent.session.id…">
+    <button type="submit">Filter</button>
+    <% if params[:session_id].present? %>
+      <%= link_to "Clear", traces_path, class: "traces-filter__clear" %>
+    <% end %>
+  </form>
+
   <% if flash[:notice] %>
     <p class="flash flash--notice"><%= flash[:notice] %></p>
   <% end %>

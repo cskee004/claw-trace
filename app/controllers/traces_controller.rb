@@ -1,6 +1,6 @@
 class TracesController < ApplicationController
   def index
-    @traces = Trace.order(start_time: :desc)
+    @traces = session_id.present? ? traces_for_session(session_id) : Trace.order(start_time: :desc)
     @durations = TraceDurationCalculator.call_many(@traces)
   end
 
@@ -12,6 +12,23 @@ class TracesController < ApplicationController
   end
 
   private
+
+  def session_id
+    params[:session_id].presence
+  end
+
+  def traces_for_session(sid)
+    matching_ids = Span.where(session_id_condition, sid).distinct.pluck(:trace_id)
+    Trace.where(trace_id: matching_ids).order(start_time: :desc)
+  end
+
+  def session_id_condition
+    if ActiveRecord::Base.connection.adapter_name.start_with?("SQLite")
+      "json_extract(metadata, '$.\"agent.session.id\"') = ?"
+    else
+      "metadata->>'agent.session.id' = ?"
+    end
+  end
 
   def compute_latencies_ms(spans)
     latencies = {}
