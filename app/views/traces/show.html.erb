@@ -37,13 +37,14 @@
   <% if @spans.empty? %>
     <p class="traces-empty">No spans recorded for this trace.</p>
   <% else %>
+    <% depths = span_depth_map(@spans) %>
     <ol class="timeline" aria-label="Span timeline">
       <% @spans.each do |span| %>
         <li class="timeline__item">
           <div class="timeline__connector">
             <span class="timeline__dot timeline__dot--<%= span.span_type %>"></span>
           </div>
-          <div class="timeline__card">
+          <div class="timeline__card" style="padding-left: <%= depths[span.span_id] * 16 %>px">
             <div class="timeline__card-header">
               <span class="span-type-badge span-type-badge--<%= span.span_type %>">
                 <%= span.span_type.tr("_", " ") %>
