@@ -297,7 +297,7 @@ RSpec.describe OtlpNormalizer do
                   timestamp_ns: 1_000_000_000_000_000_000)
       ])
       span = OtlpNormalizer.call(payload)[:spans].first
-      expect(span["name"]).to eq("tool.web_search")
+      expect(span["span_name"]).to eq("tool.web_search")
     end
   end
 
@@ -415,7 +415,7 @@ RSpec.describe OtlpNormalizer do
         otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000)
       ])
       span = OtlpNormalizer.call(payload)[:spans].first
-      expect(span.keys).to include("trace_id", "span_id", "span_type", "name", "timestamp", "agent_id", "metadata")
+      expect(span.keys).to include("trace_id", "span_id", "span_type", "span_name", "timestamp", "agent_id", "metadata")
     end
   end
 end

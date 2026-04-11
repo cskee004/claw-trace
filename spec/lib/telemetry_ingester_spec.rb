@@ -86,13 +86,13 @@ RSpec.describe TelemetryIngester do
     end
 
     it "persists name when provided in span data" do
-      described_class.call(trace: trace_data, spans: [span_data("name" => "tool.web_search")])
-      expect(Span.find_by(span_id: "s1").name).to eq("tool.web_search")
+      described_class.call(trace: trace_data, spans: [span_data("span_name" => "tool.web_search")])
+      expect(Span.find_by(span_id: "s1").span_name).to eq("tool.web_search")
     end
 
     it "persists name as nil when absent from span data" do
       described_class.call(trace: trace_data, spans: [span_data])
-      expect(Span.find_by(span_id: "s1").name).to be_nil
+      expect(Span.find_by(span_id: "s1").span_name).to be_nil
     end
   end
 end
