@@ -39,6 +39,8 @@ One row per span event within a trace.
 | `timestamp` | datetime | NOT NULL | ISO 8601 UTC timestamp when this span fired |
 | `agent_id` | string | NOT NULL | Agent that emitted this span |
 | `metadata` | JSON | NOT NULL, default `{}` | Shape varies by `span_type` — see [metadata-schemas.md](metadata-schemas.md) |
+| `end_time` | datetime | nullable | ISO 8601 UTC timestamp when this span ended |
+| `name` | string | nullable | OTLP span operation name (e.g. `"agent.turn.process"`, `"llm.inference"`); null for Bearer-token-ingested spans |
 | `created_at` | datetime | NOT NULL | Rails timestamp |
 | `updated_at` | datetime | NOT NULL | Rails timestamp |
 
