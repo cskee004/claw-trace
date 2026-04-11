@@ -1,115 +1,117 @@
-## Security Log Analyzer & Agent Observability Platform
+# ClawTrace
+
+### Agent Observability for OpenClaw
+
+---
 
 ### Requirements
 
 * Ruby 3.2 or higher
 * Rails 8.0 or higher
+* SQLite3 (development / test) or PostgreSQL (production via `DATABASE_URL`)
 
 ---
 
 ### Description
 
-This project started as a Ruby on Rails application that parses and analyzes Linux system logs (`auth.log`). It extracts key security events, summarizes event patterns by date and hour, and visualizes the data through a dashboard interface.
+ClawTrace is a Rails 8 agent observability platform built specifically for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs and surfacing them through a dashboard.
 
-The project is now evolving into an **Agent Observability Platform** — a control plane for monitoring autonomous AI agents. The existing log analysis features remain in place while new agent telemetry features are being built alongside them.
+The platform accepts telemetry over two paths: a Bearer token REST API for direct integration, and a native OTLP/HTTP endpoint that OpenClaw targets out of the box. Both paths write to the same storage layer and appear in the same UI.
 
-This project is part of a personal portfolio and demonstrates experience with Ruby, Rails, log analysis, data visualization, OpenTelemetry-inspired design, security-focused software engineering, and AI-assisted development using [Claude Code](https://claude.ai/code).
-
----
-
-### Project Structure
-
-```
-├── app
-│   ├── controllers/api/v1   # Telemetry API (auth, keys, telemetry)
-│   ├── lib                  # Service layer (LogParser, LogUtility, LogFileAnalyzer, TelemetryIngester)
-│   └── ...                  # Rails MVC components
-├── config                   # Environment settings
-├── db                       # Database setup and schema
-├── spec                     # RSpec test files
-├── data                     # Test log files
-```
+This project is part of a personal portfolio and demonstrates experience with Ruby, Rails, OpenTelemetry-inspired design, API development, and AI-assisted development using [Claude Code](https://claude.ai/code).
 
 ---
 
 ### Features
 
-#### Security Log Analysis
-* Upload and parse `auth.log` system logs
-* Detect and classify key event types:
-  * Error flags
-  * Authentication failures
-  * Invalid users
-  * Failed password attempts
-  * Disconnects
-  * Accepted publickey/passwords
-  * Session open/closes
-  * Sudo usage
-* Event grouping by severity (high/medium/ops)
-* Hourly and daily time-based summaries
-* Top IPs triggering high-severity events
-* Graphs powered by ApexCharts
-* Modular design (LogParser, LogUtility, LogFileAnalyzer)
+#### Trace & Span Ingestion
+- Trace → Span data model inspired by OpenTelemetry distributed tracing
+- OTLP/HTTP ingestion via `POST /v1/traces` — accepts `application/json` and `application/x-protobuf`
+- Bearer token ingestion via `POST /api/v1/telemetry` for direct API use
+- `parent_span_id` linking for full span hierarchy reconstruction
+- ERROR status span detection and storage
 
-#### Agent Observability Platform
-* Trace → Span data model inspired by OpenTelemetry
-* Canonical span types: `agent_run_started`, `model_call`, `model_response`, `tool_call`, `tool_result`, `decision`, `error`, `run_completed`
-* REST API for agent registration and telemetry ingestion (see [API](#api))
-* Database-backed `traces` and `spans` tables with referential integrity
+#### Metrics Ingestion
+- OTLP metrics via `POST /v1/metrics` — accepts `application/json` and `application/x-protobuf`
+- Handles `sum`, `histogram`, and `gauge` metric types
+- Filterable metrics index with per-metric time series view
+- P50/P95/P99 estimation from histogram bucket data
 
----
+#### Log Ingestion
+- OTLP logs via `POST /v1/logs` — accepts `application/json` and `application/x-protobuf`
+- Log records linked to traces and spans via `trace_id` + `span_id`
+- All severity levels stored: DEBUG, INFO, WARN, ERROR, FATAL
 
-### Dev Notes
+#### Analysis Engine
+- `TraceDurationCalculator` — execution duration per trace
+- `ToolCallAnalyzer` — tool call frequency and success rates
+- `ErrorRateAnalyzer` — error rate across traces
+- `HistogramPercentileCalculator` — P50/P95/P99 from OTLP histogram buckets
 
-#### Log Analyzer
-- Parsing logic lives in `LogParser` and `LogUtility` (`app/lib/`)
-- Analysis is performed by `LogFileAnalyzer` (`app/lib/`)
-- Controller: `DashboardController`
-- Partial views handle AJAX-based updates for summary and graphs
-
-#### Agent Telemetry
-- Data model: **Trace** (one complete agent run) → **Spans** (individual steps within a trace)
-- Ingestion logic lives in `TelemetryIngester` (`app/lib/`)
-- API controllers live in `app/controllers/api/v1/`
+#### Dashboard
+- Trace list with status filtering
+- Trace timeline with per-span metadata
+- Metrics index and time series view
+- Built with Hotwire (Turbo + Stimulus)
 
 ---
 
-### Usage
-
-#### Local Setup
+### Setup
 
 ```bash
-git clone https://github.com/cskee004/log-analyzer.git
-cd log-analyzer
+git clone https://github.com/cskee004/claw-trace.git
+cd claw-trace
 bundle install
 rails db:create db:migrate
 rails server
 ```
 
-Visit `http://localhost:3000` to use the web interface.
-
-#### Uploading a Log File
-
-1. Navigate to the dashboard homepage
-2. Upload a Linux `auth.log` file using the form
-   - Test files are located in `/data`
-3. View summary statistics and graphs from parsed results
+Visit `http://localhost:3000`.
 
 ---
 
 ### API
 
-All API endpoints are under `/api/v1`. Telemetry submission requires a Bearer token obtained via key registration.
+#### OTLP Endpoints (OpenClaw native)
 
-#### Register an API key
+No authentication required — unauthenticated by OTLP convention. All endpoints return `{}` with HTTP 200 on success.
 
+```
+POST /v1/traces    — ingest OTLP trace payload (ResourceSpans)
+POST /v1/metrics   — ingest OTLP metrics payload (ResourceMetrics)
+POST /v1/logs      — ingest OTLP log payload (ResourceLogs)
+```
+
+Both `application/json` and `application/x-protobuf` content types are accepted.
+
+OpenClaw configuration:
+```json
+{
+  "diagnostics": {
+    "enabled": true,
+    "otel": {
+      "enabled": true,
+      "endpoint": "https://your-clawtrace.com",
+      "traces": true,
+      "metrics": true
+    }
+  }
+}
+```
+
+---
+
+#### Bearer Token API
+
+Register a key, then use the returned token to submit telemetry.
+
+**Register an API key**
 ```
 POST /api/v1/keys
 Content-Type: application/json
 
 { "agent_type": "support-agent" }
 ```
-
 Response `201 Created`:
 ```json
 {
@@ -119,120 +121,79 @@ Response `201 Created`:
 }
 ```
 
-> The token is returned **once**. Store it immediately.
-
-Valid `agent_type` values: `support-agent`, `research-agent`, `automation-agent`, `triage-agent`, `data-agent`, `monitoring-agent`, `code-agent`, `notification-agent`
-
----
-
-#### Validate a token
-
-```
-POST /api/v1/auth/token
-Content-Type: application/json
-
-{ "token": "<your-token>" }
-```
-
-Response `200 OK`:
-```json
-{ "valid": true, "agent_type": "support-agent" }
-```
-
----
-
-#### Submit telemetry
-
+**Submit telemetry**
 ```
 POST /api/v1/telemetry
 Authorization: Bearer <your-token>
 Content-Type: text/plain
-
-{"trace_id":"a1b2c3d4e5f6a7b8","agent_id":"support-agent","task_name":"classify_customer_ticket","start_time":"2026-04-02T12:00:00Z","status":"success"}
-{"trace_id":"a1b2c3d4e5f6a7b8","span_id":"s1","parent_span_id":null,"span_type":"agent_run_started","timestamp":"2026-04-02T12:00:01Z","agent_id":"support-agent","metadata":{"task":"classify_customer_ticket"}}
 ```
 
-The body is **NDJSON** — one JSON object per line. Line 1 is the trace record; subsequent lines are span records. This format matches the output of `AgentSimulator#emit`.
+Body is NDJSON — line 1 is the trace record, subsequent lines are span records:
+```
+{"trace_id":"a1b2c3d4e5f6a7b8","agent_id":"support-agent","task_name":"classify_ticket","start_time":"2026-04-02T12:00:00Z","status":"success"}
+{"trace_id":"a1b2c3d4e5f6a7b8","span_id":"s1","parent_span_id":null,"span_type":"agent_run_started","timestamp":"2026-04-02T12:00:01Z","agent_id":"support-agent","metadata":{}}
+```
 
 Response `201 Created`:
 ```json
 { "trace_id": "a1b2c3d4e5f6a7b8", "spans_ingested": 1 }
 ```
 
+**Revoke a key**
+```
+DELETE /api/v1/keys/:id
+Authorization: Bearer <your-token>
+```
+
+---
+
+### Service Layer
+
+All business logic lives in `app/lib/` — never in controllers.
+
+| Class | Responsibility |
+|---|---|
+| `TelemetryIngester` | Validates and persists traces and spans |
+| `OtlpNormalizer` | Translates OTLP trace payloads into the Trace → Span model |
+| `MetricsNormalizer` | Translates OTLP metrics payloads into `Metric` records |
+| `LogsNormalizer` | Translates OTLP log payloads into `Log` records |
+| `OtlpProtobufDecoder` | Pure-Ruby proto3 decoder for binary OTLP payloads |
+| `TraceDurationCalculator` | Calculates trace execution duration in milliseconds |
+| `ToolCallAnalyzer` | Analyzes tool call frequency and success rates |
+| `ErrorRateAnalyzer` | Detects error spans and computes error rate |
+| `HistogramPercentileCalculator` | Estimates P50/P95/P99 from histogram bucket data |
+
 ---
 
 ### Testing
 
-The project uses **RSpec** for testing.
-
 ```bash
-bundle exec rspec
+bundle exec rspec        # full test suite
+bundle exec rubocop      # lint
+bundle exec brakeman     # security scan
 ```
 
-Test coverage includes:
-
-* Unit tests for parsing, utility, and analysis classes
-* Model specs for `Trace`, `Span`, and `ApiKey`
-* Request specs for all API endpoints
-
----
-
-### Dashboard Screenshots
-
-<img src="https://github.com/cskee004/log-analyzer/blob/main/docs/screenshots/upload.jpg" title="Upload" alt="Upload page sample" width="800">
-
-<img src="https://github.com/cskee004/log-analyzer/blob/main/docs/screenshots/summary.jpg" title="Summary Page" alt="Summary page sample" width="800">
-
-<img src="https://github.com/cskee004/log-analyzer/blob/main/docs/screenshots/graphs.jpg" title="Graph page" alt="Graph page sample" width="800">
-
-<img src="https://github.com/cskee004/log-analyzer/blob/main/docs/screenshots/choose-graph.jpg" alt="Choose graph sample" width="800">
+Test coverage includes service class unit specs (`spec/lib/`), model specs, and request specs for all API endpoints.
 
 ---
 
 ### Roadmap
 
-#### Log Analyzer
-- [x] Parse `auth.log` files
-- [x] Event grouping by types and timestamps
-- [x] Normalize raw log data into structured formats
-- [x] Rails dashboard with ApexCharts visualizations
-- [x] Database-backed event storage and analysis
-
-#### Agent Observability Platform
-- [x] `traces` and `spans` database tables and models
-- [x] Ingestion API with key registration and Bearer token auth
-- [ ] Agent observability dashboard (trace viewer, span timeline)
-
----
-
-### Acknowledgements
-
-* Thank you to the [Elastic team](https://github.com/elastic/examples/tree/master/Machine%20Learning/Security%20Analytics%20Recipes/suspicious_login_activity) for providing the dataset used in this project.
-
-  * Modifications: [test-auth.log](https://github.com/cskee004/log-analyzer/blob/main/data/auth-test.log)
-
----
-
-### Contributing
-
-Contributing, feedback, and ideas are welcome.
-
-This project is primarily a personal learning tool and showcase, but feel free to fork it, open issues, or suggest improvements.
-
-If you'd like to contribute:
-1. Fork the repo
-2. Create a new branch
-3. Make your changes
-4. Open a pull request describing your changes
+- [x] Trace → Span data model and storage
+- [x] Bearer token ingestion API
+- [x] OTLP trace ingestion (`/v1/traces`)
+- [x] OTLP metrics ingestion (`/v1/metrics`)
+- [x] OTLP log ingestion (`/v1/logs`)
+- [x] Protobuf support across all three OTLP endpoints
+- [x] Analysis engine (duration, tool calls, error rate, histogram percentiles)
+- [x] Trace list and timeline dashboard
+- [x] Metrics dashboard
+- [ ] Tailwind CSS + waterfall span timeline
+- [ ] Real-time trace updates via Turbo Streams
+- [ ] Dashboard charts (Chartkick + ApexCharts)
+- [ ] OpenClaw plugin for one-command installation
 
 ---
 
 [![Chris Skeens - LinkedIn](https://img.shields.io/badge/Chris_Skeens-LinkedIn-blue)](https://www.linkedin.com/in/christopher-skeens-846780248/)
-
-[![Development](https://img.shields.io/badge/branch-development-red)](https://github.com/cskee004/log-analyzer/tree/development) (Unstable but latest work)
-
-[![Legacy Version](https://img.shields.io/badge/branch-legacy-yellow)](https://github.com/cskee004/log-analyzer/tree/legacy-script-version)
-
-[![ApexCharts.RB - v0.2.0](https://img.shields.io/badge/ApexCharts.RB-v0.2.0-orange)](https://github.com/styd/apexcharts.rb) (Very cool!)
-
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-rubocop-brightgreen.svg)](https://github.com/rubocop/rubocop)
