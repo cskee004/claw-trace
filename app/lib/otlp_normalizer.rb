@@ -57,20 +57,16 @@ class OtlpNormalizer
     resource_spans = Array(@payload["resourceSpans"])
     raise Error, "payload contains no resourceSpans" if resource_spans.empty?
 
-    rs           = resource_spans.first
-    resource_attrs = attrs_to_hash(rs.dig("resource", "attributes") || [])
-    agent_id     = resource_attrs["openclaw.session.key"] ||
-                   resource_attrs["service.name"] ||
-                   "unknown"
+    entries = spans_by_resource(resource_spans)
+    raise Error, "resourceSpans contains no spans" if entries.empty?
 
-    all_spans = (rs["scopeSpans"] || []).flat_map { |ss| ss["spans"] || [] }
-    raise Error, "resourceSpans contains no spans" if all_spans.empty?
+    all_raw_spans = entries.map { |e| e[:span] }
+    trace_id      = normalize_trace_id(all_raw_spans.first["traceId"])
+    final_span    = find_final_span(all_raw_spans)
+    primary_agent = entries.first[:agent_id]
 
-    trace_id    = normalize_trace_id(all_spans.first["traceId"])
-    final_span  = find_final_span(all_spans)
-
-    trace_line = build_trace_record(all_spans, trace_id, agent_id, final_span)
-    span_lines = all_spans.map { |span| build_span_record(span, trace_id, agent_id, final_span) }
+    trace_line = build_trace_record(all_raw_spans, trace_id, primary_agent, final_span)
+    span_lines = entries.map { |e| build_span_record(e[:span], trace_id, e[:agent_id], final_span) }
 
     { trace: trace_line, spans: span_lines }
   end
@@ -87,6 +83,14 @@ class OtlpNormalizer
       value = attr["value"] || {}
       type  = %w[stringValue intValue doubleValue boolValue].find { |t| value.key?(t) }
       hash[key] = value[type] if type
+    end
+  end
+
+  def spans_by_resource(resource_spans)
+    resource_spans.flat_map do |rs|
+      attrs    = attrs_to_hash(rs.dig("resource", "attributes") || [])
+      agent_id = attrs["openclaw.session.key"] || attrs["service.name"] || "unknown"
+      (rs["scopeSpans"] || []).flat_map { |ss| ss["spans"] || [] }.map { |s| { span: s, agent_id: agent_id } }
     end
   end
 

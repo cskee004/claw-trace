@@ -418,4 +418,58 @@ RSpec.describe OtlpNormalizer do
       expect(span.keys).to include("trace_id", "span_id", "span_type", "span_name", "timestamp", "agent_id", "metadata")
     end
   end
+
+  # ── Multiple resourceSpans entries ────────────────────────────────────────
+
+  describe "multiple resourceSpans entries" do
+    # Two resource entries in one payload; spans share the same traceId.
+    # Entry 1: payment-service with openclaw.session.key; one root span.
+    # Entry 2: notification-service (service.name only); one child span.
+    def multi_service_payload
+      JSON.generate({
+        "resourceSpans" => [
+          {
+            "resource" => {
+              "attributes" => [
+                { "key" => "openclaw.session.key", "value" => { "stringValue" => "payment-service" } }
+              ]
+            },
+            "scopeSpans" => [{ "spans" => [
+              otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",
+                        timestamp_ns: 1_000_000_000_000_000_000)
+            ]}]
+          },
+          {
+            "resource" => {
+              "attributes" => [
+                { "key" => "service.name", "value" => { "stringValue" => "notification-service" } }
+              ]
+            },
+            "scopeSpans" => [{ "spans" => [
+              otlp_span(name: "openclaw.agent.turn", span_id: "bbbb0000bbbb0000",
+                        parent_span_id: "aaaa0000aaaa0000",
+                        timestamp_ns: 2_000_000_000_000_000_000)
+            ]}]
+          }
+        ]
+      })
+    end
+
+    it "returns spans from all resource entries, not just the first" do
+      result = OtlpNormalizer.call(multi_service_payload)
+      expect(result[:spans].length).to eq(2)
+    end
+
+    it "assigns agent_id per resource entry to each span" do
+      result = OtlpNormalizer.call(multi_service_payload)
+      span_ids_to_agents = result[:spans].to_h { |s| [s["span_id"], s["agent_id"]] }
+      expect(span_ids_to_agents["aaaa0000aaaa0000"]).to eq("payment-service")
+      expect(span_ids_to_agents["bbbb0000bbbb0000"]).to eq("notification-service")
+    end
+
+    it "uses the first resource entry's agent_id for the trace record" do
+      result = OtlpNormalizer.call(multi_service_payload)
+      expect(result[:trace]["agent_id"]).to eq("payment-service")
+    end
+  end
 end
