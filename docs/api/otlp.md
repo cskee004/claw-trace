@@ -49,7 +49,7 @@ The body must be a JSON object conforming to the OTLP ResourceSpans format:
 }
 ```
 
-Only the first `resourceSpan` entry is processed. Multi-resource payloads are accepted without error — additional resources beyond the first are ignored.
+All `resourceSpans` entries are processed. Multi-service payloads (one entry per service) are fully supported — spans from every entry are aggregated into a single trace. Each entry's `agent_id` is resolved independently from its own `resource.attributes`.
 
 ---
 
