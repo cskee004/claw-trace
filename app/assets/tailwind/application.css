@@ -30,7 +30,7 @@
   --color-row-hover:   rgb(122 162 247 / 0.05);
 }
 
-@theme {
+@theme inline {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
