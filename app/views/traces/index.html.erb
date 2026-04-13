@@ -1,64 +1,84 @@
 <% content_for(:title) { "Agent Traces" } %>
 
-<div class="traces-page">
-  <div class="traces-header">
-    <h1 class="page-title">Agent Traces</h1>
-  </div>
-
+<div class="flex items-center justify-between mb-5">
+  <h1 class="text-xl font-bold text-[var(--color-fg)]">Agent Traces</h1>
   <%= button_to "Reset All Data", reset_path,
         data: { turbo_confirm: "Delete ALL traces, spans, logs, and metrics?" },
         class: "btn btn--danger" %>
+</div>
 
-  <form class="traces-filter" action="<%= traces_path %>" method="get">
-    <label for="session_id">Session ID</label>
-    <input type="text" id="session_id" name="session_id"
+<% if flash[:notice] %>
+  <p class="flash flash--notice px-4 py-2 rounded text-sm mb-4"><%= flash[:notice] %></p>
+<% end %>
+<% if flash[:alert] %>
+  <p class="flash flash--alert px-4 py-2 rounded text-sm mb-4"><%= flash[:alert] %></p>
+<% end %>
+
+<turbo-frame id="trace_list">
+  <form class="flex items-center gap-2 flex-wrap mb-5"
+        action="<%= traces_path %>" method="get">
+    <label class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]"
+           for="session_id">Session ID</label>
+    <input class="font-mono text-sm bg-[var(--color-surface)] border border-[var(--color-surface-2)] text-[var(--color-fg)] rounded px-2.5 py-1.5 w-56 focus:outline-none focus:border-[var(--color-accent)] placeholder:text-[var(--color-fg-subtle)]"
+           type="text" id="session_id" name="session_id"
            value="<%= params[:session_id] %>"
            placeholder="Filter by agent.session.id…">
-    <button type="submit">Filter</button>
+    <button class="text-xs font-bold px-3 py-1.5 bg-[var(--color-surface-2)] text-[var(--color-fg)] rounded cursor-pointer hover:opacity-80"
+            type="submit">Filter</button>
     <% if params[:session_id].present? %>
-      <%= link_to "Clear", traces_path, class: "traces-filter__clear" %>
+      <%= link_to "Clear", traces_path,
+            class: "text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]" %>
     <% end %>
   </form>
 
-  <% if flash[:notice] %>
-    <p class="flash flash--notice"><%= flash[:notice] %></p>
-  <% end %>
-  <% if flash[:alert] %>
-    <p class="flash flash--alert"><%= flash[:alert] %></p>
-  <% end %>
-
   <% if @traces.empty? %>
-    <p class="traces-empty">No traces recorded yet.</p>
+    <p class="text-center py-12 text-sm italic text-[var(--color-fg-subtle)]">
+      No traces recorded yet.
+    </p>
   <% else %>
-    <table class="traces-table">
-      <thead>
-        <tr>
-          <th>Trace ID</th>
-          <th>Agent</th>
-          <th>Task</th>
-          <th>Start Time</th>
-          <th>Duration</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @traces.each do |trace| %>
+    <div class="rounded-lg overflow-hidden border border-[var(--color-surface-2)]">
+      <table class="w-full border-collapse bg-[var(--color-surface)]">
+        <thead>
           <tr>
-            <td class="traces-table__trace-id">
-              <%= link_to trace.trace_id, trace_path(trace), class: "traces-table__trace-link" %>
-            </td>
-            <td><%= trace.agent_id %></td>
-            <td><%= trace.task_name %></td>
-            <td><%= trace.start_time.strftime("%Y-%m-%d %H:%M:%S UTC") %></td>
-            <td><%= format_duration(@durations[trace.trace_id]) %></td>
-            <td>
-              <span class="status-badge status-badge--<%= trace.status %>">
-                <%= trace.status.tr("_", " ") %>
-              </span>
-            </td>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Trace ID</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Agent</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Task</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Start Time</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Duration</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Status</th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          <% @traces.each do |trace| %>
+            <tr class="border-b border-[var(--color-surface-2)] last:border-0"
+                onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
+                onmouseout="this.style.backgroundColor=''">
+              <td class="px-4 py-2.5 align-middle">
+                <%= link_to trace.trace_id, trace_path(trace),
+                      class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
+              </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
+                <%= trace.agent_id %>
+              </td>
+              <td class="px-4 py-2.5 align-middle text-sm font-light text-[var(--color-fg-muted)]">
+                <%= trace.task_name %>
+              </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-subtle)]">
+                <%= trace.start_time.strftime("%Y-%m-%d %H:%M:%S") %>
+              </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
+                <%= format_duration(@durations[trace.trace_id]) %>
+              </td>
+              <td class="px-4 py-2.5 align-middle">
+                <span class="status-badge status-badge--<%= trace.status %>
+                             inline-block px-2 py-0.5 rounded text-xs font-bold tracking-wide capitalize">
+                  <%= trace.status.tr("_", " ") %>
+                </span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
   <% end %>
-</div>
+</turbo-frame>
