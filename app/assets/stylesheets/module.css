@@ -257,6 +257,7 @@ turbo-frame#frame_panel {
 }
 
 /* Span type badges — colors from :root tokens, never hardcoded hex */
+/* lifecycle is a muted grey — 20% keeps it perceptible on the dark surface background */
 .span-type-badge--agent_run_started,
 .span-type-badge--run_completed {
     background-color: color-mix(in srgb, var(--color-span-lifecycle) 20%, transparent);
@@ -299,6 +300,8 @@ turbo-frame#frame_panel {
 }
 
 .waterfall-drawer.open {
+    /* 600px exceeds any realistic metadata drawer height; the CSS max-height
+       animation stays snappy because actual content is well below this value */
     max-height: 600px;
 }
 
