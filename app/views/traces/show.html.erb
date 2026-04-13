@@ -1,78 +1,151 @@
 <% content_for(:title) { "#{@trace.task_name} — Trace" } %>
 
-<div class="traces-show">
-  <div class="traces-show__header">
-    <%= link_to "← All Traces", traces_path, class: "traces-show__back" %>
-    <div class="traces-show__title-row">
-      <h1 class="page-title"><%= @trace.task_name %></h1>
-      <span class="status-badge status-badge--<%= @trace.status %>">
+<div class="p-4">
+
+  <%# ── Back link + title row ── %>
+  <div class="mb-5">
+    <%= link_to "← All Traces", traces_path,
+          class: "text-xs font-bold text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]" %>
+    <div class="flex items-center gap-3 mt-2">
+      <h1 class="text-xl font-bold text-[var(--color-fg)]"><%= @trace.task_name %></h1>
+      <span class="status-badge status-badge--<%= @trace.status %>
+                   inline-block px-2 py-0.5 rounded text-xs font-bold tracking-wide capitalize">
         <%= @trace.status.tr("_", " ") %>
       </span>
     </div>
   </div>
 
-  <dl class="traces-show__meta">
-    <div class="traces-show__meta-item">
-      <dt>Trace ID</dt>
-      <dd class="mono"><%= @trace.trace_id %></dd>
+  <%# ── Meta strip ── %>
+  <dl class="flex flex-wrap gap-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)]
+             rounded px-4 py-3 mb-5">
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Trace ID</dt>
+      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0"><%= @trace.trace_id %></dd>
     </div>
-    <div class="traces-show__meta-item">
-      <dt>Agent</dt>
-      <dd><%= @trace.agent_id %></dd>
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Agent</dt>
+      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0"><%= @trace.agent_id %></dd>
     </div>
-    <div class="traces-show__meta-item">
-      <dt>Started</dt>
-      <dd><%= @trace.start_time.strftime("%Y-%m-%d %H:%M:%S UTC") %></dd>
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Started</dt>
+      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0">
+        <%= @trace.start_time.strftime("%Y-%m-%d %H:%M:%S UTC") %>
+      </dd>
     </div>
-    <div class="traces-show__meta-item">
-      <dt>Total Duration</dt>
-      <dd><%= format_duration(@total_duration_ms) %></dd>
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Duration</dt>
+      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0">
+        <%= format_duration(@total_duration_ms) %>
+      </dd>
     </div>
-    <div class="traces-show__meta-item">
-      <dt>Spans</dt>
-      <dd><%= @spans.size %></dd>
+    <div class="flex flex-col gap-0.5">
+      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Spans</dt>
+      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0"><%= @spans.size %></dd>
     </div>
   </dl>
 
   <% if @spans.empty? %>
-    <p class="traces-empty">No spans recorded for this trace.</p>
+    <p class="text-center py-12 text-sm font-light italic text-[var(--color-fg-subtle)]">
+      No spans recorded for this trace.
+    </p>
   <% else %>
-    <% depths = span_depth_map(@spans) %>
-    <ol class="timeline" aria-label="Span timeline">
+
+    <%# ── Column header row ── %>
+    <div class="flex text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)] mb-1 px-3">
+      <div class="w-[45%]">Span</div>
+      <div class="flex-1">Timeline</div>
+    </div>
+
+    <% depths   = span_depth_map(@spans) %>
+    <% total_ms = @total_duration_ms.to_f %>
+
+    <%# ── Waterfall rows ── %>
+    <div class="rounded-lg overflow-hidden border border-[var(--color-surface-2)]">
       <% @spans.each do |span| %>
-        <li class="timeline__item">
-          <div class="timeline__connector">
-            <span class="timeline__dot timeline__dot--<%= span.span_type %>"></span>
-          </div>
-          <div class="timeline__card" style="padding-left: <%= depths[span.span_id] * 16 %>px">
-            <div class="timeline__card-header">
-              <span class="span-type-badge span-type-badge--<%= span.span_type %>">
+        <% depth   = depths[span.span_id] %>
+        <% latency = @span_latencies[span.span_id] %>
+        <%# Bar geometry — percentage of total trace duration %>
+        <% if total_ms > 0 %>
+          <% offset_ms  = (span.timestamp.to_f - @trace.start_time.to_f) * 1000.0 %>
+          <% offset_pct = (offset_ms  / total_ms * 100).clamp(0.0, 98.0).round(2) %>
+          <% width_pct  = latency ? (latency / total_ms * 100).clamp(0.01, 100.0 - offset_pct).round(2) : 0 %>
+        <% else %>
+          <% offset_pct = 0; width_pct = 0 %>
+        <% end %>
+
+        <div class="border-b border-[var(--color-surface-2)] last:border-0 bg-[var(--color-surface)]"
+             data-controller="span-detail">
+
+          <%# ── Clickable row: label col + bar col ── %>
+          <%# Uses <button> (not <div>) so keyboard users can reach it with Tab %>
+          <button type="button"
+                  class="w-full flex items-center min-h-[2.5rem] text-left cursor-pointer
+                         hover:bg-[var(--color-row-hover)] focus:outline-none focus:bg-[var(--color-row-hover)]"
+                  data-action="click->span-detail#toggle"
+                  aria-expanded="false">
+
+            <%# Label column (45%) — indented by parent depth %>
+            <div class="w-[45%] flex items-center gap-2 py-2 pr-3 overflow-hidden min-w-0"
+                 style="padding-left: calc(0.75rem + <%= depth * 16 %>px)">
+              <span class="span-type-badge span-type-badge--<%= span.span_type %> shrink-0">
                 <%= span.span_type.tr("_", " ") %>
               </span>
               <% if span.span_name.present? %>
-                <span class="timeline__span-name"><%= span.span_name %></span>
+                <span class="font-mono font-light text-xs text-[var(--color-fg-muted)] truncate"
+                      title="<%= span.span_name %>">
+                  <%= span.span_name %>
+                </span>
               <% end %>
-              <span class="timeline__timestamp">
+              <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)] ml-auto shrink-0">
                 <%= span.timestamp.strftime("%H:%M:%S.%3N") %>
               </span>
-              <% latency = @span_latencies[span.span_id] %>
+            </div>
+
+            <%# Bar column (flex-1 ≈ 55%) — bar positioned absolutely within the container %>
+            <div class="flex-1 relative h-10">
+              <% if total_ms > 0 %>
+                <div class="absolute inset-0 flex items-center">
+                  <div class="absolute h-2 rounded-sm waterfall-bar--<%= span.span_type %>"
+                       style="left: <%= offset_pct %>%;
+                              width: <%= width_pct %>%;
+                              min-width: 4px">
+                  </div>
+                </div>
+              <% end %>
               <% if latency %>
-                <span class="timeline__latency"><%= format_duration(latency) %> →</span>
+                <span class="absolute right-2 top-1/2 -translate-y-1/2
+                             font-mono font-light text-[10px] text-[var(--color-fg-subtle)]">
+                  <%= format_duration(latency) %>
+                </span>
               <% end %>
             </div>
-            <% unless span.metadata.empty? %>
-              <dl class="timeline__metadata">
-                <% span.metadata.each do |key, value| %>
-                  <div class="timeline__metadata-row">
-                    <dt class="timeline__metadata-key"><%= key.to_s.tr("_", " ") %></dt>
-                    <dd class="timeline__metadata-value"><%= value %></dd>
-                  </div>
-                <% end %>
-              </dl>
-            <% end %>
+
+          </button><%# end clickable row %>
+
+          <%# ── Metadata drawer (collapsed; expands via Stimulus toggle) ── %>
+          <div class="waterfall-drawer border-t border-[var(--color-surface-2)] bg-[var(--color-bg)]"
+               data-span-detail-target="drawer">
+            <div class="px-4 py-3">
+              <% if span.metadata.present? %>
+                <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1">
+                  <% span.metadata.each do |key, value| %>
+                    <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] capitalize whitespace-nowrap">
+                      <%= key.to_s.tr("_", " ") %>
+                    </dt>
+                    <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] break-all m-0">
+                      <%= value %>
+                    </dd>
+                  <% end %>
+                </dl>
+              <% else %>
+                <p class="text-xs font-light italic text-[var(--color-fg-subtle)]">No metadata.</p>
+              <% end %>
+            </div>
           </div>
-        </li>
+
+        </div><%# end span-detail controller root %>
       <% end %>
-    </ol>
+    </div>
+
   <% end %>
 </div>
