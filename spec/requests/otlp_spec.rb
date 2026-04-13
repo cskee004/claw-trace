@@ -246,5 +246,20 @@ RSpec.describe "POST /v1/traces", type: :request do
         post "/v1/traces", params: multi_trace_payload, headers: headers
       }.to change(Span, :count).by(2)
     end
+
+    it "persists zero traces when the second TelemetryIngester call raises" do
+      call_count = 0
+      allow(TelemetryIngester).to receive(:call).and_wrap_original do |original, **kwargs|
+        call_count += 1
+        raise TelemetryIngester::Error, "injected failure" if call_count == 2
+        original.call(**kwargs)
+      end
+
+      expect {
+        post "/v1/traces", params: multi_trace_payload, headers: headers
+      }.not_to change(Trace, :count)
+
+      expect(response).to have_http_status(:bad_request)
+    end
   end
 end

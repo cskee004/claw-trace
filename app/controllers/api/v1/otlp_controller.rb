@@ -22,7 +22,9 @@ module Api
           results = OtlpNormalizer.call(body)
         end
 
-        results.each { |r| TelemetryIngester.call(**r) }
+        ActiveRecord::Base.transaction do
+          results.each { |r| TelemetryIngester.call(**r) }
+        end
         render json: {}, status: :ok
       rescue OtlpProtobufDecoder::Error => e
         render json: { error: e.message }, status: :bad_request
