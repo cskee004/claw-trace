@@ -10,11 +10,15 @@
 #     }]
 #   }
 #
-# Output:
-#   {
-#     trace: { "trace_id", "agent_id", "task_name", "start_time", "status" },
-#     spans: [{ "trace_id", "span_id", "parent_span_id", "span_type", "span_name", "timestamp", "agent_id", "metadata" }, ...]
-#   }
+# Output: an Array of result hashes, one per distinct traceId in the payload.
+# Single-trace payloads return a one-element array.
+#   [
+#     {
+#       trace: { "trace_id", "agent_id", "task_name", "start_time", "status" },
+#       spans: [{ "trace_id", "span_id", "parent_span_id", "span_type", "span_name", "timestamp", "agent_id", "metadata" }, ...]
+#     },
+#     ...
+#   ]
 #
 # Span type mapping:
 #   openclaw.request      → agent_run_started
@@ -29,8 +33,8 @@
 # agent_id is read from the openclaw.session.key resource attribute.
 #
 # Usage:
-#   result = OtlpNormalizer.call(otlp_json_string)
-#   TelemetryIngester.call(**result)
+#   results = OtlpNormalizer.call(otlp_json_string)
+#   results.each { |r| TelemetryIngester.call(**r) }
 #
 # Raises OtlpNormalizer::Error on malformed input.
 class OtlpNormalizer
