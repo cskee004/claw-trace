@@ -4,8 +4,8 @@ div#container {
 }
 
 turbo-frame#frame_panel {
-    background-color: #f9fafb;
-    border: 1px solid #d1d5db;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-surface-2);
 }
 
 .upload-modal {
@@ -126,7 +126,8 @@ turbo-frame#frame_panel {
 
 .nav-link { color: var(--color-fg-subtle); }
 .nav-link:hover { color: var(--color-fg); }
-.nav-link--active { color: var(--color-accent); font-weight: 700; }
+.nav-link--active,
+.nav-link--active:hover { color: var(--color-accent); font-weight: 700; }
 
 .btn-seed {
     background-color: #e2e8f0;
