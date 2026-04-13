@@ -2,6 +2,12 @@
 
 ### Agent Observability for OpenClaw
 
+<!-- CLAUDE_STATS_START -->
+#### Claude Code Stats
+
+![sessions: 15](https://img.shields.io/badge/sessions-15-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 1,681](https://img.shields.io/badge/API%20calls-1%2C681-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 125.3M](https://img.shields.io/badge/tokens-125.3M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 56.4m](https://img.shields.io/badge/thinking%20time-56.4m-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 15.9h](https://img.shields.io/badge/wall%20clock-15.9h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $68.00](https://img.shields.io/badge/est.%20cost-%2468.00-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+<!-- CLAUDE_STATS_END -->
+
 ---
 
 ### Requirements
@@ -195,5 +201,4 @@ Test coverage includes service class unit specs (`spec/lib/`), model specs, and 
 
 ---
 
-[![Chris Skeens - LinkedIn](https://img.shields.io/badge/Chris_Skeens-LinkedIn-blue)](https://www.linkedin.com/in/christopher-skeens-846780248/)
 [![Ruby Style Guide](https://img.shields.io/badge/code_style-rubocop-brightgreen.svg)](https://github.com/rubocop/rubocop)
