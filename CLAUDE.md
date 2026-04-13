@@ -131,7 +131,6 @@ See `AI_ARCHITECTURE.md` for full span mappings, OTLP attribute format, and inge
 - `metric_attributes` not `attributes` — ActiveRecord reserves the `attributes` method name
 - Metric names contain dots (e.g. `gen_ai.client.token.usage`) — routes need `format: false` and a `/[^\/]+/` constraint
 - Rescue blocks in OTLP controllers must force-encode `e.message` to UTF-8 before rendering JSON — binary protobuf input can make `e.message` non-UTF-8, causing `JSON::GeneratorError`: `e.message.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?")`
-- Tailwind v4 `@theme {}` silently drops any token whose value is a `var()` reference — use `@theme inline {}` instead; with `inline`, utilities like `bg-span-model` emit `background-color: var(--color-span-model)` at runtime and the tokens are registered as CSS custom properties
 
 ---
 
