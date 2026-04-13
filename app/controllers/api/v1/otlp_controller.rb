@@ -27,11 +27,19 @@ module Api
         end
         render json: {}, status: :ok
       rescue OtlpProtobufDecoder::Error => e
-        render json: { error: e.message }, status: :bad_request
+        render json: { error: safe_message(e) }, status: :bad_request
       rescue JSON::ParserError => e
-        render json: { error: "invalid JSON: #{e.message}" }, status: :bad_request
+        render json: { error: "invalid JSON: #{safe_message(e)}" }, status: :bad_request
       rescue OtlpNormalizer::Error, TelemetryIngester::Error => e
-        render json: { error: e.message }, status: :bad_request
+        render json: { error: safe_message(e) }, status: :bad_request
+      end
+
+      private
+
+      # Encodes error messages to UTF-8 to prevent JSON::GeneratorError when
+      # the message contains binary characters from a malformed protobuf input.
+      def safe_message(err)
+        err.message.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?")
       end
     end
   end

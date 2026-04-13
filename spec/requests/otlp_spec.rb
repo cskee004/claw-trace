@@ -262,4 +262,23 @@ RSpec.describe "POST /v1/traces", type: :request do
       expect(response).to have_http_status(:bad_request)
     end
   end
+
+  # ── Non-UTF-8 error message safety ────────────────────────────────────────────
+
+  describe "non-UTF-8 error message safety" do
+    let(:pb_headers) { { "Content-Type" => "application/x-protobuf" } }
+
+    it "returns 400 (not 500) and a parseable JSON body when the error message contains non-UTF-8 bytes" do
+      binary_message = "bad input: \xFF\xFE".b
+      allow(OtlpProtobufDecoder).to receive(:decode_traces).and_raise(
+        OtlpProtobufDecoder::Error, binary_message
+      )
+
+      post "/v1/traces", params: "\x00".b, headers: pb_headers
+
+      expect(response).to have_http_status(:bad_request)
+      expect { JSON.parse(response.body) }.not_to raise_error
+      expect(JSON.parse(response.body)).to have_key("error")
+    end
+  end
 end
