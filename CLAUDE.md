@@ -107,11 +107,12 @@ OpenClaw → POST /v1/logs → LogsNormalizer → Log.insert_all! → logs table
 - Phase 5 (Analysis Engine): ✅ Complete — `TraceDurationCalculator`, `ToolCallAnalyzer`, `ErrorRateAnalyzer`
 - Phase 6 (OTLP Ingestion): ✅ Complete — `OtlpNormalizer`, `POST /v1/traces`
 - Phase 7 (Metrics Ingestion): ✅ Complete — `MetricsNormalizer`, `Metric` model, `POST /v1/metrics`, Metrics UI
-- Phase 8 (UI Polish): 🟡 In progress — Task 24 (Tailwind + Tokyo Night) + Task 25 (trace list restyle) complete
+- Phase 8 (UI Polish): 🟡 In progress — Task 24 (Tailwind + Tokyo Night) + Task 25 (trace list restyle) + Task 26 (waterfall span timeline) complete
 - Task 19 (Protobuf Support): ✅ Complete — `OtlpProtobufDecoder`, `application/x-protobuf` routing in both OTLP controllers
+- Task 26 (Waterfall Span Timeline): ✅ Complete — `show.html.erb` waterfall, `span_detail` Stimulus controller, span-type color tokens
 - Tasks 33–49: ✅ Complete — see `AI_TASKS.md` for full task history
 
-**Next up:** Task 26 — Waterfall Span Timeline View
+**Next up:** Task 27 — Inline Trace Row Expansion
 
 ---
 

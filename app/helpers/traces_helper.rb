@@ -51,5 +51,7 @@ module TracesHelper
     result
   end
 
+  # Exposed as module_function so TracesController can call TracesHelper.dfs_ordered_spans
+  # directly without a view context. span_depth_map is view-only and does not need this.
   module_function :dfs_ordered_spans
 end
