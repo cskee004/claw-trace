@@ -22,7 +22,7 @@
   --color-warn-bg:     #2e2a1a;
   --color-warn-fg:     #e0af68;
 
-  /* Danger (reset button) */
+  /* Danger (reset button) — matches error palette; may diverge as UI matures */
   --color-danger-bg:   #2e1a1a;
   --color-danger-fg:   #f7768e;
 
