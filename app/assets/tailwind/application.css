@@ -33,4 +33,23 @@
 @theme {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* ── Span-type design tokens ─────────────────────────────────────────
+     Single source of truth for badges, waterfall bars, and future charts.
+     Generates bg-span-*, text-span-* Tailwind utilities automatically.
+  ────────────────────────────────────────────────────────────────────── */
+
+  /* Bar / accent colors (full opacity — used in waterfall bars) */
+  --color-span-lifecycle: #565f89;   /* agent_run_started, run_completed */
+  --color-span-model:     #bb9af7;   /* model_call, model_response */
+  --color-span-tool:      #7aa2f7;   /* tool_call, tool_result */
+  --color-span-decision:  #e0af68;   /* decision */
+  --color-span-error:     #f7768e;   /* error */
+
+  /* Badge foreground text (lighter tones for readability on dark bg) */
+  --color-span-lifecycle-fg: #a9b1d6;
+  --color-span-model-fg:     #bb9af7;
+  --color-span-tool-fg:      #7aa2f7;
+  --color-span-decision-fg:  #e0af68;
+  --color-span-error-fg:     #f7768e;
 }
