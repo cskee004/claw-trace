@@ -13,16 +13,16 @@ module Api
           data = OtlpProtobufDecoder.decode_traces(request.raw_post)
           return render json: {}, status: :ok if data["resourceSpans"].blank?
 
-          result = OtlpNormalizer.call(data.to_json)
+          results = OtlpNormalizer.call(data.to_json)
         else
           body = request.raw_post
           data = JSON.parse(body)
           return render json: {}, status: :ok if data["resourceSpans"].blank?
 
-          result = OtlpNormalizer.call(body)
+          results = OtlpNormalizer.call(body)
         end
 
-        TelemetryIngester.call(**result)
+        results.each { |r| TelemetryIngester.call(**r) }
         render json: {}, status: :ok
       rescue OtlpProtobufDecoder::Error => e
         render json: { error: e.message }, status: :bad_request

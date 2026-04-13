@@ -36,8 +36,9 @@ RSpec.describe OtlpNormalizer do
 
   # Returns OtlpNormalizer output as an array: [trace_hash, *span_hashes].
   # Index 0 is the trace record; index 1+ are span records.
+  # OtlpNormalizer.call always returns an array of result hashes; we use the first.
   def normalize_and_parse(json_string)
-    result = OtlpNormalizer.call(json_string)
+    result = OtlpNormalizer.call(json_string).first
     [result[:trace]] + result[:spans]
   end
 
@@ -266,7 +267,7 @@ RSpec.describe OtlpNormalizer do
                     timestamp_ns: 1_000_000_000_000_000_000,
                     end_timestamp_ns: 1_000_000_001_500_000_000)
         ])
-        span = OtlpNormalizer.call(payload)[:spans].first
+        span = OtlpNormalizer.call(payload).first[:spans].first
         expected = Time.at(1_000_000_001.5).utc.iso8601(3)
         expect(span["end_time"]).to eq(expected)
       end
@@ -276,7 +277,7 @@ RSpec.describe OtlpNormalizer do
           otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",
                     timestamp_ns: 1_000_000_000_000_000_000)
         ])
-        span = OtlpNormalizer.call(payload)[:spans].first
+        span = OtlpNormalizer.call(payload).first[:spans].first
         expect(span["end_time"]).to be_nil
       end
 
@@ -286,7 +287,7 @@ RSpec.describe OtlpNormalizer do
                     timestamp_ns: 1_000_000_000_000_000_000,
                     end_timestamp_ns: 0)
         ])
-        span = OtlpNormalizer.call(payload)[:spans].first
+        span = OtlpNormalizer.call(payload).first[:spans].first
         expect(span["end_time"]).to be_nil
       end
     end
@@ -296,7 +297,7 @@ RSpec.describe OtlpNormalizer do
         otlp_span(name: "tool.web_search", span_id: "aaaa0000aaaa0000",
                   timestamp_ns: 1_000_000_000_000_000_000)
       ])
-      span = OtlpNormalizer.call(payload)[:spans].first
+      span = OtlpNormalizer.call(payload).first[:spans].first
       expect(span["span_name"]).to eq("tool.web_search")
     end
   end
@@ -390,23 +391,23 @@ RSpec.describe OtlpNormalizer do
   # ── Output structure ───────────────────────────────────────────────────────
 
   describe "output structure" do
-    it "returns a hash with :trace and :spans keys" do
+    it "returns an array containing one result hash for a single-trace payload" do
       payload = otlp_payload(spans: [
         otlp_span(name: "openclaw.request",    span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000),
         otlp_span(name: "openclaw.agent.turn", span_id: "bbbb0000bbbb0000",
                   parent_span_id: "aaaa0000aaaa0000", timestamp_ns: 2_000_000_000_000_000_000)
       ])
-      result = OtlpNormalizer.call(payload)
-      expect(result).to be_a(Hash)
-      expect(result[:trace]).to be_a(Hash)
-      expect(result[:spans]).to be_an(Array).and have_attributes(length: 2)
+      results = OtlpNormalizer.call(payload)
+      expect(results).to be_an(Array).and have_attributes(length: 1)
+      expect(results.first[:trace]).to be_a(Hash)
+      expect(results.first[:spans]).to be_an(Array).and have_attributes(length: 2)
     end
 
     it "trace has the expected fields" do
       payload = otlp_payload(spans: [
         otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000)
       ])
-      trace = OtlpNormalizer.call(payload)[:trace]
+      trace = OtlpNormalizer.call(payload).first[:trace]
       expect(trace.keys).to include("trace_id", "agent_id", "task_name", "start_time", "status")
     end
 
@@ -414,7 +415,7 @@ RSpec.describe OtlpNormalizer do
       payload = otlp_payload(spans: [
         otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000)
       ])
-      span = OtlpNormalizer.call(payload)[:spans].first
+      span = OtlpNormalizer.call(payload).first[:spans].first
       expect(span.keys).to include("trace_id", "span_id", "span_type", "span_name", "timestamp", "agent_id", "metadata")
     end
   end
@@ -456,20 +457,121 @@ RSpec.describe OtlpNormalizer do
     end
 
     it "returns spans from all resource entries, not just the first" do
-      result = OtlpNormalizer.call(multi_service_payload)
+      result = OtlpNormalizer.call(multi_service_payload).first
       expect(result[:spans].length).to eq(2)
     end
 
     it "assigns agent_id per resource entry to each span" do
-      result = OtlpNormalizer.call(multi_service_payload)
+      result = OtlpNormalizer.call(multi_service_payload).first
       span_ids_to_agents = result[:spans].to_h { |s| [s["span_id"], s["agent_id"]] }
       expect(span_ids_to_agents["aaaa0000aaaa0000"]).to eq("payment-service")
       expect(span_ids_to_agents["bbbb0000bbbb0000"]).to eq("notification-service")
     end
 
     it "uses the first resource entry's agent_id for the trace record" do
-      result = OtlpNormalizer.call(multi_service_payload)
+      result = OtlpNormalizer.call(multi_service_payload).first
       expect(result[:trace]["agent_id"]).to eq("payment-service")
+    end
+  end
+
+  # ── Multiple distinct traceId values ─────────────────────────────────────
+
+  describe "multiple distinct traceId values" do
+    TRACE_ID_A = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    TRACE_ID_B = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    TRACE_ID_C = "ccccccccccccccccccccccccccccccccc"
+
+    EXPECTED_TRACE_A = "aaaaaaaaaaaaaaaa"
+    EXPECTED_TRACE_B = "bbbbbbbbbbbbbbbb"
+    EXPECTED_TRACE_C = "cccccccccccccccc"
+
+    # Helper: build an otlp_span with an explicit trace_id.
+    def otlp_span_for_trace(trace_id:, name:, span_id:, timestamp_ns:, parent_span_id: nil)
+      span = {
+        "traceId"           => trace_id,
+        "spanId"            => span_id,
+        "name"              => name,
+        "startTimeUnixNano" => timestamp_ns.to_s,
+        "attributes"        => []
+      }
+      span["parentSpanId"] = parent_span_id if parent_span_id
+      span
+    end
+
+    # Payload with 3 agent turns, each with a distinct traceId, all in one resourceSpans entry.
+    def multi_trace_payload
+      JSON.generate({
+        "resourceSpans" => [{
+          "resource" => {
+            "attributes" => [
+              { "key" => "openclaw.session.key", "value" => { "stringValue" => "multi-agent" } }
+            ]
+          },
+          "scopeSpans" => [{ "spans" => [
+            otlp_span_for_trace(trace_id: TRACE_ID_A, name: "openclaw.request",
+                                span_id: "span_a_root", timestamp_ns: 1_000_000_000_000_000_000),
+            otlp_span_for_trace(trace_id: TRACE_ID_A, name: "openclaw.agent.turn",
+                                span_id: "span_a_child", parent_span_id: "span_a_root",
+                                timestamp_ns: 1_000_000_001_000_000_000),
+            otlp_span_for_trace(trace_id: TRACE_ID_B, name: "openclaw.request",
+                                span_id: "span_b_root", timestamp_ns: 2_000_000_000_000_000_000),
+            otlp_span_for_trace(trace_id: TRACE_ID_B, name: "openclaw.agent.turn",
+                                span_id: "span_b_child", parent_span_id: "span_b_root",
+                                timestamp_ns: 2_000_000_001_000_000_000),
+            otlp_span_for_trace(trace_id: TRACE_ID_C, name: "openclaw.request",
+                                span_id: "span_c_root", timestamp_ns: 3_000_000_000_000_000_000),
+            otlp_span_for_trace(trace_id: TRACE_ID_C, name: "openclaw.agent.turn",
+                                span_id: "span_c_child", parent_span_id: "span_c_root",
+                                timestamp_ns: 3_000_000_001_000_000_000)
+          ]}]
+        }]
+      })
+    end
+
+    it "returns an array with one entry per distinct traceId" do
+      results = OtlpNormalizer.call(multi_trace_payload)
+      expect(results).to be_an(Array).and have_attributes(length: 3)
+    end
+
+    it "each result has the correct normalized trace_id" do
+      results = OtlpNormalizer.call(multi_trace_payload)
+      result_trace_ids = results.map { |r| r[:trace]["trace_id"] }.sort
+      expect(result_trace_ids).to eq([EXPECTED_TRACE_A, EXPECTED_TRACE_B, EXPECTED_TRACE_C].sort)
+    end
+
+    it "each trace result only contains its own spans" do
+      results = OtlpNormalizer.call(multi_trace_payload)
+      results.each do |result|
+        trace_id = result[:trace]["trace_id"]
+        result[:spans].each do |span|
+          expect(span["trace_id"]).to eq(trace_id)
+        end
+      end
+    end
+
+    it "each trace has the correct span count (2 per trace)" do
+      results = OtlpNormalizer.call(multi_trace_payload)
+      results.each do |result|
+        expect(result[:spans].length).to eq(2)
+      end
+    end
+
+    it "the final span within each trace gets run_completed, not a span from another trace" do
+      results = OtlpNormalizer.call(multi_trace_payload)
+      results.each do |result|
+        final_types = result[:spans].map { |s| s["span_type"] }
+        expect(final_types).to include("run_completed"),
+          "expected trace #{result[:trace]["trace_id"]} to have a run_completed span"
+      end
+    end
+
+    it "single-trace payload still returns an array with one element" do
+      payload = otlp_payload(spans: [
+        otlp_span(name: "openclaw.request", span_id: "aaaa0000aaaa0000",
+                  timestamp_ns: 1_000_000_000_000_000_000)
+      ])
+      results = OtlpNormalizer.call(payload)
+      expect(results).to be_an(Array).and have_attributes(length: 1)
     end
   end
 end

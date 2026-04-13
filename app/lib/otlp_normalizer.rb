@@ -57,18 +57,21 @@ class OtlpNormalizer
     resource_spans = Array(@payload["resourceSpans"])
     raise Error, "payload contains no resourceSpans" if resource_spans.empty?
 
-    entries = spans_by_resource(resource_spans)
-    raise Error, "resourceSpans contains no spans" if entries.empty?
+    all_entries = spans_by_resource(resource_spans)
+    raise Error, "resourceSpans contains no spans" if all_entries.empty?
 
-    all_raw_spans = entries.map { |e| e[:span] }
-    trace_id      = normalize_trace_id(all_raw_spans.first["traceId"])
-    final_span    = find_final_span(all_raw_spans)
-    primary_agent = entries.first[:agent_id]
+    grouped = all_entries.group_by { |e| normalize_trace_id(e[:span]["traceId"]) }
 
-    trace_line = build_trace_record(all_raw_spans, trace_id, primary_agent, final_span)
-    span_lines = entries.map { |e| build_span_record(e[:span], trace_id, e[:agent_id], final_span) }
+    grouped.map do |trace_id, entries|
+      raw_spans     = entries.map { |e| e[:span] }
+      final_span    = find_final_span(raw_spans)
+      primary_agent = entries.first[:agent_id]
 
-    { trace: trace_line, spans: span_lines }
+      trace_line = build_trace_record(raw_spans, trace_id, primary_agent, final_span)
+      span_lines = entries.map { |e| build_span_record(e[:span], trace_id, e[:agent_id], final_span) }
+
+      { trace: trace_line, spans: span_lines }
+    end
   end
 
   private

@@ -189,4 +189,62 @@ RSpec.describe "POST /v1/traces", type: :request do
       expect(JSON.parse(response.body)).to have_key("error")
     end
   end
+
+  # ── Multi-trace payload ───────────────────────────────────────────────────────
+
+  describe "multi-trace payload" do
+    MULTI_TRACE_ID_1 = "1111111111111111111111111111111111"
+    MULTI_TRACE_ID_2 = "2222222222222222222222222222222222"
+
+    def multi_trace_payload
+      JSON.generate({
+        "resourceSpans" => [{
+          "resource" => {
+            "attributes" => [
+              { "key" => "openclaw.session.key", "value" => { "stringValue" => "agent-session" } }
+            ]
+          },
+          "scopeSpans" => [{ "spans" => [
+            {
+              "traceId"           => MULTI_TRACE_ID_1,
+              "spanId"            => "span1111a",
+              "name"              => "openclaw.request",
+              "startTimeUnixNano" => "1000000000000000000"
+            },
+            {
+              "traceId"           => MULTI_TRACE_ID_2,
+              "spanId"            => "span2222a",
+              "name"              => "openclaw.request",
+              "startTimeUnixNano" => "2000000000000000000"
+            }
+          ]}]
+        }]
+      })
+    end
+
+    it "returns 200 with {}" do
+      post "/v1/traces", params: multi_trace_payload, headers: headers
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)).to eq({})
+    end
+
+    it "persists one trace per distinct traceId" do
+      expect {
+        post "/v1/traces", params: multi_trace_payload, headers: headers
+      }.to change(Trace, :count).by(2)
+    end
+
+    it "persists the correct trace_ids (first 16 chars of each OTLP traceId)" do
+      post "/v1/traces", params: multi_trace_payload, headers: headers
+      stored_ids = Trace.order(:trace_id).pluck(:trace_id).sort
+      expected   = [MULTI_TRACE_ID_1.first(16), MULTI_TRACE_ID_2.first(16)].sort
+      expect(stored_ids & expected).to eq(expected)
+    end
+
+    it "persists spans for each trace separately" do
+      expect {
+        post "/v1/traces", params: multi_trace_payload, headers: headers
+      }.to change(Span, :count).by(2)
+    end
+  end
 end
