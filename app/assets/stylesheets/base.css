@@ -1,16 +1,12 @@
 body,
 html {
-   margin: 0;
-   font-family: "Roboto", sans-serif;
-   
+  margin: 0;
 }
 
 ul {
-   gap: 1rem;
+  gap: 1rem;
 }
 
 li {
-   list-style-type: none;
-   
+  list-style-type: none;
 }
-

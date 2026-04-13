@@ -14,19 +14,23 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag "application", "base", "layout", "module", "state", "theme", "data-turbo-track": Rails.env.production? ? "reload" : "" %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+    <%# Tailwind loads first; existing custom stylesheets can override during transition %>
+    <%= stylesheet_link_tag "tailwind", "application", "base", "layout", "module", "state", "theme", "data-turbo-track": Rails.env.production? ? "reload" : "" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
+  <body class="bg-[var(--color-bg)] text-[var(--color-fg)] font-sans antialiased">
     <div id="container">
       <div id="header">
         <div id="logo">ClawTrace</div>
       </div>
       <div id="nav">
-        <%= link_to 'Traces',  traces_path,  class: 'nav-link' %>
-        <%= link_to 'Metrics', metrics_path, class: 'nav-link' %>
+        <%= link_to 'Traces',  traces_path,  class: "nav-link #{'nav-link--active' if controller_name == 'traces'}" %>
+        <%= link_to 'Metrics', metrics_path, class: "nav-link #{'nav-link--active' if controller_name == 'metrics'}" %>
       </div>
       <div id="main">
         <%= yield %>

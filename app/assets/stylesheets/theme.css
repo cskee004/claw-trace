@@ -1,6 +1,6 @@
 div#container {
-    background-color: #f5f7fa;  
-    color: #1f2937;
+    background-color: var(--color-bg);
+    color: var(--color-fg);
 }
 
 turbo-frame#frame_panel {
@@ -24,12 +24,11 @@ turbo-frame#frame_panel {
 }
 
 #logo {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: #1f2937;
-    letter-spacing: 1px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--color-fg);
+    letter-spacing: 0.05em;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 .button-bar {
@@ -121,11 +120,13 @@ turbo-frame#frame_panel {
     cursor: not-allowed;
 }
 
-.status-badge--in_progress { background-color: #f3f4f6; color: #6b7280; }
-.status-badge--success     { background-color: #dcfce7; color: #15803d; }
-.status-badge--error       { background-color: #fee2e2; color: #b91c1c; }
+.status-badge--in_progress { background-color: var(--color-warn-bg);    color: var(--color-warn-fg);    }
+.status-badge--success     { background-color: var(--color-success-bg); color: var(--color-success-fg); }
+.status-badge--error       { background-color: var(--color-error-bg);   color: var(--color-error-fg);   }
 
-.nav-link { color: #374151; }
+.nav-link { color: var(--color-fg-subtle); }
+.nav-link:hover { color: var(--color-fg); }
+.nav-link--active { color: var(--color-accent); font-weight: 700; }
 
 .btn-seed {
     background-color: #e2e8f0;
@@ -141,5 +142,18 @@ turbo-frame#frame_panel {
 
 .btn-seed:hover { background-color: #cbd5e0; }
 
-.flash--notice { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-.flash--alert  { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.flash--notice { background-color: var(--color-success-bg); color: var(--color-success-fg); border: 1px solid var(--color-success-fg); }
+.flash--alert  { background-color: var(--color-error-bg);   color: var(--color-error-fg);   border: 1px solid var(--color-error-fg);   }
+
+.btn--danger {
+    background-color: var(--color-danger-bg);
+    color: var(--color-danger-fg);
+    border: 1px solid var(--color-danger-fg);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.3rem 0.75rem;
+    cursor: pointer;
+    opacity: 0.8;
+}
+.btn--danger:hover { opacity: 1; }
