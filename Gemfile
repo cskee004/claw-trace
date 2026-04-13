@@ -45,3 +45,4 @@ group :test do
 end
 
 gem "hotwire-livereload", "~> 2.0", group: :development
+gem "tailwindcss-rails"
