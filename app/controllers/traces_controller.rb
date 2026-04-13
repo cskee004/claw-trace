@@ -14,9 +14,10 @@ class TracesController < ApplicationController
 
   def show
     @trace = Trace.find_by!(trace_id: params[:id])
-    @spans = @trace.spans.order(:timestamp)
-    @span_latencies = compute_latencies_ms(@spans)
+    spans = @trace.spans.order(:timestamp)
+    @span_latencies = compute_latencies_ms(spans)
     @total_duration_ms = TraceDurationCalculator.call(@trace)
+    @spans = TracesHelper.dfs_ordered_spans(spans.to_a)
   end
 
   private

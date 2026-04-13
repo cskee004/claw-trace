@@ -18,4 +18,38 @@ module TracesHelper
       depths[span.span_id] = depth
     end
   end
+
+  # Returns spans in DFS pre-order so each parent immediately precedes its
+  # entire subtree in the list, regardless of timestamp ordering.
+  # Within each parent, children are visited in ascending timestamp order.
+  # Spans whose parent is absent from the set are treated as roots.
+  #
+  # Input:  array of objects responding to #span_id, #parent_span_id, #timestamp
+  # Output: ordered array of the same objects
+  def dfs_ordered_spans(spans)
+    return [] if spans.empty?
+
+    id_set = spans.each_with_object({}) { |s, h| h[s.span_id] = true }
+    children = Hash.new { |h, k| h[k] = [] }
+
+    spans.each do |span|
+      parent = span.parent_span_id
+      key = (parent && id_set.key?(parent)) ? parent : nil
+      children[key] << span
+    end
+
+    result = []
+    stack = children[nil].sort_by(&:timestamp).reverse
+
+    until stack.empty?
+      span = stack.pop
+      result << span
+      kids = children[span.span_id].sort_by(&:timestamp).reverse
+      stack.push(*kids)
+    end
+
+    result
+  end
+
+  module_function :dfs_ordered_spans
 end
