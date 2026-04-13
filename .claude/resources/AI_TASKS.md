@@ -540,6 +540,8 @@ Frontend conventions for this phase: Tailwind CSS for all new styling — utilit
 
 **Prerequisite:** Task 24
 
+**Pre-work done:** `@theme {}` changed to `@theme inline {}` in `app/assets/tailwind/application.css` so that span-type tokens whose values are `var()` references are correctly registered as CSS custom properties at runtime (Tailwind v4 silently drops `var()` values in a plain `@theme` block).
+
 **Changes:**
 - Replace the current flat span list in `app/views/traces/show.html.erb` with a CSS waterfall timeline
 - Each span is a row: label column (left) + proportional bar column (right); bar left offset and width are percentages of total trace duration; all layout is pure CSS (flexbox + percentage widths) — no JS for bar positioning
