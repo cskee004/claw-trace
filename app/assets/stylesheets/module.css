@@ -303,6 +303,7 @@ turbo-frame#frame_panel {
     /* 600px exceeds any realistic metadata drawer height; the CSS max-height
        animation stays snappy because actual content is well below this value */
     max-height: 600px;
+    border-top: 1px solid var(--color-surface-2);
 }
 
 /* Span metadata grid */
