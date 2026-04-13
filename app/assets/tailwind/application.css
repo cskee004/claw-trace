@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  /* Backgrounds */
+  --color-bg:          #1a1b2e;
+  --color-surface:     #16213e;
+  --color-surface-2:   #0f3460;
+
+  /* Foregrounds */
+  --color-fg:          #c0caf5;
+  --color-fg-muted:    #a9b1d6;
+  --color-fg-subtle:   #565f89;
+
+  /* Accent */
+  --color-accent:      #7aa2f7;
+
+  /* Status */
+  --color-success-bg:  #1a2e1a;
+  --color-success-fg:  #9ece6a;
+  --color-error-bg:    #2e1a1a;
+  --color-error-fg:    #f7768e;
+  --color-warn-bg:     #2e2a1a;
+  --color-warn-fg:     #e0af68;
+
+  /* Danger (reset button) */
+  --color-danger-bg:   #2e1a1a;
+  --color-danger-fg:   #f7768e;
+
+  /* Row hover */
+  --color-row-hover:   rgb(122 162 247 / 0.05);
+}
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
