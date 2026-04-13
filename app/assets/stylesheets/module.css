@@ -215,14 +215,6 @@ turbo-frame#frame_panel {
     margin-top: 4px;
 }
 
-.timeline__dot--agent_run_started { background-color: #6366f1; }
-.timeline__dot--model_call        { background-color: #3b82f6; }
-.timeline__dot--model_response    { background-color: #0ea5e9; }
-.timeline__dot--tool_call         { background-color: #f59e0b; }
-.timeline__dot--tool_result       { background-color: #10b981; }
-.timeline__dot--decision          { background-color: #8b5cf6; }
-.timeline__dot--error             { background-color: #ef4444; }
-.timeline__dot--run_completed     { background-color: #22c55e; }
 
 .timeline__card {
     flex: 1;
@@ -264,14 +256,51 @@ turbo-frame#frame_panel {
     letter-spacing: 0.02em;
 }
 
-.span-type-badge--agent_run_started { background-color: #ede9fe; color: #4f46e5; }
-.span-type-badge--model_call        { background-color: #dbeafe; color: #1d4ed8; }
-.span-type-badge--model_response    { background-color: #e0f2fe; color: #0369a1; }
-.span-type-badge--tool_call         { background-color: #fef3c7; color: #b45309; }
-.span-type-badge--tool_result       { background-color: #d1fae5; color: #065f46; }
-.span-type-badge--decision          { background-color: #ede9fe; color: #6d28d9; }
-.span-type-badge--error             { background-color: #fee2e2; color: #b91c1c; }
-.span-type-badge--run_completed     { background-color: #dcfce7; color: #15803d; }
+/* Span type badges — colors from :root tokens, never hardcoded hex */
+.span-type-badge--agent_run_started,
+.span-type-badge--run_completed {
+    background-color: color-mix(in srgb, var(--color-span-lifecycle) 20%, transparent);
+    color: var(--color-span-lifecycle-fg);
+}
+.span-type-badge--model_call,
+.span-type-badge--model_response {
+    background-color: color-mix(in srgb, var(--color-span-model) 15%, transparent);
+    color: var(--color-span-model-fg);
+}
+.span-type-badge--tool_call,
+.span-type-badge--tool_result {
+    background-color: color-mix(in srgb, var(--color-span-tool) 15%, transparent);
+    color: var(--color-span-tool-fg);
+}
+.span-type-badge--decision {
+    background-color: color-mix(in srgb, var(--color-span-decision) 15%, transparent);
+    color: var(--color-span-decision-fg);
+}
+.span-type-badge--error {
+    background-color: color-mix(in srgb, var(--color-span-error) 15%, transparent);
+    color: var(--color-span-error-fg);
+}
+
+/* Waterfall bars — reference :root span-type tokens, never hardcoded hex */
+.waterfall-bar--agent_run_started,
+.waterfall-bar--run_completed  { background-color: var(--color-span-lifecycle); }
+.waterfall-bar--model_call,
+.waterfall-bar--model_response { background-color: var(--color-span-model);     }
+.waterfall-bar--tool_call,
+.waterfall-bar--tool_result    { background-color: var(--color-span-tool);      }
+.waterfall-bar--decision       { background-color: var(--color-span-decision);  }
+.waterfall-bar--error          { background-color: var(--color-span-error);     }
+
+/* Waterfall drawer — max-height animation per CLAUDE.md motion policy (drawer open/close only) */
+.waterfall-drawer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 150ms ease-out;
+}
+
+.waterfall-drawer.open {
+    max-height: 600px;
+}
 
 /* Span metadata grid */
 .timeline__metadata {
