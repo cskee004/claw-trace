@@ -7,7 +7,9 @@ export default class extends Controller {
   static targets = ["drawer", "frame", "chevron"]
   static values  = { previewUrl: String }
 
-  toggle() {
+  toggle(event) {
+    if (event.target.closest("a")) return
+
     const isOpen = !this.drawerTarget.classList.contains("open")
     this.drawerTarget.classList.toggle("open", isOpen)
     this.chevronTarget.setAttribute("aria-expanded", isOpen)

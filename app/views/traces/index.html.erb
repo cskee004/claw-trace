@@ -55,7 +55,8 @@
                  data-trace-row-preview-url-value="<%= preview_trace_path(trace) %>">
 
             <%# ── Data row ── %>
-            <tr class="border-b border-[var(--color-surface-2)]"
+            <tr class="border-b border-[var(--color-surface-2)] cursor-pointer"
+                data-action="click->trace-row#toggle"
                 onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
                 onmouseout="this.style.backgroundColor=''">
               <td class="px-4 py-2.5 align-middle">
@@ -91,7 +92,6 @@
                         class="font-mono text-[10px] text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]
                                focus:outline-none cursor-pointer w-6 text-center"
                         data-trace-row-target="chevron"
-                        data-action="click->trace-row#toggle"
                         aria-expanded="false"
                         aria-controls="drawer_<%= trace.trace_id %>"
                         aria-label="Expand trace preview">▼</button>
