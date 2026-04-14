@@ -6,7 +6,7 @@ export default class extends Controller {
   toggle(event) {
     const isOpen = this.drawerTarget.classList.toggle("open")
     event.currentTarget.setAttribute("aria-expanded", isOpen)
-    if (isOpen && this.hasLogsFrameTarget && !this.logsFrameTarget.src) {
+    if (isOpen && this.hasLogsFrameTarget && !this.logsFrameTarget.getAttribute("src")) {
       this.logsFrameTarget.src = this.logsFrameTarget.dataset.logsUrl
     }
   }
