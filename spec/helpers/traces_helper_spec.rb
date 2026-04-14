@@ -125,4 +125,59 @@ RSpec.describe TracesHelper, type: :helper do
       expect(result).to eq([root, child, grand])
     end
   end
+
+  describe "#span_accent" do
+    AccentStub = Struct.new(:span_name, :metadata)
+
+    it "returns the model name for llm.inference spans" do
+      span = AccentStub.new("llm.inference", { "llm.model" => "claude-sonnet-4-6" })
+      expect(span_accent(span)).to eq("claude-sonnet-4-6")
+    end
+
+    it "returns nil for llm.inference spans with no llm.model" do
+      span = AccentStub.new("llm.inference", {})
+      expect(span_accent(span)).to be_nil
+    end
+
+    it "returns METHOD host for http.client.request spans" do
+      span = AccentStub.new("http.client.request", {
+        "http.method" => "GET",
+        "http.url"    => "https://duckduckgo.com/?q=test"
+      })
+      expect(span_accent(span)).to eq("GET duckduckgo.com")
+    end
+
+    it "returns nil for http.client.request spans with no method" do
+      span = AccentStub.new("http.client.request", { "http.url" => "https://example.com" })
+      expect(span_accent(span)).to be_nil
+    end
+
+    it "returns nil for http.client.request spans with malformed url" do
+      span = AccentStub.new("http.client.request", {
+        "http.method" => "POST",
+        "http.url"    => "not a url"
+      })
+      expect(span_accent(span)).to be_nil
+    end
+
+    it "returns the tool name for tool.exec.* spans" do
+      span = AccentStub.new("tool.exec.web_search", { "tool.name" => "web_search" })
+      expect(span_accent(span)).to eq("web_search")
+    end
+
+    it "returns nil for tool.exec.* spans with no tool.name" do
+      span = AccentStub.new("tool.exec.bash", {})
+      expect(span_accent(span)).to be_nil
+    end
+
+    it "returns nil for unrecognised span names" do
+      span = AccentStub.new("agent.turn.process", { "anything" => "value" })
+      expect(span_accent(span)).to be_nil
+    end
+
+    it "returns nil when metadata is nil" do
+      span = AccentStub.new("llm.inference", nil)
+      expect(span_accent(span)).to be_nil
+    end
+  end
 end

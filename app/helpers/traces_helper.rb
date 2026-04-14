@@ -1,3 +1,5 @@
+require "uri"
+
 module TracesHelper
   # Returns a hash mapping each span_id to its nesting depth (0 = root).
   # Depth is computed by walking the parent_span_id chain until nil or a
@@ -49,6 +51,26 @@ module TracesHelper
     end
 
     result
+  end
+
+  # Returns a short display string for a span based on its name and metadata.
+  # Used to show contextual info (model name, HTTP method+host, tool name) next to each span.
+  # Returns nil when no relevant metadata is available.
+  def span_accent(span)
+    meta = span.metadata || {}
+    name = span.span_name.to_s
+
+    if name == "llm.inference"
+      meta["llm.model"].presence
+    elsif name == "http.client.request"
+      method = meta["http.method"].presence
+      url    = meta["http.url"].presence
+      return nil unless method && url
+      host = URI.parse(url).host rescue nil
+      host ? "#{method} #{host}" : nil
+    elsif name.start_with?("tool.exec.")
+      meta["tool.name"].presence
+    end
   end
 
   # Exposed as module_function so TracesController can call TracesHelper.dfs_ordered_spans
