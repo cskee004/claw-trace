@@ -73,7 +73,10 @@ class TelemetryIngester
   def broadcast_new_spans(trace, spans)
     return if spans.empty?
 
-    total_ms = TraceDurationCalculator.call(trace).to_f
+    total_ms = begin
+      span_times = spans.filter_map(&:end_time) + spans.map(&:timestamp)
+      ((span_times.max - trace.start_time) * 1000.0).clamp(1.0, Float::INFINITY)
+    end
 
     spans.each do |span|
       locals = {
@@ -97,7 +100,7 @@ class TelemetryIngester
       partial: "traces/summary",
       locals: {
         trace: trace,
-        span_count: trace.spans.count,
+        span_count: trace.spans.count, # all spans on the trace, not just this batch
         total_duration_ms: total_ms
       }
     )
@@ -110,7 +113,7 @@ class TelemetryIngester
   def compute_span_depth(span)
     depth = 0
     current_parent_id = span.parent_span_id
-    while current_parent_id.present?
+    while current_parent_id.present? && depth < 20
       parent = Span.find_by(span_id: current_parent_id, trace_id: span.trace_id)
       break unless parent
       depth += 1
