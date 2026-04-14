@@ -33,7 +33,7 @@
           </div>
           <div class="min-h-[320px]"
                data-controller="chart"
-               data-chart-options-value="<%= card[:options].to_json %>">
+               data-chart-options-value="<%= json_escape(card[:options].to_json) %>">
           </div>
         </div>
       <% end %>
