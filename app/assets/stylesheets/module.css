@@ -481,3 +481,24 @@ turbo-frame#frame_panel {
     padding: 1rem;
     margin-top: 1rem;
 }
+
+/* Trace row inline expansion drawer */
+.trace-row-drawer {
+    display: none;
+}
+
+.trace-row-drawer.open {
+    display: table-row;
+}
+
+/* Inner content wrapper — animated via max-height (block element, not table-row) */
+.trace-row-drawer__content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 150ms ease-out;
+}
+
+.trace-row-drawer.open .trace-row-drawer__content {
+    max-height: 600px;
+    border-top: 1px solid var(--color-surface-2);
+}
