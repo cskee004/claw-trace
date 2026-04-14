@@ -8,9 +8,10 @@
   <% else %>
 
     <%# ── Column header row ── %>
-    <div class="flex text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)] mb-1 px-3">
-      <div class="w-[45%]">Span</div>
-      <div class="flex-1">Timeline</div>
+    <div class="grid grid-cols-[45%_1fr_64px] text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)] mb-1 px-3">
+      <div>Span</div>
+      <div>Timeline</div>
+      <div class="text-right pr-2">Duration</div>
     </div>
 
     <% depths   = span_depth_map(spans) %>
