@@ -14,7 +14,7 @@
           %>
           <div class="flex items-start gap-3 font-mono text-[11px]">
             <span class="shrink-0 font-light text-[var(--color-fg-subtle)]">
-              <%= log.timestamp.strftime("%H:%M:%S.%3N") %>
+              <%= log.timestamp&.strftime("%H:%M:%S.%3N") %>
             </span>
             <span class="shrink-0 font-bold <%= severity_class %>">
               [<%= log.severity_text || "?" %>]

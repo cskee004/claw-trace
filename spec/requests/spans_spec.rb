@@ -34,6 +34,12 @@ RSpec.describe "GET /spans/:span_id/logs", type: :request do
       expect(response.body).to include("[INFO]")
       expect(response.body).to include("[ERROR]")
     end
+
+    it "renders FATAL severity label" do
+      create_log(span_id: "abc123", severity_text: "FATAL", body: "process crashed", offset_seconds: 2)
+      get "/spans/abc123/logs"
+      expect(response.body).to include("[FATAL]")
+    end
   end
 
   describe "span with no logs" do
