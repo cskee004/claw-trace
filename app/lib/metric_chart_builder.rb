@@ -1,14 +1,14 @@
 # app/lib/metric_chart_builder.rb
 #
-# Builds ApexCharts options hashes from a collection of Metric records.
+# Builds ApexCharts options and stat-strip data from a collection of Metric records.
 #
 # Usage:
 #   MetricChartBuilder.call(records: records, metric_type: "sum")
 #   MetricChartBuilder.call(records: records, metric_type: "histogram")
 #
-# Returns a plain Ruby hash compatible with ApexCharts JS.
+# Returns { options: <ApexCharts hash>, stats: <stat hash or nil> }
 class MetricChartBuilder
-  FALLBACK = {
+  FALLBACK_OPTIONS = {
     chart:  { type: "line", height: 300 },
     series: [],
     xaxis:  { type: "datetime" }
@@ -24,12 +24,15 @@ class MetricChartBuilder
   end
 
   def call
-    return FALLBACK.dup if @records.empty?
+    return { options: FALLBACK_OPTIONS.dup, stats: nil } if @records.empty?
 
     case @metric_type
-    when "sum"       then sum_chart_options
-    when "histogram" then histogram_chart_options
-    else                  FALLBACK.dup
+    when "sum"
+      { options: sum_chart_options, stats: sum_stats }
+    when "histogram"
+      { options: histogram_chart_options, stats: histogram_stats }
+    else
+      { options: FALLBACK_OPTIONS.dup, stats: nil }
     end
   end
 
@@ -43,6 +46,15 @@ class MetricChartBuilder
       xaxis:  { type: "datetime" },
       stroke: { curve: "smooth" },
       colors: ["#3b82f6"]
+    }
+  end
+
+  def sum_stats
+    latest = @records.last
+    {
+      type:             "sum",
+      latest_value:     latest.data_points["value"],
+      latest_timestamp: latest.timestamp
     }
   end
 
@@ -73,6 +85,21 @@ class MetricChartBuilder
       xaxis:  { type: "datetime" },
       stroke: { curve: "smooth" },
       colors: ["#3b82f6", "#f59e0b", "#ef4444"]
+    }
+  end
+
+  def histogram_stats
+    latest = @records.last
+    dp     = latest.data_points
+    pcts   = HistogramPercentileCalculator.call(
+      bucket_counts:   dp["bucket_counts"]   || [],
+      explicit_bounds: dp["explicit_bounds"] || []
+    )
+    {
+      type: "histogram",
+      p50:  pcts&.dig(:p50),
+      p95:  pcts&.dig(:p95),
+      p99:  pcts&.dig(:p99)
     }
   end
 end
