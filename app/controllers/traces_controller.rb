@@ -20,6 +20,15 @@ class TracesController < ApplicationController
     @spans = TracesHelper.dfs_ordered_spans(spans.to_a)
   end
 
+  def preview
+    @trace = Trace.find_by!(trace_id: params[:id])
+    spans  = @trace.spans.order(:timestamp).limit(8)
+    @span_latencies = compute_latencies_ms(spans)
+    @total_duration_ms = TraceDurationCalculator.call(@trace)
+    @spans = TracesHelper.dfs_ordered_spans(spans.to_a)
+    render partial: "span_preview"
+  end
+
   private
 
   def session_id

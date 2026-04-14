@@ -1,0 +1,44 @@
+<% # Rendered inside turbo-frame#trace_preview_<id>; no layout. %>
+<div class="px-4 py-3 bg-[var(--color-bg)]">
+
+  <% if @spans.empty? %>
+    <p class="text-xs font-light italic text-[var(--color-fg-subtle)]">No spans recorded.</p>
+  <% else %>
+    <% depths = span_depth_map(@spans) %>
+    <ul class="space-y-1 mb-3">
+      <% @spans.each do |span| %>
+        <% depth   = depths[span.span_id] %>
+        <% latency = @span_latencies[span.span_id] %>
+        <li class="flex items-center gap-2 min-h-[1.75rem]"
+            style="padding-left: <%= depth * 12 %>px">
+          <span class="span-type-badge span-type-badge--<%= span.span_type %> shrink-0">
+            <%= span.span_type.tr("_", " ") %>
+          </span>
+          <% if span.span_name.present? %>
+            <span class="font-mono font-light text-xs text-[var(--color-fg-muted)] truncate"
+                  title="<%= span.span_name %>">
+              <%= span.span_name %>
+            </span>
+          <% end %>
+          <% if latency %>
+            <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)] ml-auto shrink-0">
+              <%= format_duration(latency) %>
+            </span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+
+    <% if @trace.spans.count > 8 %>
+      <p class="text-[10px] text-[var(--color-fg-subtle)] mb-2">
+        Showing 8 of <%= @trace.spans.count %> spans.
+      </p>
+    <% end %>
+  <% end %>
+
+  <div class="border-t border-[var(--color-surface-2)] pt-2 mt-1">
+    <%= link_to "View full trace →", trace_path(@trace),
+          class: "text-xs font-bold text-[var(--color-accent)] hover:underline",
+          data: { turbo_frame: "_top" } %>
+  </div>
+</div>
