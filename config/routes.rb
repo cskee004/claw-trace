@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     member do
       get :preview
       get :summary
+      get :waterfall
     end
   end
   post "/reset", to: "traces#reset"

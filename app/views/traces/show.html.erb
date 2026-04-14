@@ -15,38 +15,15 @@
     </div>
   </div>
 
-  <%# ── Meta strip ── %>
   <%= render "summary",
         trace: @trace,
         span_count: @spans.size,
         total_duration_ms: @total_duration_ms %>
 
-  <% if @spans.empty? %>
-    <p class="text-center py-12 text-sm font-light italic text-[var(--color-fg-subtle)]">
-      No spans recorded for this trace.
-    </p>
-  <% else %>
+  <%= render "waterfall",
+        trace: @trace,
+        spans: @spans,
+        span_latencies: @span_latencies,
+        total_duration_ms: @total_duration_ms %>
 
-    <%# ── Column header row ── %>
-    <div class="flex text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)] mb-1 px-3">
-      <div class="w-[45%]">Span</div>
-      <div class="flex-1">Timeline</div>
-    </div>
-
-    <% depths   = span_depth_map(@spans) %>
-    <% total_ms = @total_duration_ms.to_f %>
-
-    <%# ── Waterfall rows ── %>
-    <div class="rounded-lg overflow-hidden border border-[var(--color-surface-2)]">
-      <% @spans.each do |span| %>
-        <%= render "span_row",
-              span: span,
-              depth: depths[span.span_id],
-              latency: @span_latencies[span.span_id],
-              total_ms: total_ms,
-              trace_start_time: @trace.start_time %>
-      <% end %>
-    </div>
-
-  <% end %>
 </div>

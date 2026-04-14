@@ -40,6 +40,20 @@ class TracesController < ApplicationController
     }
   end
 
+  def waterfall
+    @trace = Trace.find_by!(trace_id: params[:id])
+    spans = @trace.spans.order(:timestamp)
+    span_latencies = compute_latencies_ms(spans)
+    total_duration_ms = TraceDurationCalculator.call(@trace)
+    ordered_spans = TracesHelper.dfs_ordered_spans(spans.to_a)
+    render partial: "waterfall", locals: {
+      trace: @trace,
+      spans: ordered_spans,
+      span_latencies: span_latencies,
+      total_duration_ms: total_duration_ms
+    }
+  end
+
   private
 
   def session_id
