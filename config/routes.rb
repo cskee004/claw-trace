@@ -12,6 +12,8 @@ Rails.application.routes.draw do
   resources :metrics, only: [:index, :show], param: :metric_name,
             constraints: { metric_name: /[^\/]+/ }, format: false
 
+  get "/spans/:span_id/logs", to: "spans#logs", as: :span_logs
+
   namespace :api do
     namespace :v1 do
       post "auth/token", to: "auth#token"
