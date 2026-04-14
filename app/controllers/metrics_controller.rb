@@ -1,6 +1,6 @@
 class MetricsController < ApplicationController
   def index
-    @metrics_summary = build_metrics_summary
+    @chart_cards = build_chart_cards
   end
 
   def show
@@ -13,9 +13,20 @@ class MetricsController < ApplicationController
 
   private
 
+  def build_chart_cards
+    build_metrics_summary.map do |m|
+      records = Metric.where(metric_name: m.metric_name).order(:timestamp).to_a
+      {
+        metric_name: m.metric_name,
+        metric_type: m.metric_type,
+        options:     MetricChartBuilder.call(records: records, metric_type: m.metric_type)
+      }
+    end
+  end
+
   def build_metrics_summary
     scope = Metric.all
-    scope = scope.where("metric_name LIKE ?", "%#{params[:q]}%")                          if params[:q].present?
+    scope = scope.where("metric_name LIKE ?", "%#{params[:q]}%")                               if params[:q].present?
     scope = scope.where("json_extract(metric_attributes, '$.model') = ?",    params[:model])    if params[:model].present?
     scope = scope.where("json_extract(metric_attributes, '$.provider') = ?", params[:provider]) if params[:provider].present?
     scope = scope.where("json_extract(metric_attributes, '$.channel') = ?",  params[:channel])  if params[:channel].present?
