@@ -12,6 +12,7 @@ module ApplicationHelper
 
   # Returns a human-readable relative label for +time+ relative to +now+.
   # Examples: "just now", "5 min ago", "2 hr ago", "Yesterday", "Sat 11", "Apr 4", "Nov 3, 2024"
+  # Future timestamps (negative diff) fall through to "just now" — intentional for OTLP clock skew.
   def format_time_relative(time, now: Time.current)
     diff = now - time
 

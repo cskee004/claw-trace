@@ -67,5 +67,9 @@ RSpec.describe ApplicationHelper, type: :helper do
       old = Time.utc(2024, 11, 3, 10, 0, 0)
       expect(format_time_relative(old, now: now)).to eq("Nov 3, 2024")
     end
+
+    it "returns 'just now' for a future timestamp (clock skew tolerance)" do
+      expect(format_time_relative(now + 300, now: now)).to eq("just now")
+    end
   end
 end
