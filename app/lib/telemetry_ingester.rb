@@ -73,10 +73,10 @@ class TelemetryIngester
   def broadcast_new_spans(trace, spans)
     return if spans.empty?
 
-    total_ms = begin
-      span_times = spans.filter_map(&:end_time) + spans.map(&:timestamp)
-      ((span_times.max - trace.start_time) * 1000.0).clamp(1.0, Float::INFINITY)
-    end
+    candidate_times = spans.filter_map(&:end_time) + spans.filter_map(&:timestamp)
+    return if candidate_times.empty?
+
+    total_ms = ((candidate_times.max - trace.start_time) * 1000.0).clamp(1.0, Float::INFINITY)
 
     spans.each do |span|
       locals = {
