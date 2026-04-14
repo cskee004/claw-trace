@@ -1,5 +1,5 @@
-<% # Rendered inside turbo-frame#trace_preview_<id>; no layout. %>
-<div class="px-4 py-3 bg-[var(--color-bg)]">
+<%= turbo_frame_tag "trace_preview_#{@trace.trace_id}" do %>
+  <div class="px-4 py-3 bg-[var(--color-bg)]">
 
   <% if @spans.empty? %>
     <p class="text-xs font-light italic text-[var(--color-fg-subtle)]">No spans recorded.</p>
@@ -41,4 +41,5 @@
           class: "text-xs font-bold text-[var(--color-accent)] hover:underline",
           data: { turbo_frame: "_top" } %>
   </div>
-</div>
+  </div>
+<% end %>
