@@ -6,7 +6,6 @@ export default class extends Controller {
   connect() {
     this.drawerTarget.classList.add("open")
     if (this.hasChevronTarget) this.chevronTarget.textContent = "▾"
-    this.element.querySelector("[aria-expanded]")?.setAttribute("aria-expanded", "true")
   }
 
   toggle(event) {
