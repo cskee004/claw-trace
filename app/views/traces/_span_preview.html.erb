@@ -7,24 +7,31 @@
     <% depths = span_depth_map(@spans) %>
     <ul class="space-y-1 mb-3">
       <% @spans.each do |span| %>
-        <% depth   = depths[span.span_id] %>
-        <% latency = @span_latencies[span.span_id] %>
+        <% depth      = depths[span.span_id] %>
+        <% latency    = @span_latencies[span.span_id] %>
+        <% offset_ms  = ((span.timestamp - @trace.start_time) * 1000).round %>
+        <% accent     = span_accent(span) %>
         <li class="flex items-center gap-2 min-h-[1.75rem]"
             style="padding-left: <%= depth * 12 %>px">
           <span class="span-type-badge span-type-badge--<%= span.span_type %> shrink-0">
             <%= span.span_type.tr("_", " ") %>
           </span>
           <% if span.span_name.present? %>
-            <span class="font-mono font-light text-xs text-[var(--color-fg-muted)] truncate"
+            <span class="font-mono font-light text-xs text-[var(--color-fg-muted)] truncate min-w-0"
                   title="<%= span.span_name %>">
-              <%= span.span_name %>
+              <%= span.span_name %><% if accent %><span class="font-sans font-light text-[var(--color-fg-subtle)]"> · <%= accent %></span><% end %>
             </span>
           <% end %>
-          <% if latency %>
-            <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)] ml-auto shrink-0">
-              <%= format_duration(latency) %>
+          <div class="flex items-center gap-2 ml-auto shrink-0">
+            <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)]">
+              +<%= offset_ms %> ms
             </span>
-          <% end %>
+            <% if latency %>
+              <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)]">
+                <%= format_duration(latency) %>
+              </span>
+            <% end %>
+          </div>
         </li>
       <% end %>
     </ul>
