@@ -13,6 +13,9 @@ Rails.application.routes.draw do
   post "/reset", to: "traces#reset"
   resources :metrics, only: [:index, :show], param: :metric_name,
             constraints: { metric_name: /[^\/]+/ }, format: false do
+    collection do
+      get :tool_calls_chart
+    end
     member do
       get :chart
     end

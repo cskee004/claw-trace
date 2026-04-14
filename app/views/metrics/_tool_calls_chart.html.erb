@@ -1,0 +1,14 @@
+<%# app/views/metrics/_tool_calls_chart.html.erb %>
+<turbo-frame id="tool_calls_chart">
+  <% if @tool_calls_data.any? %>
+    <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4 mb-6">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">
+        Tool Calls — last 24h
+      </h2>
+      <div class="min-h-[300px]"
+           data-controller="apex-chart"
+           data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
+      </div>
+    </div>
+  <% end %>
+</turbo-frame>
