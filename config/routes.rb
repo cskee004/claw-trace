@@ -3,7 +3,11 @@ Rails.application.routes.draw do
 
   get "up" => "rails/health#show", as: :rails_health_check
 
-  resources :traces, only: [:index, :show]
+  resources :traces, only: [:index, :show] do
+    member do
+      get :preview
+    end
+  end
   post "/reset", to: "traces#reset"
   resources :metrics, only: [:index, :show], param: :metric_name,
             constraints: { metric_name: /[^\/]+/ }, format: false
