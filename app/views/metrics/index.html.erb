@@ -17,6 +17,11 @@
     <% end %>
   <% end %>
 
+  <turbo-frame id="tool_calls_chart"
+               src="<%= tool_calls_chart_metrics_path %>"
+               loading="lazy">
+  </turbo-frame>
+
   <% if @metric_names.empty? %>
     <p class="metrics-empty">No metrics recorded yet.</p>
   <% else %>
