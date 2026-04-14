@@ -112,6 +112,7 @@ OpenClaw → POST /v1/logs → LogsNormalizer → Log.insert_all! → logs table
 - Phase 7 (Metrics Ingestion): ✅ Complete — `MetricsNormalizer`, `Metric` model, `POST /v1/metrics`, Metrics UI
 - Phase 8 (UI Polish): 🟡 In progress — Tasks 24, 25, 26, 27 complete (Tailwind, trace list restyle, waterfall timeline, inline row expansion); Task 28 next
 - Tasks 33–54: ✅ Complete — see `AI_TASKS.md` for full task history
+- Task 39: ✅ Complete — Span Log Drawer UI (lazy Turbo Frame logs in waterfall drawer)
 
 **Next up:** Task 28 — Real-Time Trace Ingestion via Turbo Streams
 

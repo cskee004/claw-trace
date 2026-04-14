@@ -572,7 +572,7 @@ scope and implementation after Task 26 is complete.
 
 ---
 
-### Task 39 — Span Log Drawer UI
+### ✅ Task 39 — Span Log Drawer UI
 
 **Prerequisite:** Tasks 35 and 26
 
