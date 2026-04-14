@@ -1,3 +1,4 @@
+<%= turbo_stream_from "trace:#{@trace.trace_id}" %>
 <% content_for(:title) { "#{@trace.task_name} — Trace" } %>
 
 <div class="p-4">
