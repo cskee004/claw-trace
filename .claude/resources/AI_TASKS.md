@@ -553,7 +553,7 @@ Frontend conventions for this phase: Tailwind CSS for all new styling — utilit
 
 ---
 
-### Task 27 — Inline Trace Row Expansion
+### ✅ Task 27 — Inline Trace Row Expansion
 
 **Prerequisite:** Task 25, Task 26
 
@@ -561,6 +561,14 @@ Frontend conventions for this phase: Tailwind CSS for all new styling — utilit
 timeline page. This task adds inline expansion: clicking a row toggles a detail
 drawer beneath it showing the first N spans without leaving the list. Revisit
 scope and implementation after Task 26 is complete.
+
+**Changes:**
+- New `app/javascript/controllers/trace_row_controller.js` — Stimulus controller; lazy-sets `turbo-frame src` on first expand, toggles `.open` class, chevron text, and `aria-expanded`
+- New `app/views/traces/_span_preview.html.erb` — compact span list partial (first 8 spans, DFS-ordered, with latency and "View full trace →" link)
+- Modified `app/controllers/traces_controller.rb` — added `preview` action
+- Modified `config/routes.rb` — added `GET /traces/:id/preview` member route
+- Modified `app/views/traces/index.html.erb` — each trace row is a `<tbody>` with data row and hidden drawer row; chevron expand button; nested `<turbo-frame>` for lazy preview load
+- Modified `app/assets/stylesheets/module.css` — added `.trace-row-drawer` and `.trace-row-drawer__content` CSS
 
 ---
 

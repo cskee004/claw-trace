@@ -110,10 +110,10 @@ OpenClaw → POST /v1/logs → LogsNormalizer → Log.insert_all! → logs table
 - Phase 5 (Analysis Engine): ✅ Complete — `TraceDurationCalculator`, `ToolCallAnalyzer`, `ErrorRateAnalyzer`
 - Phase 6 (OTLP Ingestion): ✅ Complete — `OtlpNormalizer`, `OtlpProtobufDecoder`, `POST /v1/traces` (JSON + protobuf)
 - Phase 7 (Metrics Ingestion): ✅ Complete — `MetricsNormalizer`, `Metric` model, `POST /v1/metrics`, Metrics UI
-- Phase 8 (UI Polish): 🟡 In progress — Tasks 24, 25, 26 complete (Tailwind, trace list restyle, waterfall timeline); Task 27 next
+- Phase 8 (UI Polish): 🟡 In progress — Tasks 24, 25, 26, 27 complete (Tailwind, trace list restyle, waterfall timeline, inline row expansion); Task 28 next
 - Tasks 33–54: ✅ Complete — see `AI_TASKS.md` for full task history
 
-**Next up:** Task 27 — Inline Trace Row Expansion
+**Next up:** Task 28 — Real-Time Trace Ingestion via Turbo Streams
 
 ---
 
