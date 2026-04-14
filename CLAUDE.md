@@ -111,8 +111,8 @@ OpenClaw → POST /v1/logs → LogsNormalizer → Log.insert_all! → logs table
 - Phase 6 (OTLP Ingestion): ✅ Complete — `OtlpNormalizer`, `OtlpProtobufDecoder`, `POST /v1/traces` (JSON + protobuf)
 - Phase 7 (Metrics Ingestion): ✅ Complete — `MetricsNormalizer`, `Metric` model, `POST /v1/metrics`, Metrics UI
 - Phase 8 (UI Polish): 🟡 In progress — Tasks 24, 25, 26, 27 complete (Tailwind, trace list restyle, waterfall timeline, inline row expansion); Task 28 next
-- Tasks 33–55: ✅ Complete — see `AI_TASKS.md` for full task history
-- Task 55: ✅ Complete — Turbo Frame Panel Isolation (_summary + _waterfall partials, waterfall route)
+- Tasks 33–57: ✅ Complete — see `AI_TASKS.md` for full task history
+- Task 57: ✅ Complete — Human-Readable Time Display (format_time_relative, format_time_absolute, two-line stack in trace list + summary strip)
 
 **Next up:** Task 28 — Real-Time Trace Ingestion via Turbo Streams
 

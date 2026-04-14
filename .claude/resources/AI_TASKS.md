@@ -613,6 +613,181 @@ scope and implementation after Task 26 is complete.
 
 ---
 
+### Task 57 — Human-Readable Time Display ✅
+
+**Prerequisite:** Task 24
+
+**Context:** Start times currently render as single-line UTC strings like `2026-04-14 15:23:45 UTC`. Accurate but slow to scan. Replace with a two-line stack: relative label on top, precise clock time below. Applies to both the trace list and the trace detail summary strip.
+
+**Changes:**
+- New helpers in `app/helpers/application_helper.rb`:
+  - `format_time_relative(time, now: Time.current)` — returns `just now`, `N min ago`, `N hr ago`, `Yesterday`, `Mon 14`, `Apr 12`, or full date for older entries
+  - `format_time_absolute(time)` — returns `HH:MM:SS` (UTC)
+- Modified `app/views/traces/index.html.erb` — Start Time cell renders two-line stack: relative label in sans-medium on top, `HH:MM:SS` in JetBrains Mono below
+- Modified `app/views/traces/_summary.html.erb` — Started field uses the same two-line treatment
+- New `spec/helpers/application_helper_spec.rb` covering boundaries (now, <1 min, <1 hr, same day, yesterday, >1 day, >1 year)
+
+**Verification:**
+- Trace list shows glanceable relative time plus precise clock time
+- Summary strip matches the list formatting
+
+---
+
+### Task 58 — Font Consistency Pass on Trace List
+
+**Prerequisite:** Task 24
+
+**Context:** JetBrains Mono and IBM Plex Sans *light* collide in the same row (Agent mono, Task sans-light). Lock in the rule: mono is reserved for data meant to be compared character-by-character (IDs, timestamps, durations); everything else is sans at weight 500.
+
+**Changes:**
+- Modified `app/views/traces/index.html.erb`:
+  - Agent cell: stays `font-mono text-xs text-[var(--color-fg-muted)]`
+  - Task cell: `text-sm font-medium text-[var(--color-fg)]` (was `font-light text-[var(--color-fg-muted)]`)
+- Modified `app/views/traces/_summary.html.erb` — confirm every `<dd>` obeys the rule (IDs, timestamps, durations stay mono; word labels sans-medium)
+
+---
+
+### Task 59 — Waterfall 3-Column Grid Layout
+
+**Prerequisite:** Task 26
+
+**Context:** Current waterfall row uses a flex layout where duration is absolutely positioned inside the bar column. Long bars slide under the duration text and hide it. Break the row into an explicit 3-column grid: span label (45%), timeline bar (fill), duration (64px right-aligned gutter).
+
+**Changes:**
+- Modified `app/views/traces/_span_row.html.erb`:
+  - Top-level container switches to `grid grid-cols-[45%_1fr_64px] items-center`
+  - Duration lifts out of the bar column into its own cell: `font-mono text-xs text-[var(--color-fg-muted)] text-right pr-2`
+- Modified `app/views/traces/_waterfall.html.erb` if any width assumption depends on the old flex layout
+
+---
+
+### Task 60 — Waterfall Drawers Default to Expanded
+
+**Prerequisite:** Task 26
+
+**Context:** Waterfall span rows render closed on page load; users must click each row to reveal its drawer. Flip the default so the page lands already showing the detail.
+
+**Changes:**
+- Modified `app/javascript/controllers/span_detail_controller.js`:
+  - `connect()` adds `open` class to `drawerTarget` and sets chevron text to `▾`
+  - Initial `aria-expanded="true"` on the row
+
+---
+
+### Task 61 — Drawer Depth Indent Alignment
+
+**Prerequisite:** Task 26, Task 60
+
+**Context:** When a waterfall drawer opens, its content renders full-width instead of inheriting the parent row's depth indent, so the drawer visually detaches from its row. Apply the same `padding-left: calc(0.75rem + depth * 16px)` used on the span label column to the drawer's content div.
+
+**Changes:**
+- Modified `app/views/traces/_span_row.html.erb` — drawer content div gets an inline style (or a data attribute consumed by the Stimulus controller) applying depth-based left padding
+
+---
+
+### Task 62 — Waterfall Bar Alignment Precision Fix
+
+**Prerequisite:** Task 26
+
+**Context:** In Scenario 7 (Multi-Turn Session, Turn 2) consecutive sibling bars render with visible gaps even when timestamps abut. Three issues compound: `round(2)` is only 1% precision, `clamp(0.0, 98.0)` artificially caps placement, and `min-width: 4px` makes short bars overshoot.
+
+**Changes:**
+- Modified `app/views/traces/_span_row.html.erb`:
+  - `raw_offset_pct = (offset_ms / total_ms * 100).clamp(0.0, 100.0)`
+  - `offset_pct = raw_offset_pct.round(4)`
+  - `width_pct  = latency ? (latency / total_ms * 100).clamp(0.0, 100.0 - raw_offset_pct).round(4) : 0`
+  - Remove `min-width: 4px` from bar style
+
+**Verification:**
+- Load a Scenario 7 trace: Turn 2 sibling bars (`tool.exec.web_search` → `llm.inference`) abut cleanly with no visible gap
+
+---
+
+### Task 63 — Chevron Affordance on Waterfall Rows
+
+**Prerequisite:** Task 26
+
+**Context:** Waterfall rows are clickable today but offer no visual affordance. Prepend a chevron that flips between `▸` (collapsed) and `▾` (expanded).
+
+**Changes:**
+- Modified `app/views/traces/_span_row.html.erb` — prepend a chevron `<span>` with a Stimulus `chevron` target
+- Modified `app/javascript/controllers/span_detail_controller.js` — toggle chevron text inside `toggle()` and set initial state in `connect()`
+
+---
+
+### Task 64 — Whole-Row Clickable Inline Trace Expansion
+
+**Prerequisite:** Task 27
+
+**Context:** Only the chevron button currently triggers inline expansion. Move the handler to the `<tr>` itself so the full row is the click target. Anchor clicks (the trace ID link) must continue to navigate instead of expanding.
+
+**Changes:**
+- Modified `app/views/traces/index.html.erb`:
+  - Move `data-action="click->trace-row#toggle"` from the chevron button onto the data `<tr>`
+  - Chevron button becomes visual-only (no `data-action`)
+- Modified `app/javascript/controllers/trace_row_controller.js`:
+  - `toggle(event)` checks `event.target.closest("a")` and returns early if an anchor was clicked
+
+---
+
+### Task 65 — Readable Chevron and Duration on Trace List
+
+**Prerequisite:** Task 27
+
+**Context:** Duration uses `--color-fg-subtle` and reads as ghosted/unavailable. Chevron at `text-[10px]` is barely visible. Bump both for legibility.
+
+**Changes:**
+- Modified `app/views/traces/index.html.erb`:
+  - Duration cell: `text-[var(--color-fg-muted)]` (was `fg-subtle`)
+  - Chevron button: `text-sm text-[var(--color-fg-muted)]` (was `text-[10px] text-[var(--color-fg-subtle)]`)
+
+---
+
+### Task 66 — Show All Spans in Inline Preview
+
+**Prerequisite:** Task 27
+
+**Context:** `TracesController#preview` slices to the first 8 spans and the view shows "Showing 8 of X spans". Remove the cap — users expect the full span list.
+
+**Changes:**
+- Modified `app/controllers/traces_controller.rb` — `preview` action drops `.limit(8)`
+- Modified `app/views/traces/_span_preview.html.erb` — remove the "Showing N of X" line
+
+**Verification:**
+- Expand a trace with ~100 spans inline; render completes without perceptible lag
+
+---
+
+### Task 67 — Start Offset and Type-Aware Attribute in Inline Preview
+
+**Prerequisite:** Task 27, Task 66
+
+**Context:** Inline preview rows show only span name and duration. Add two signals per row: start offset from trace start (`+142 ms`) and a type-aware attribute pulled from `metadata` (model name for `llm.inference`, `METHOD host` for `http.client.request`, tool name for `tool.exec.*`). Silently omit when absent.
+
+**Changes:**
+- New helper `span_accent(span)` in `TracesHelper` — returns a short string based on `span_type` and `metadata`, or `nil` when nothing is available
+- Modified `app/views/traces/_span_preview.html.erb`:
+  - After span name, render `· <%= span_accent(span) %>` in sans-light when present
+  - Insert a mono `+offset ms` column between name and duration
+- Offset calculation: `((span.timestamp - trace.start_time) * 1000).round`
+- New example in `spec/helpers/traces_helper_spec.rb` covering each `span_type` branch of `span_accent`
+
+---
+
+### Task 68 — Status Icon on Inline Preview Rows
+
+**Prerequisite:** Task 27
+
+**Context:** Error spans (`span_type == "error"`) are visually indistinguishable from normal spans in the inline preview. Add a leading status column showing a red `✗` for errors; omit for non-error spans.
+
+**Changes:**
+- Modified `app/views/traces/_span_preview.html.erb`:
+  - Prepend a fixed-width icon cell (~16px)
+  - Render `<span class="text-[var(--color-error-fg)]">✗</span>` when `span.span_type == "error"`
+- No new column or model logic — the `span_type` convention already encodes error state
+
+---
+
 # Phase 9 — Dashboard Charts
 
 Add analysis charts to the dashboard using Chartkick (for simple metrics) and ApexCharts.rb (for timeline/range charts). All chart data is served from dedicated controller actions returning JSON — keeping page load fast.
