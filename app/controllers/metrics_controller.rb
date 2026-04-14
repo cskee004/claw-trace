@@ -7,21 +7,18 @@ class MetricsController < ApplicationController
 
   def show
     @metric_name = params[:metric_name]
-    records      = Metric.where(metric_name: @metric_name).order(:timestamp).to_a
-    @metric_type = records.first&.metric_type
-    @has_data    = records.any?
-    if @has_data
-      result         = MetricChartBuilder.call(records: records, metric_type: @metric_type)
-      @chart_options = result[:options]
-      @chart_stats   = result[:stats]
-    else
-      @chart_options = {}
-      @chart_stats   = nil
-    end
+    load_chart_data
   end
 
   def chart
     @metric_name = params[:metric_name]
+    load_chart_data
+    render partial: "chart"
+  end
+
+  private
+
+  def load_chart_data
     records      = Metric.where(metric_name: @metric_name).order(:timestamp).to_a
     @metric_type = records.first&.metric_type
     @has_data    = records.any?
@@ -33,10 +30,7 @@ class MetricsController < ApplicationController
       @chart_options = {}
       @chart_stats   = nil
     end
-    render partial: "chart"
   end
-
-  private
 
   def build_metrics_summary
     scope = Metric.all
