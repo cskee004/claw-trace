@@ -1,7 +1,14 @@
 <%# app/views/metrics/_chart.html.erb %>
 <turbo-frame id="metric_chart_<%= @metric_name.parameterize %>">
-  <div class="min-h-[320px]"
-       data-controller="apex-chart"
-       data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
-  </div>
+  <% if @has_data %>
+    <div class="min-h-[320px]"
+         data-controller="apex-chart"
+         data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
+    </div>
+  <% else %>
+    <div class="min-h-[320px] flex items-center justify-center
+                text-xs italic text-[var(--color-fg-subtle)]">
+      No data recorded for this metric.
+    </div>
+  <% end %>
 </turbo-frame>

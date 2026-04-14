@@ -16,8 +16,9 @@ class MetricsController < ApplicationController
   def chart
     @metric_name   = params[:metric_name]
     records        = Metric.where(metric_name: @metric_name).order(:timestamp).to_a
-    @metric_type   = records.first&.metric_type || "sum"
-    @chart_options = MetricChartBuilder.call(records: records, metric_type: @metric_type)
+    @metric_type   = records.first&.metric_type
+    @has_data      = records.any?
+    @chart_options = @has_data ? MetricChartBuilder.call(records: records, metric_type: @metric_type) : {}
     render partial: "chart"
   end
 
