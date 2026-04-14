@@ -3,9 +3,9 @@
 
 <% if total_ms > 0 %>
   <% offset_ms      = (span.timestamp.to_f - trace_start_time.to_f) * 1000.0 %>
-  <% raw_offset_pct = (offset_ms / total_ms * 100).clamp(0.0, 98.0) %>
-  <% offset_pct     = raw_offset_pct.round(2) %>
-  <% width_pct      = latency ? (latency / total_ms * 100).clamp(0.01, 100.0 - raw_offset_pct).round(2) : 0 %>
+  <% raw_offset_pct = (offset_ms / total_ms * 100).clamp(0.0, 100.0) %>
+  <% offset_pct     = raw_offset_pct.round(4) %>
+  <% width_pct      = latency ? (latency / total_ms * 100).clamp(0.0, 100.0 - raw_offset_pct).round(4) : 0 %>
 <% else %>
   <% offset_pct = 0; width_pct = 0 %>
 <% end %>
@@ -45,8 +45,7 @@
         <div class="absolute inset-0 flex items-center">
           <div class="absolute h-2 rounded-sm waterfall-bar--<%= span.span_type %>"
                style="left: <%= offset_pct %>%;
-                      width: <%= width_pct %>%;
-                      min-width: 4px">
+                      width: <%= width_pct %>%">
           </div>
         </div>
       <% end %>
