@@ -69,8 +69,13 @@
               <td class="px-4 py-2.5 align-middle text-sm font-light text-[var(--color-fg-muted)]">
                 <%= trace.task_name %>
               </td>
-              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-subtle)]">
-                <%= trace.start_time.strftime("%Y-%m-%d %H:%M:%S UTC") %>
+              <td class="px-4 py-2.5 align-middle">
+                <span class="block text-xs font-medium text-[var(--color-fg-muted)]">
+                  <%= format_time_relative(trace.start_time) %>
+                </span>
+                <span class="block font-mono text-[10px] text-[var(--color-fg-subtle)]">
+                  <%= format_time_absolute(trace.start_time) %>
+                </span>
               </td>
               <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
                 <%= format_duration(@durations[trace.trace_id]) %>
