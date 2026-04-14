@@ -12,7 +12,11 @@ Rails.application.routes.draw do
   end
   post "/reset", to: "traces#reset"
   resources :metrics, only: [:index, :show], param: :metric_name,
-            constraints: { metric_name: /[^\/]+/ }, format: false
+            constraints: { metric_name: /[^\/]+/ }, format: false do
+    member do
+      get :chart
+    end
+  end
 
   get "/spans/:span_id/logs", to: "spans#logs", as: :span_logs
 

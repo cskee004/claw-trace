@@ -1,6 +1,8 @@
 class MetricsController < ApplicationController
   def index
-    @chart_cards = build_chart_cards
+    @metric_names = build_metrics_summary.map do |m|
+      { metric_name: m.metric_name, metric_type: m.metric_type }
+    end
   end
 
   def show
@@ -11,18 +13,15 @@ class MetricsController < ApplicationController
     @chart_options = @has_data ? MetricChartBuilder.call(records: records, metric_type: @metric_type) : {}
   end
 
-  private
-
-  def build_chart_cards
-    build_metrics_summary.map do |m|
-      records = Metric.where(metric_name: m.metric_name).order(:timestamp).to_a
-      {
-        metric_name: m.metric_name,
-        metric_type: m.metric_type,
-        options:     MetricChartBuilder.call(records: records, metric_type: m.metric_type)
-      }
-    end
+  def chart
+    @metric_name   = params[:metric_name]
+    records        = Metric.where(metric_name: @metric_name).order(:timestamp).to_a
+    @metric_type   = records.first&.metric_type || "sum"
+    @chart_options = MetricChartBuilder.call(records: records, metric_type: @metric_type)
+    render partial: "chart"
   end
+
+  private
 
   def build_metrics_summary
     scope = Metric.all
