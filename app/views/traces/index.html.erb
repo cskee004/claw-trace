@@ -88,18 +88,19 @@
                         data-trace-row-target="chevron"
                         data-action="click->trace-row#toggle"
                         aria-expanded="false"
+                        aria-controls="drawer_<%= trace.trace_id %>"
                         aria-label="Expand trace preview">▼</button>
               </td>
             </tr>
 
             <%# ── Drawer row (hidden until expanded) ── %>
-            <tr class="trace-row-drawer border-b border-[var(--color-surface-2)] last:border-0"
+            <tr id="drawer_<%= trace.trace_id %>"
+                class="trace-row-drawer border-b border-[var(--color-surface-2)] last:border-0"
                 data-trace-row-target="drawer">
               <td colspan="7" class="p-0">
                 <div class="trace-row-drawer__content">
                   <turbo-frame id="trace_preview_<%= trace.trace_id %>"
-                               data-trace-row-target="frame"
-                               loading="lazy">
+                               data-trace-row-target="frame">
                     <div class="px-4 py-3 text-xs text-[var(--color-fg-subtle)] italic">Loading…</div>
                   </turbo-frame>
                 </div>
