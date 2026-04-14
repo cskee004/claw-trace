@@ -9,6 +9,7 @@ export default class extends Controller {
 
   toggle(event) {
     if (event.target.closest("a")) return
+    event.stopPropagation()
 
     const isOpen = !this.drawerTarget.classList.contains("open")
     this.drawerTarget.classList.toggle("open", isOpen)
