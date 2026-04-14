@@ -5,7 +5,7 @@
 <!-- CLAUDE_STATS_START -->
 #### Claude Code Stats
 
-![sessions: 15](https://img.shields.io/badge/sessions-15-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 1,681](https://img.shields.io/badge/API%20calls-1%2C681-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 125.3M](https://img.shields.io/badge/tokens-125.3M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 56.4m](https://img.shields.io/badge/thinking%20time-56.4m-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 15.9h](https://img.shields.io/badge/wall%20clock-15.9h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $68.00](https://img.shields.io/badge/est.%20cost-%2468.00-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+![sessions: 17](https://img.shields.io/badge/sessions-17-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 1,893](https://img.shields.io/badge/API%20calls-1%2C893-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 145.4M](https://img.shields.io/badge/tokens-145.4M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 58.3m](https://img.shields.io/badge/thinking%20time-58.3m-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 17.5h](https://img.shields.io/badge/wall%20clock-17.5h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $78.44](https://img.shields.io/badge/est.%20cost-%2478.44-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
 <!-- CLAUDE_STATS_END -->
 
 ---
@@ -196,9 +196,4 @@ Test coverage includes service class unit specs (`spec/lib/`), model specs, and 
 - [x] Metrics dashboard
 - [ ] Tailwind CSS + waterfall span timeline
 - [ ] Real-time trace updates via Turbo Streams
-- [ ] Dashboard charts (Chartkick + ApexCharts)
-- [ ] OpenClaw plugin for one-command installation
-
----
-
-[![Ruby Style Guide](https://img.shields.io/badge/code_style-rubocop-brightgreen.svg)](https://github.com/rubocop/rubocop)
+- [ ] Dashboard charts (Chartk

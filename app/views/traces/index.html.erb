@@ -55,7 +55,8 @@
                 onmouseout="this.style.backgroundColor=''">
               <td class="px-4 py-2.5 align-middle">
                 <%= link_to trace.trace_id, trace_path(trace),
-                      class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
+                      class: "font-mono text-xs text-[var(--color-accent)] hover:underline",
+                      data: { turbo_frame: "_top" } %>
               </td>
               <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
                 <%= trace.agent_id %>

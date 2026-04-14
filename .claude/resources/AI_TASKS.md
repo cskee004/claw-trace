@@ -536,7 +536,7 @@ Frontend conventions for this phase: Tailwind CSS for all new styling — utilit
 
 ---
 
-### Task 26 — Waterfall Span Timeline View
+### ✅ Task 26 — Waterfall Span Timeline View
 
 **Prerequisite:** Task 24
 
@@ -582,7 +582,7 @@ scope and implementation after Task 26 is complete.
 
 ---
 
-### Task 27 — Turbo Frame Panel Isolation on Trace Show Page
+### Task 55 — Turbo Frame Panel Isolation on Trace Show Page
 
 **Prerequisite:** Task 26
 
@@ -595,7 +595,7 @@ scope and implementation after Task 26 is complete.
 
 ### Task 28 — Real-Time Trace Ingestion via Turbo Streams
 
-**Prerequisite:** Tasks 26 and 27
+**Prerequisite:** Tasks 26, 27, and 55
 
 **Changes:**
 - Subscribe the trace show page to a `TraceChannel` scoped to the current `trace_id`
@@ -671,51 +671,25 @@ Charting conventions: simple bar/line/pie charts → Chartkick + Chart.js (no ne
 **Changes:**
 - Design and implement a pruning strategy; options to evaluate: scheduled job (Rufus-Scheduler or Active Job + cron) deleting `Log` records older than a configurable retention window (e.g. 30 days); database-level TTL trigger (SQLite: not supported natively; PostgreSQL: consider `pg_partman` or a periodic job); soft cap: delete oldest N rows when count exceeds a threshold
 - Add `rails runner` or rake task as a minimum viable approach — no new background job infrastructure required unless justified
-- Add a configuration constant (not hardcoded) for the retention window
-- Document the chosen strategy in `docs/reference/schema.md` under the `logs` table section
-
-**Verification:**
-- Old log records are deleted when the pruning job/rake task runs
-- Recent log records are retained
-- Rake task or runner command is documented
+- Add a configuration constant (not hardcoded)
 
 ---
 
 # Polish
 
+Non-blocking improvements surfaced during implementation or code review. These tasks are not blockers for any phase; complete when convenient.
+
 ---
 
-### Task 53 — Strengthen Multi-Trace Rollback Assertion in Tests
+### Task 56 — Strengthen Multi-Trace Rollback Assertion
 
-**Context:** A code review flagged that the multi-trace ingestion test asserts `not_to change(Trace, :count)` on rollback but does not make the same assertion for `Span`. Spans are also rolled back by the outer transaction, but the omission means the test only half-documents the guarantee. Non-blocking, but worth making explicit.
+**Context:** The request spec for `POST /v1/traces` with a multi-trace payload uses `expect { ... }.not_to change(Trace, :count)` to verify atomic rollback when one trace in the payload is invalid. The assertion covers the `traces` table but not the `spans` table — a partial write that persisted spans without a parent trace would pass undetected.
 
-**Prereqs:** Task 52
+**Prereqs:** Task 53
 
 **Changes:**
-- Add `not_to change(Span, :count)` alongside the existing `not_to change(Trace, :count)` assertion in the relevant spec
+- Extend the rollback assertion to also assert `not_to change(Span, :count)` in `spec/requests/otlp_spec.rb`
 
 **Verification:**
-- `bundle exec rspec` — full suite green
-
----
-
-# Phase 10 — ClawTrace OpenClaw Plugin
-
-Publish a first-party `clawtrace-openclaw` plugin so users can install ClawTrace observability with a single command:
-
-```bash
-openclaw plugins install clawtrace
-```
-
-The plugin should use OpenClaw's hook-based plugin SDK, send telemetry directly to the ClawTrace Bearer token API, and bundle ClawTrace API key configuration into the OpenClaw config flow. This is the primary distribution and adoption strategy for ClawTrace.
-
----
-
-# Development Workflow
-
-1. Read relevant code before proposing changes
-2. Propose implementation steps and wait for approval
-3. Generate small, focused changes one task at a time
-4. Run the full test suite before declaring a task complete
-
-Tasks should not modify unrelated
+- `bundle exec rspec spec/requests/otlp_spec.rb` — green
+- Both `Trace.count` and `Span.count` are unchanged after a failed multi-trace payload 

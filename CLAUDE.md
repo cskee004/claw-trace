@@ -76,6 +76,7 @@ generic card shadows, emoji icons, rounded-3xl on data rows.
 - `ErrorRateAnalyzer` — detects traces containing error spans and computes error rate
 - `HistogramPercentileCalculator` — estimates P50/P95/P99 from OTLP histogram bucket data
 - `OtlpProtobufDecoder` — pure-Ruby proto3 decoder; `decode_traces` / `decode_metrics` / `decode_logs` return the same structure as OTLP/JSON so normalizers need no changes
+- `TracesHelper` — view helper owning `span_depth_map` (parent-chain depth computation for waterfall indentation)
 
 **Data flows:**
 ```
@@ -96,21 +97,21 @@ OpenClaw → POST /v1/logs → LogsNormalizer → Log.insert_all! → logs table
 
 **Database:** SQLite3 (dev/test), PostgreSQL (prod via `DATABASE_URL`).
 
+**Tables:** `traces`, `spans`, `metrics`, `logs`, `api_keys`.
+
 ---
 
 ## Current Status
 
 - Phase 1 (Simulator): ✅ Complete — removed after serving its purpose; codebase no longer contains simulator
-- Phase 2 (Data Model): ✅ Complete — `traces`, `spans`, and `metrics` tables live
+- Phase 2 (Data Model): ✅ Complete — `traces`, `spans`, `metrics`, `logs` tables live
 - Phase 3 (Ingestion API): ✅ Complete — Bearer token auth, `TelemetryIngester`, `ApiKey` model
 - Phase 4 (Observability UI): ✅ Complete — trace list and timeline views
 - Phase 5 (Analysis Engine): ✅ Complete — `TraceDurationCalculator`, `ToolCallAnalyzer`, `ErrorRateAnalyzer`
-- Phase 6 (OTLP Ingestion): ✅ Complete — `OtlpNormalizer`, `POST /v1/traces`
+- Phase 6 (OTLP Ingestion): ✅ Complete — `OtlpNormalizer`, `OtlpProtobufDecoder`, `POST /v1/traces` (JSON + protobuf)
 - Phase 7 (Metrics Ingestion): ✅ Complete — `MetricsNormalizer`, `Metric` model, `POST /v1/metrics`, Metrics UI
-- Phase 8 (UI Polish): 🟡 In progress — Task 24 (Tailwind + Tokyo Night) + Task 25 (trace list restyle) + Task 26 (waterfall span timeline) complete
-- Task 19 (Protobuf Support): ✅ Complete — `OtlpProtobufDecoder`, `application/x-protobuf` routing in both OTLP controllers
-- Task 26 (Waterfall Span Timeline): ✅ Complete — `show.html.erb` waterfall, `span_detail` Stimulus controller, span-type color tokens
-- Tasks 33–49: ✅ Complete — see `AI_TASKS.md` for full task history
+- Phase 8 (UI Polish): 🟡 In progress — Tasks 24, 25, 26 complete (Tailwind, trace list restyle, waterfall timeline); Task 27 next
+- Tasks 33–54: ✅ Complete — see `AI_TASKS.md` for full task history
 
 **Next up:** Task 27 — Inline Trace Row Expansion
 
@@ -126,12 +127,16 @@ See `AI_ARCHITECTURE.md` for full span mappings, OTLP attribute format, and inge
 ## Gotchas
 
 - OTLP attributes arrive as `[{ key:, value: { stringValue: } }]` — use `attrs_to_hash` pattern to flatten
+- `attrs_to_hash` is intentionally copy-pasted into each normalizer — do not extract to a shared module; normalizers must stay independently deployable
+- All `spans` table columns use the `span_*` prefix: `span_id`, `span_type`, `span_name`, `parent_span_id`. Never add a column named `name`, `type`, or `id` to `spans` — follow the prefix or the column will need renaming later
 - OTLP timestamps are nanosecond strings — convert to ISO8601 before storing
 - `cost_usd`, cache tokens, and context fields from OpenClaw are optional — never fail if absent
 - OTLP endpoints must return `{}` with HTTP 200 on success — required by the OTLP spec
 - `metric_attributes` not `attributes` — ActiveRecord reserves the `attributes` method name
 - Metric names contain dots (e.g. `gen_ai.client.token.usage`) — routes need `format: false` and a `/[^\/]+/` constraint
 - Rescue blocks in OTLP controllers must force-encode `e.message` to UTF-8 before rendering JSON — binary protobuf input can make `e.message` non-UTF-8, causing `JSON::GeneratorError`: `e.message.encode("UTF-8", invalid: :replace, undef: :replace, replace: "?")`
+- A single OTLP payload can contain multiple `resourceSpans` entries (one per service) and multiple distinct `traceId` values — `OtlpNormalizer` handles both; do not assume one payload = one trace
+- SQLite does not support PostgreSQL JSON operators (`->`, `->>`) — avoid raw JSON queries on `metadata` or `log_attributes`; filter in Ruby or use `LIKE` if a SQL query is unavoidable in dev
 
 ---
 
@@ -158,10 +163,10 @@ Services: `OtlpNormalizer` → `TelemetryIngester` (traces); `MetricsNormalizer`
 
 ## Testing
 
-- Service class specs live in `spec/lib/`
-- Controller and request specs live in `spec/requests/`
-- New `app/lib/` classes must have corresponding specs in `spec/lib/`
-- UI controllers (`TracesController`, `MetricsController`) have no request specs — tested via the browser
+- Service class specs live in `spec/lib/` — every `app/lib/` class must have one
+- OTLP and API endpoint specs live in `spec/requests/` — covers `OtlpController`, `MetricsController` (OTLP), `LogsController`, `TelemetryController`, `KeysController`
+- UI controllers (`TracesController`, the metrics UI controller) have no request specs — tested via the browser
+- `spec/requests/api/v1/` covers Bearer token endpoints; `spec/requests/` root covers OTLP endpoints
 
 ---
 
@@ -194,7 +199,7 @@ Only proceed with `git commit` or `git push` if the result is `0 failures`. If t
 
 **After a successful commit, update `AI_TASKS.md`:**
 - Mark the completed task with ✅
-- Update the Current Status block in `CLAUDE.md` if a phase changed
+- Update the Current Status block in `CLAUDE.md`: always update the "Tasks 33–XX" range and the **Next up** line, not just when a full phase changes
 - If new tasks were discovered during implementation, add them before the next phase
 
 ## Validation Loop
@@ -203,8 +208,6 @@ Before considering a task complete, verify:
 
 1. **Architecture fit** — Does new code follow the Trace → Span model? Is logic in `app/lib/` and not in controllers?
 2. **Scope** — Were any unrelated files modified? Were any files renamed or deleted without instruction?
-3. **Database** — If a migration was added, is it reversible? Are indexed fields for `trace_id` and `span_id` included?
-4. **Tests** — Do new `app/lib/` classes have specs in `spec/lib/`?
-5. **OTLP** — If touching the OTLP path, does `OtlpNormalizer` feed into `TelemetryIngester` without bypassing it?
-6. **Run checks** — `bundle exec rspec`, `bundle exec rubocop`, `bundle exec brakeman`
-7. **Docs** — If a REST endpoint was added or changed → update `docs/api/`. If a service class in `app/lib/` was added or changed → update `docs/services/`. If a migration was added → update `docs/reference/schema.md`.
+3. **Database** — If a migration was added, is it reversible? Do new `spans` columns follow the `span_*` prefix convention?
+4. **Tests** — Do new `app/lib/` classes have a corresponding spec in `spec/lib/`? Do modified OTLP controllers have passing request specs?
+5. **Conventions** — Do new `spans` columns use the `span_*` prefix? Did any normalizer change introduce a shared helper that should stay duplicated instead?
