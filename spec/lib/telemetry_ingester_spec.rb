@@ -24,6 +24,13 @@ RSpec.describe TelemetryIngester do
   end
 
   describe ".call" do
+    # Stub broadcasts so rendering partials is never attempted in the test environment.
+    # Individual broadcast tests override these stubs with expectations.
+    before do
+      allow(Turbo::StreamsChannel).to receive(:broadcast_append_to)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+    end
+
     it "persists the trace and returns trace_id and spans_ingested" do
       result = described_class.call(trace: trace_data, spans: [span_data])
       expect(result[:trace_id]).to eq("a1b2c3d4e5f6a7b8")
@@ -93,6 +100,63 @@ RSpec.describe TelemetryIngester do
     it "persists span_name as nil when absent from span data" do
       described_class.call(trace: trace_data, spans: [span_data])
       expect(Span.find_by(span_id: "s1").span_name).to be_nil
+    end
+
+    # ── Broadcast tests ──────────────────────────────────────────────────────────
+
+    it "broadcasts a span append for each persisted span" do
+      expect(Turbo::StreamsChannel).to receive(:broadcast_append_to)
+        .with("trace:a1b2c3d4e5f6a7b8",
+              hash_including(target: "waterfall-rows-a1b2c3d4e5f6a7b8",
+                             partial: "traces/span_row"))
+      described_class.call(trace: trace_data, spans: [span_data])
+    end
+
+    it "broadcasts one append per span when multiple spans are ingested" do
+      spans = [
+        span_data(span_id: "s1", span_type: "agent_run_started"),
+        span_data(span_id: "s2", span_type: "model_call", parent_span_id: "s1")
+      ]
+      expect(Turbo::StreamsChannel).to receive(:broadcast_append_to)
+        .with("trace:a1b2c3d4e5f6a7b8", hash_including(target: "waterfall-rows-a1b2c3d4e5f6a7b8"))
+        .twice
+      described_class.call(trace: trace_data, spans: spans)
+    end
+
+    it "broadcasts a summary replace after spans are appended" do
+      expect(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
+        .with("trace:a1b2c3d4e5f6a7b8",
+              hash_including(target: "trace-summary-a1b2c3d4e5f6a7b8",
+                             partial: "traces/summary"))
+      described_class.call(trace: trace_data, spans: [span_data])
+    end
+
+    it "does not broadcast when the transaction fails" do
+      expect(Turbo::StreamsChannel).not_to receive(:broadcast_append_to)
+      expect(Turbo::StreamsChannel).not_to receive(:broadcast_replace_to)
+      described_class.call(
+        trace: trace_data,
+        spans: [span_data(span_type: "invalid_type")]
+      ) rescue nil
+    end
+
+    it "does not broadcast when spans array is empty" do
+      expect(Turbo::StreamsChannel).not_to receive(:broadcast_append_to)
+      described_class.call(trace: trace_data, spans: [])
+    end
+
+    it "broadcasts span appends with correct locals keys" do
+      expect(Turbo::StreamsChannel).to receive(:broadcast_append_to)
+        .with(anything,
+              hash_including(
+                locals: hash_including(
+                  span: an_instance_of(Span),
+                  depth: 0,
+                  total_ms: be_a(Float),
+                  trace_start_time: be_a(Time)
+                )
+              ))
+      described_class.call(trace: trace_data, spans: [span_data])
     end
   end
 end

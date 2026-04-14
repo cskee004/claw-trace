@@ -10,6 +10,8 @@
 #
 # Raises TelemetryIngester::Error on invalid input or validation failure.
 # All DB writes are wrapped in a single transaction — all succeed or all roll back.
+# After the transaction commits, new span rows and an updated summary panel are
+# broadcast to the trace's Turbo Streams channel.
 class TelemetryIngester
   Error = Class.new(StandardError)
 
@@ -26,11 +28,14 @@ class TelemetryIngester
     raise Error, "trace is missing or invalid" unless @trace.is_a?(Hash)
     raise Error, "spans must be an array" unless @spans.is_a?(Array)
 
-    ActiveRecord::Base.transaction do
+    persisted = ActiveRecord::Base.transaction do
       trace = persist_trace(@trace)
       spans = @spans.map { |span| persist_span(span, trace.trace_id) }
-      { trace_id: trace.trace_id, spans_ingested: spans.length }
+      { trace: trace, spans: spans }
     end
+
+    broadcast_new_spans(persisted[:trace], persisted[:spans])
+    { trace_id: persisted[:trace].trace_id, spans_ingested: persisted[:spans].length }
   rescue ActiveRecord::RecordInvalid => e
     raise Error, e.message
   end
@@ -59,5 +64,58 @@ class TelemetryIngester
       agent_id:       data["agent_id"],
       metadata:       data["metadata"] || {}
     )
+  end
+
+  # Broadcasts each span as an append to the waterfall rows container, then
+  # broadcasts a replace of the summary Turbo Frame with updated span count
+  # and duration. No-ops if the spans array is empty.
+  # Called after the transaction commits — never inside the transaction block.
+  def broadcast_new_spans(trace, spans)
+    return if spans.empty?
+
+    total_ms = TraceDurationCalculator.call(trace).to_f
+
+    spans.each do |span|
+      locals = {
+        span: span,
+        depth: compute_span_depth(span),
+        latency: span.end_time ? (span.end_time - span.timestamp) * 1000.0 : nil,
+        total_ms: total_ms,
+        trace_start_time: trace.start_time
+      }
+      Turbo::StreamsChannel.broadcast_append_to(
+        "trace:#{trace.trace_id}",
+        target: "waterfall-rows-#{trace.trace_id}",
+        partial: "traces/span_row",
+        locals: locals
+      )
+    end
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "trace:#{trace.trace_id}",
+      target: "trace-summary-#{trace.trace_id}",
+      partial: "traces/summary",
+      locals: {
+        trace: trace,
+        span_count: trace.spans.count,
+        total_duration_ms: total_ms
+      }
+    )
+  end
+
+  # Computes the nesting depth of a span by walking its parent_span_id chain
+  # up to the root. Returns 0 for root spans (no parent or parent not in DB).
+  # Issues one DB query per level of nesting — acceptable for typical agent
+  # traces (2–3 levels deep).
+  def compute_span_depth(span)
+    depth = 0
+    current_parent_id = span.parent_span_id
+    while current_parent_id.present?
+      parent = Span.find_by(span_id: current_parent_id, trace_id: span.trace_id)
+      break unless parent
+      depth += 1
+      current_parent_id = parent.parent_span_id
+    end
+    depth
   end
 end
