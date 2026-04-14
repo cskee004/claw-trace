@@ -46,11 +46,16 @@
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Start Time</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Duration</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Status</th>
+            <th class="w-8 bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]"></th>
           </tr>
         </thead>
-        <tbody>
-          <% @traces.each do |trace| %>
-            <tr class="border-b border-[var(--color-surface-2)] last:border-0"
+
+        <% @traces.each do |trace| %>
+          <tbody data-controller="trace-row"
+                 data-trace-row-preview-url-value="<%= preview_trace_path(trace) %>">
+
+            <%# ── Data row ── %>
+            <tr class="border-b border-[var(--color-surface-2)]"
                 onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
                 onmouseout="this.style.backgroundColor=''">
               <td class="px-4 py-2.5 align-middle">
@@ -76,9 +81,33 @@
                   <%= trace.status.tr("_", " ") %>
                 </span>
               </td>
+              <td class="px-2 py-2.5 align-middle text-right">
+                <button type="button"
+                        class="font-mono text-[10px] text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]
+                               focus:outline-none cursor-pointer w-6 text-center"
+                        data-trace-row-target="chevron"
+                        data-action="click->trace-row#toggle"
+                        aria-expanded="false"
+                        aria-label="Expand trace preview">▼</button>
+              </td>
             </tr>
-          <% end %>
-        </tbody>
+
+            <%# ── Drawer row (hidden until expanded) ── %>
+            <tr class="trace-row-drawer border-b border-[var(--color-surface-2)] last:border-0"
+                data-trace-row-target="drawer">
+              <td colspan="7" class="p-0">
+                <div class="trace-row-drawer__content">
+                  <turbo-frame id="trace_preview_<%= trace.trace_id %>"
+                               data-trace-row-target="frame"
+                               loading="lazy">
+                    <div class="px-4 py-3 text-xs text-[var(--color-fg-subtle)] italic">Loading…</div>
+                  </turbo-frame>
+                </div>
+              </td>
+            </tr>
+
+          </tbody>
+        <% end %>
       </table>
     </div>
   <% end %>
