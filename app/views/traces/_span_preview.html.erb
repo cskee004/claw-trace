@@ -29,11 +29,6 @@
       <% end %>
     </ul>
 
-    <% if @trace.spans.count > 8 %>
-      <p class="text-[10px] text-[var(--color-fg-subtle)] mb-2">
-        Showing 8 of <%= @trace.spans.count %> spans.
-      </p>
-    <% end %>
   <% end %>
 
   <div class="border-t border-[var(--color-surface-2)] pt-2 mt-1">
