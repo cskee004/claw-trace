@@ -141,6 +141,11 @@
               <% else %>
                 <p class="text-xs font-light italic text-[var(--color-fg-subtle)]">No metadata.</p>
               <% end %>
+
+              <turbo-frame id="logs-<%= span.span_id %>"
+                           data-span-detail-target="logsFrame"
+                           data-logs-url="<%= span_logs_path(span.span_id) %>">
+              </turbo-frame>
             </div>
           </div>
 
