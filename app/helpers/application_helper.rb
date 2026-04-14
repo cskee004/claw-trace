@@ -9,4 +9,31 @@ module ApplicationHelper
 
     ms >= 1000 ? "#{(ms / 1000.0).round(1)}s" : "#{ms.round(1)}ms"
   end
+
+  # Returns a human-readable relative label for +time+ relative to +now+.
+  # Examples: "just now", "5 min ago", "2 hr ago", "Yesterday", "Sat 11", "Apr 4", "Nov 3, 2024"
+  def format_time_relative(time, now: Time.current)
+    diff = now - time
+
+    return "just now"                      if diff < 60
+    return "#{(diff / 60).to_i} min ago"   if diff < 3600 && time.to_date == now.to_date
+    return "#{(diff / 3600).to_i} hr ago"  if diff < 86_400 && time.to_date == now.to_date
+
+    return "Yesterday" if time.to_date == now.to_date - 1
+
+    if diff < 7 * 86_400
+      return "#{time.strftime('%a')} #{time.day}"
+    end
+
+    if time.year == now.year
+      return "#{time.strftime('%b')} #{time.day}"
+    end
+
+    "#{time.strftime('%b')} #{time.day}, #{time.year}"
+  end
+
+  # Returns the UTC wall-clock time as "HH:MM:SS".
+  def format_time_absolute(time)
+    time.utc.strftime("%H:%M:%S")
+  end
 end
