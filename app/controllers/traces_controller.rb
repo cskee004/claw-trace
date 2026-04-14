@@ -29,6 +29,17 @@ class TracesController < ApplicationController
     render partial: "span_preview"
   end
 
+  def summary
+    @trace = Trace.find_by!(trace_id: params[:id])
+    span_count = @trace.spans.count
+    total_duration_ms = TraceDurationCalculator.call(@trace)
+    render partial: "summary", locals: {
+      trace: @trace,
+      span_count: span_count,
+      total_duration_ms: total_duration_ms
+    }
+  end
+
   private
 
   def session_id

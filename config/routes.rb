@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   resources :traces, only: [:index, :show] do
     member do
       get :preview
+      get :summary
     end
   end
   post "/reset", to: "traces#reset"

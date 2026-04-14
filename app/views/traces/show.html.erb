@@ -16,33 +16,10 @@
   </div>
 
   <%# ── Meta strip ── %>
-  <dl class="flex flex-wrap gap-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)]
-             rounded px-4 py-3 mb-5">
-    <div class="flex flex-col gap-0.5">
-      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Trace ID</dt>
-      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0"><%= @trace.trace_id %></dd>
-    </div>
-    <div class="flex flex-col gap-0.5">
-      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Agent</dt>
-      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0"><%= @trace.agent_id %></dd>
-    </div>
-    <div class="flex flex-col gap-0.5">
-      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Started</dt>
-      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0">
-        <%= @trace.start_time.strftime("%Y-%m-%d %H:%M:%S UTC") %>
-      </dd>
-    </div>
-    <div class="flex flex-col gap-0.5">
-      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Duration</dt>
-      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0">
-        <%= format_duration(@total_duration_ms) %>
-      </dd>
-    </div>
-    <div class="flex flex-col gap-0.5">
-      <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Spans</dt>
-      <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0"><%= @spans.size %></dd>
-    </div>
-  </dl>
+  <%= render "summary",
+        trace: @trace,
+        span_count: @spans.size,
+        total_duration_ms: @total_duration_ms %>
 
   <% if @spans.empty? %>
     <p class="text-center py-12 text-sm font-light italic text-[var(--color-fg-subtle)]">
