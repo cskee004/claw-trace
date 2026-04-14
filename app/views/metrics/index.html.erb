@@ -17,34 +17,26 @@
     <% end %>
   <% end %>
 
-  <% if @metrics_summary.empty? %>
+  <% if @chart_cards.empty? %>
     <p class="metrics-empty">No metrics recorded yet.</p>
   <% else %>
-    <table class="metrics-table">
-      <thead>
-        <tr>
-          <th>Metric Name</th>
-          <th>Type</th>
-          <th>Data Points</th>
-          <th>Latest</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% @metrics_summary.each do |m| %>
-          <tr>
-            <td class="metrics-table__name">
-              <%= link_to m.metric_name, metric_path(m.metric_name), class: "metrics-table__link" %>
-            </td>
-            <td>
-              <span class="metric-type-badge metric-type-badge--<%= m.metric_type %>">
-                <%= m.metric_type %>
-              </span>
-            </td>
-            <td><%= m.data_point_count %></td>
-            <td><%= m.latest_timestamp.to_s.first(19) %> UTC</td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      <% @chart_cards.each do |card| %>
+        <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="font-mono text-sm font-bold text-[var(--color-fg)]">
+              <%= card[:metric_name] %>
+            </span>
+            <span class="metric-type-badge metric-type-badge--<%= card[:metric_type] %>">
+              <%= card[:metric_type] %>
+            </span>
+          </div>
+          <div class="min-h-[320px]"
+               data-controller="chart"
+               data-chart-options-value="<%= card[:options].to_json %>">
+          </div>
+        </div>
+      <% end %>
+    </div>
   <% end %>
 </div>
