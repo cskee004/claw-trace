@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_11_174920) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_15_164758) do
   create_table "api_keys", force: :cascade do |t|
     t.string "token", null: false
     t.string "agent_type"
@@ -47,6 +47,12 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_11_174920) do
     t.index ["metric_name"], name: "index_metrics_on_metric_name"
     t.index ["timestamp"], name: "index_metrics_on_timestamp"
     t.index ["trace_id"], name: "index_metrics_on_trace_id"
+  end
+
+  create_table "settings", force: :cascade do |t|
+    t.string "key", null: false
+    t.text "value"
+    t.index ["key"], name: "index_settings_on_key", unique: true
   end
 
   create_table "spans", force: :cascade do |t|
