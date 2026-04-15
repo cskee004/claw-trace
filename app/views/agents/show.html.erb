@@ -43,9 +43,8 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <%# ── Top Tools ── %>
-    <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4">
+  <%# ── Top Tools ── %>
+  <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4 mb-6">
       <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">Top Tools</h2>
       <% if @aggregate.top_tools.empty? %>
         <p class="text-xs italic text-[var(--color-fg-subtle)]">No tool calls recorded.</p>
@@ -72,7 +71,6 @@
           </tbody>
         </table>
       <% end %>
-    </div>
   </div>
 
   <%# ── Recent Traces ── %>
