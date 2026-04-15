@@ -21,7 +21,7 @@
       <%# ── Logs ── %>
       <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Logs</p>
 
-      <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do |f| %>
+      <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do %>
         <input type="hidden" name="setting_key" value="log_retention_days">
         <label class="text-sm text-[var(--color-fg)]" for="log_retention_days">
           Delete log records older than
@@ -62,7 +62,7 @@
       <div class="border-t border-[var(--color-surface-2)] mt-4 pt-4">
         <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Traces</p>
 
-        <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do |f| %>
+        <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do %>
           <input type="hidden" name="setting_key" value="trace_retention_days">
           <label class="text-sm text-[var(--color-fg)]" for="trace_retention_days">
             Delete trace records older than
@@ -105,7 +105,7 @@
       <div class="border-t border-[var(--color-surface-2)] mt-4 pt-4">
         <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Metrics</p>
 
-        <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do |f| %>
+        <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do %>
           <input type="hidden" name="setting_key" value="metric_retention_days">
           <label class="text-sm text-[var(--color-fg)]" for="metric_retention_days">
             Delete metric records older than
