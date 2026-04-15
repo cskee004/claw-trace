@@ -1,0 +1,59 @@
+<% content_for(:title) { "Agent Inventory" } %>
+
+<div class="p-4">
+  <h1 class="text-xl font-bold text-[var(--color-fg)] mb-5">Agent Inventory</h1>
+
+  <% if @agents.empty? %>
+    <p class="text-center py-12 text-sm italic text-[var(--color-fg-subtle)]">
+      No agents recorded yet.
+    </p>
+  <% else %>
+    <div class="rounded-lg overflow-hidden border border-[var(--color-surface-2)]">
+      <table class="w-full border-collapse bg-[var(--color-surface)]">
+        <thead>
+          <tr>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Agent ID</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Runs</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Successes</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Errors</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Error Rate</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Avg Duration</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Last Seen</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @agents.each do |agent| %>
+            <tr class="border-b border-[var(--color-surface-2)] last:border-0"
+                onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
+                onmouseout="this.style.backgroundColor=''">
+              <td class="px-4 py-2.5 align-middle">
+                <%= link_to agent.agent_id, agent_path(agent.agent_id),
+                      class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
+              </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)] text-right">
+                <%= agent.total_runs %>
+              </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-success-fg)] text-right">
+                <%= agent.success_count %>
+              </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-right
+                         <%= agent.error_count > 0 ? 'text-[var(--color-span-error)]' : 'text-[var(--color-fg-muted)]' %>">
+                <%= agent.error_count %>
+              </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-right
+                         <%= agent.error_rate > 0 ? 'text-[var(--color-span-error)]' : 'text-[var(--color-fg-muted)]' %>">
+                <%= agent.error_rate %>%
+              </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)] text-right">
+                <%= format_duration(agent.avg_duration_ms) %>
+              </td>
+              <td class="px-4 py-2.5 align-middle text-xs text-[var(--color-fg-muted)]">
+                <%= agent.last_seen ? format_time_relative(agent.last_seen) : "—" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

@@ -7,6 +7,9 @@ Rails.application.routes.draw do
   get "/dashboard/error_rate_chart",    to: "dashboard#error_rate_chart",    as: :error_rate_chart_dashboard_index
   get "/dashboard/traces_volume_chart", to: "dashboard#traces_volume_chart", as: :traces_volume_chart_dashboard_index
 
+  resources :agents, only: [:index, :show], param: :agent_id,
+            constraints: { agent_id: /[^\/]+/ }, format: false
+
   resources :traces, only: [:index, :show] do
     member do
       get :preview
