@@ -5,7 +5,9 @@ export default class extends Controller {
   static values = { options: Object }
 
   connect() {
-    this.chart = new ApexCharts(this.element, this.resolveColors(this.optionsValue))
+    const style = getComputedStyle(document.documentElement)
+    const opts  = this.withTheme(this.resolveColors(this.optionsValue, style), style)
+    this.chart  = new ApexCharts(this.element, opts)
     this.chart.render()
   }
 
@@ -16,9 +18,19 @@ export default class extends Controller {
     }
   }
 
-  resolveColors(opts) {
+  // Merges dark-theme defaults so all charts are readable against the dark background.
+  // Defaults come first — explicit keys in opts take precedence via spread.
+  withTheme(opts, style) {
+    return {
+      ...opts,
+      chart:   { foreColor: this.resolveVar("var(--color-fg-muted)", style),   ...opts.chart },
+      grid:    { borderColor: this.resolveVar("var(--color-surface-2)", style), ...opts.grid },
+      tooltip: { theme: "dark", ...opts.tooltip }
+    }
+  }
+
+  resolveColors(opts, style) {
     if (!opts.colors || !opts.colors.length) return opts
-    const style = getComputedStyle(document.documentElement)
     return {
       ...opts,
       // Only processes top-level colors array; nested ApexCharts color keys (fill, markers, etc.)
