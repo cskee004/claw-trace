@@ -562,3 +562,35 @@ turbo-frame#frame_panel {
     outline: none;
     border-color: var(--color-accent);
 }
+
+/* Severity badges for log records */
+.severity-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.severity-badge--error {
+    background-color: color-mix(in srgb, var(--color-span-error) 15%, transparent);
+    color: var(--color-span-error);
+}
+
+.severity-badge--warn {
+    background-color: color-mix(in srgb, var(--color-warn-fg) 15%, transparent);
+    color: var(--color-warn-fg);
+}
+
+.severity-badge--info {
+    background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
+    color: var(--color-accent);
+}
+
+.severity-badge--debug {
+    background-color: color-mix(in srgb, var(--color-fg-subtle) 15%, transparent);
+    color: var(--color-fg-subtle);
+}

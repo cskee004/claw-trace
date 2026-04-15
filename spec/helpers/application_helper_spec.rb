@@ -72,4 +72,38 @@ RSpec.describe ApplicationHelper, type: :helper do
       expect(format_time_relative(now + 300, now: now)).to eq("just now")
     end
   end
+
+  describe "#severity_badge_class" do
+    it "returns error class for ERROR" do
+      expect(severity_badge_class("ERROR")).to eq("severity-badge--error")
+    end
+
+    it "returns error class for FATAL" do
+      expect(severity_badge_class("FATAL")).to eq("severity-badge--error")
+    end
+
+    it "is case-insensitive — lowercase error maps to error class" do
+      expect(severity_badge_class("error")).to eq("severity-badge--error")
+    end
+
+    it "returns warn class for WARN" do
+      expect(severity_badge_class("WARN")).to eq("severity-badge--warn")
+    end
+
+    it "returns info class for INFO" do
+      expect(severity_badge_class("INFO")).to eq("severity-badge--info")
+    end
+
+    it "returns debug class for DEBUG" do
+      expect(severity_badge_class("DEBUG")).to eq("severity-badge--debug")
+    end
+
+    it "returns info class for unknown severity text" do
+      expect(severity_badge_class("TRACE")).to eq("severity-badge--info")
+    end
+
+    it "returns info class for nil" do
+      expect(severity_badge_class(nil)).to eq("severity-badge--info")
+    end
+  end
 end

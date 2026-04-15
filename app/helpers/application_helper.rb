@@ -38,4 +38,16 @@ module ApplicationHelper
   def format_time_absolute(time)
     time.utc.strftime("%H:%M:%S")
   end
+
+  # Returns the CSS modifier class for a severity badge element.
+  # Shared by the logs index table and the span drawer partial.
+  def severity_badge_class(severity_text)
+    case severity_text&.upcase
+    when "ERROR", "FATAL" then "severity-badge--error"
+    when "WARN"           then "severity-badge--warn"
+    when "INFO"           then "severity-badge--info"
+    when "DEBUG"          then "severity-badge--debug"
+    else                       "severity-badge--info"
+    end
+  end
 end

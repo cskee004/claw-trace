@@ -2,22 +2,16 @@
   <% if logs.any? %>
     <div class="mt-3 pt-3 border-t border-[var(--color-surface-2)]">
       <p class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)] mb-2">Logs</p>
-      <div class="space-y-1">
+      <div class="space-y-1.5">
         <% logs.each do |log| %>
-          <%
-            severity_class = case log.severity_text&.upcase
-                             when "ERROR", "FATAL" then "text-[var(--color-span-error)]"
-                             when "WARN"           then "text-[var(--color-warn-fg)]"
-                             when "DEBUG"          then "text-[var(--color-fg-subtle)]"
-                             else                       "text-[var(--color-fg-muted)]"
-                             end
-          %>
           <div class="flex items-start gap-3 font-mono text-[11px]">
             <span class="shrink-0 font-light text-[var(--color-fg-subtle)]">
               <%= log.timestamp&.strftime("%H:%M:%S.%3N") %>
             </span>
-            <span class="shrink-0 font-bold <%= severity_class %>">
-              [<%= log.severity_text || "?" %>]
+            <span class="shrink-0">
+              <span class="severity-badge <%= severity_badge_class(log.severity_text) %>">
+                <%= log.severity_text || "?" %>
+              </span>
             </span>
             <span class="font-light text-[var(--color-fg-muted)] break-all">
               <%= log.body %>

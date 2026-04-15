@@ -31,14 +31,14 @@ RSpec.describe "GET /spans/:span_id/logs", type: :request do
 
     it "renders severity labels" do
       get "/spans/abc123/logs"
-      expect(response.body).to include("[INFO]")
-      expect(response.body).to include("[ERROR]")
+      expect(response.body).to include("severity-badge--info")
+      expect(response.body).to include("severity-badge--error")
     end
 
     it "renders FATAL severity label" do
       create_log(span_id: "abc123", severity_text: "FATAL", body: "process crashed", offset_seconds: 2)
       get "/spans/abc123/logs"
-      expect(response.body).to include("[FATAL]")
+      expect(response.body).to include("severity-badge--error")
     end
   end
 
