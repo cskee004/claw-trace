@@ -445,6 +445,10 @@ turbo-frame#frame_panel {
     background-color: color-mix(in srgb, var(--color-warn-fg) 15%, transparent);
     color: var(--color-warn-fg);
 }
+.metric-type-badge--gauge {
+    background-color: color-mix(in srgb, var(--color-success-fg) 15%, transparent);
+    color: var(--color-success-fg);
+}
 
 /* Metrics show page */
 .metrics-show {

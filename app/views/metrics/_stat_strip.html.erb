@@ -5,7 +5,7 @@
 %>
 <% if chart_stats %>
   <div class="flex gap-6 <%= mb %>">
-    <% if chart_stats[:type] == "sum" %>
+    <% if chart_stats[:type] == "sum" || chart_stats[:type] == "gauge" %>
       <div class="flex items-baseline gap-1.5">
         <span class="text-xs text-[var(--color-fg-muted)]">Latest</span>
         <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= chart_stats[:latest_value]&.round(4) %></span>

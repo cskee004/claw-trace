@@ -133,10 +133,56 @@ RSpec.describe MetricChartBuilder do
     end
   end
 
+  describe ".call with metric_type: 'gauge'" do
+    let(:records) do
+      [
+        fake_metric(timestamp: ts1, data_points: { "value" => 0.73 }, metric_type: "gauge"),
+        fake_metric(timestamp: ts2, data_points: { "value" => 0.81 }, metric_type: "gauge")
+      ]
+    end
+
+    subject(:result) { described_class.call(records: records, metric_type: "gauge") }
+
+    # options
+    it "returns a chart type of 'line'" do
+      expect(result[:options].dig(:chart, :type)).to eq("line")
+    end
+
+    it "returns a single series named 'Value'" do
+      expect(result[:options][:series].length).to eq(1)
+      expect(result[:options][:series].first[:name]).to eq("Value")
+    end
+
+    it "maps records to { x: epoch_ms, y: value } data points" do
+      data = result[:options][:series].first[:data]
+      expect(data).to eq([
+        { x: ts1 * 1000, y: 0.73 },
+        { x: ts2 * 1000, y: 0.81 }
+      ])
+    end
+
+    it "uses the success CSS variable for color" do
+      expect(result[:options][:colors]).to eq(["var(--color-success-fg)"])
+    end
+
+    # stats — derived from the last record
+    it "returns stats with type 'gauge'" do
+      expect(result[:stats][:type]).to eq("gauge")
+    end
+
+    it "returns the latest value from the last record" do
+      expect(result[:stats][:latest_value]).to eq(0.81)
+    end
+
+    it "returns the latest timestamp from the last record" do
+      expect(result[:stats][:latest_timestamp]).to eq(Time.at(ts2))
+    end
+  end
+
   describe ".call with unknown metric_type" do
     let(:records) { [fake_metric(timestamp: ts1, data_points: { "value" => 1 })] }
 
-    subject(:result) { described_class.call(records: records, metric_type: "gauge") }
+    subject(:result) { described_class.call(records: records, metric_type: "bogus") }
 
     it "returns a fallback line chart hash in options" do
       expect(result[:options].dig(:chart, :type)).to eq("line")

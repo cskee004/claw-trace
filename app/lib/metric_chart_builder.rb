@@ -29,6 +29,8 @@ class MetricChartBuilder
     case @metric_type
     when "sum"
       { options: sum_chart_options, stats: sum_stats }
+    when "gauge"
+      { options: gauge_chart_options, stats: gauge_stats }
     when "histogram"
       { options: histogram_chart_options, stats: histogram_stats }
     else
@@ -46,6 +48,26 @@ class MetricChartBuilder
       xaxis:  { type: "datetime" },
       stroke: { curve: "smooth" },
       colors: ["var(--color-accent)"]
+    }
+  end
+
+  def gauge_chart_options
+    series_data = @records.map { |r| { x: r.timestamp.to_i * 1000, y: r.data_points["value"] } }
+    {
+      chart:  { type: "line", height: 300, zoom: { enabled: false } },
+      series: [{ name: "Value", data: series_data }],
+      xaxis:  { type: "datetime" },
+      stroke: { curve: "smooth" },
+      colors: ["var(--color-success-fg)"]
+    }
+  end
+
+  def gauge_stats
+    latest = @records.last
+    {
+      type:             "gauge",
+      latest_value:     latest.data_points["value"],
+      latest_timestamp: latest.timestamp
     }
   end
 
