@@ -9,16 +9,16 @@ turbo-frame#frame_panel {
 }
 
 .upload-modal {
-    background-color: #f9fafb;
-    border: 1px solid #d1d5db;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-surface-2);
     border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     padding: 1.5rem;
-    color: #111827;
+    color: var(--color-fg);
   }
 
 .reset-link {
-    color: #e11d48;
+    color: var(--color-error-fg);
     font-weight: bold;
     text-decoration: none;
 }
@@ -42,25 +42,25 @@ turbo-frame#frame_panel {
 }
   
 .button-bar input[type="submit"] {
-    background-color: #e2e8f0;
-    color: #1f2937;
-    border: 1px solid #cbd5e0;
+    background-color: var(--color-surface-2);
+    color: var(--color-fg);
+    border: 1px solid var(--color-surface-2);
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 700;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
-  
+
 .button-bar input[type="submit"]:hover:not(:disabled) {
-    background-color: #cbd5e0;
+    background-color: color-mix(in srgb, var(--color-surface-2) 70%, var(--color-fg));
 }
-  
+
 .button-bar input[type="submit"]:disabled {
-    background-color: #f1f5f9;
-    color: #9ca3af;
-    border-color: #e5e7eb;
+    background-color: var(--color-surface);
+    color: var(--color-fg-subtle);
+    border-color: var(--color-surface-2);
     cursor: not-allowed;
 }
   
@@ -69,54 +69,54 @@ turbo-frame#frame_panel {
     gap: 1rem;
     margin-bottom: 1rem;
 }
-  
+
 .button-bar form {
     display: inline;
 }
-  
+
 .button-bar form input[type="submit"] {
-    background-color: #e2e8f0;
-    color: #1f2937;
-    border: 1px solid #cbd5e0;
+    background-color: var(--color-surface-2);
+    color: var(--color-fg);
+    border: 1px solid var(--color-surface-2);
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 700;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
-  
+
 .button-bar form input[type="submit"]:hover:not(:disabled) {
-    background-color: #cbd5e0;
+    background-color: color-mix(in srgb, var(--color-surface-2) 70%, var(--color-fg));
 }
-  
+
 .button-bar form input[type="submit"]:disabled {
-    background-color: #f1f5f9;
-    color: #9ca3af;
-    border-color: #e5e7eb;
+    background-color: var(--color-surface);
+    color: var(--color-fg-subtle);
+    border-color: var(--color-surface-2);
     cursor: not-allowed;
 }
   
 #summary-button, #graph-button {
-    background-color: #e2e8f0;
-    color: #1f2937;
-    border: 1px solid #cbd5e0;
+    background-color: var(--color-surface-2);
+    color: var(--color-fg);
+    border: 1px solid var(--color-surface-2);
     padding: 0.5rem 1rem;
     border-radius: 6px;
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 700;
     cursor: pointer;
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #summary-button:hover, #graph-button:hover {
-    background-color: #cbd5e0;
+    background-color: color-mix(in srgb, var(--color-surface-2) 70%, var(--color-fg));
 }
 
 #summary-button:disabled, #graph-button:disabled {
-    background-color: #f1f5f9;
-    color: #9ca3af;
-    border-color: #e5e7eb;
+    background-color: var(--color-surface);
+    color: var(--color-fg-subtle);
+    border-color: var(--color-surface-2);
     cursor: not-allowed;
 }
 
@@ -130,18 +130,18 @@ turbo-frame#frame_panel {
 .nav-link--active:hover { color: var(--color-accent); font-weight: 700; }
 
 .btn-seed {
-    background-color: #e2e8f0;
-    color: #1f2937;
-    border: 1px solid #cbd5e0;
+    background-color: var(--color-surface-2);
+    color: var(--color-fg);
+    border: 1px solid var(--color-surface-2);
     padding: 0.45rem 0.9rem;
     border-radius: 6px;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 700;
     cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-.btn-seed:hover { background-color: #cbd5e0; }
+.btn-seed:hover { background-color: color-mix(in srgb, var(--color-surface-2) 70%, var(--color-fg)); }
 
 .flash--notice { background-color: var(--color-success-bg); color: var(--color-success-fg); border: 1px solid var(--color-success-fg); }
 .flash--alert  { background-color: var(--color-error-bg);   color: var(--color-error-fg);   border: 1px solid var(--color-error-fg);   }
