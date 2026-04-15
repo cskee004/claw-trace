@@ -30,6 +30,11 @@ RSpec.describe Setting, type: :model do
       Setting.create!(key: "log_retention_days", value: "90")
       expect(Setting.get("log_retention_days", default: "30")).to eq("90")
     end
+
+    it "returns an empty string value rather than the default" do
+      Setting.create!(key: "empty_val", value: "")
+      expect(Setting.get("empty_val", default: "fallback")).to eq("")
+    end
   end
 
   describe ".set" do
