@@ -17,7 +17,12 @@ Rails.application.routes.draw do
   resources :logs, only: [:index]
 
   resource :settings, only: [:show, :update] do
-    post :prune_logs, on: :member
+    post :prune_logs,         on: :member
+    post :prune_traces,       on: :member
+    post :delete_all_traces,  on: :member
+    post :prune_metrics,      on: :member
+    post :delete_all_metrics, on: :member
+    post :delete_all_logs,    on: :member
   end
 
   resources :traces, only: [:index, :show] do
