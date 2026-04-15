@@ -17,6 +17,7 @@ module ApplicationHelper
     diff = now - time
 
     return "just now"                      if diff < 60
+    # date guard prevents "5 min ago" for a span from 23:58 yesterday when now is 00:03 today
     return "#{(diff / 60).to_i} min ago"   if diff < 3600 && time.to_date == now.to_date
     return "#{(diff / 3600).to_i} hr ago"  if diff < 86_400 && time.to_date == now.to_date
 
