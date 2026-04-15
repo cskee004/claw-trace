@@ -48,14 +48,6 @@ Rails.application.routes.draw do
 
   get "/spans/:span_id/logs", to: "spans#logs", as: :span_logs
 
-  namespace :api do
-    namespace :v1 do
-      post "auth/token", to: "auth#token"
-      post "telemetry",  to: "telemetry#create"
-      post "keys",       to: "keys#create"
-    end
-  end
-
   scope "/v1" do
     post "/traces",  to: "api/v1/otlp#create"
     post "/metrics", to: "api/v1/metrics#create"
