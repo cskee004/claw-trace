@@ -565,9 +565,10 @@ turbo-frame#frame_panel {
     font-family: "JetBrains Mono", ui-monospace, monospace;
 }
 
-.date-input:focus {
+.date-input:focus-visible {
     outline: none;
     border-color: var(--color-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 /* Severity badges for log records */
