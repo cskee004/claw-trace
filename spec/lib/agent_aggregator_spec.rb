@@ -44,6 +44,10 @@ RSpec.describe AgentAggregator do
         expect(result.avg_duration_ms).to be_nil
         expect(result.last_seen).to be_nil
       end
+
+      it "returns the correct agent_id" do
+        expect(result.agent_id).to eq(agent_id)
+      end
     end
 
     context "with mixed traces" do
@@ -94,8 +98,16 @@ RSpec.describe AgentAggregator do
         expect(result.top_tools["search"][:calls]).to eq(2)
       end
 
-      it "limits top_tools to at most 5 entries" do
-        expect(result.top_tools.size).to be <= 5
+      it "limits top_tools to at most 5 entries even when more than 5 tools exist" do
+        # Create spans for 6 distinct tools to exercise the .first(5) slice
+        %w[tool_a tool_b tool_c tool_d tool_e tool_f].each do |name|
+          create_span(t1, span_type: "tool_result",
+                      timestamp: 2.days.ago + 1.second,
+                      metadata: { "tool_name" => name, "success" => true })
+        end
+        fresh = Trace.includes(:spans).where(agent_id: agent_id)
+        r = AgentAggregator.call(agent_id: agent_id, traces: fresh)
+        expect(r.top_tools.size).to eq(5)
       end
 
       it "computes a non-nil avg_duration_ms when spans exist" do

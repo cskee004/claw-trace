@@ -27,6 +27,7 @@ class AgentAggregator
                      .first(5)
                      .to_h
 
+    # Denominator is traces-with-spans only; spanless traces are excluded from the average.
     avg_ms = durations.empty? ? nil : durations.values.sum / durations.values.size.to_f
 
     Result.new(
