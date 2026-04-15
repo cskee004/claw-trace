@@ -247,7 +247,7 @@ RSpec.describe "POST /v1/traces", type: :request do
       }.to change(Span, :count).by(2)
     end
 
-    it "persists zero traces when the second TelemetryIngester call raises" do
+    it "persists zero traces and zero spans when the second TelemetryIngester call raises" do
       call_count = 0
       allow(TelemetryIngester).to receive(:call).and_wrap_original do |original, **kwargs|
         call_count += 1
@@ -255,10 +255,13 @@ RSpec.describe "POST /v1/traces", type: :request do
         original.call(**kwargs)
       end
 
-      expect {
-        post "/v1/traces", params: multi_trace_payload, headers: headers
-      }.not_to change(Trace, :count)
+      trace_count = Trace.count
+      span_count  = Span.count
 
+      post "/v1/traces", params: multi_trace_payload, headers: headers
+
+      expect(Trace.count).to eq(trace_count)
+      expect(Span.count).to eq(span_count)
       expect(response).to have_http_status(:bad_request)
     end
   end
