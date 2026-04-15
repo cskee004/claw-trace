@@ -1,7 +1,7 @@
 .dashboard {
     display: grid;
     grid-template-rows: auto 1fr;
-    min-height: 500px; 
+    min-height: 500px;
 }
 
 div.button-bar {
@@ -85,7 +85,7 @@ turbo-frame#frame_panel {
 .traces-table td {
     padding: 0.6rem 0.9rem;
     text-align: left;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-surface-2);
 }
 
 .traces-table thead th {
@@ -93,7 +93,7 @@ turbo-frame#frame_panel {
 }
 
 .traces-table__trace-id {
-    font-family: monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.85rem;
 }
 
@@ -115,7 +115,7 @@ turbo-frame#frame_panel {
 .traces-show__back {
     display: inline-block;
     font-size: 0.8rem;
-    color: #374151;
+    color: var(--color-fg-muted);
     text-decoration: none;
     margin-bottom: 0.75rem;
 }
@@ -140,8 +140,8 @@ turbo-frame#frame_panel {
     flex-wrap: wrap;
     gap: 1.5rem;
     padding: 0.75rem 1rem;
-    background-color: #fff;
-    border: 1px solid #e5e7eb;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-surface-2);
     border-radius: 6px;
     margin-bottom: 1.5rem;
     font-size: 0.8rem;
@@ -155,7 +155,7 @@ turbo-frame#frame_panel {
 
 .traces-show__meta-item dt {
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-fg-subtle);
     text-transform: uppercase;
     font-size: 0.7rem;
     letter-spacing: 0.04em;
@@ -163,11 +163,11 @@ turbo-frame#frame_panel {
 
 .traces-show__meta-item dd {
     margin: 0;
-    color: #1f2937;
+    color: var(--color-fg);
 }
 
 .mono {
-    font-family: monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.8rem;
 }
 
@@ -192,7 +192,7 @@ turbo-frame#frame_panel {
     top: 16px;
     bottom: -0.75rem;
     width: 2px;
-    background-color: #e5e7eb;
+    background-color: var(--color-surface-2);
 }
 
 .timeline__connector {
@@ -209,8 +209,8 @@ turbo-frame#frame_panel {
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px #e5e7eb;
+    border: 2px solid var(--color-surface);
+    box-shadow: 0 0 0 2px var(--color-surface-2);
     flex-shrink: 0;
     margin-top: 4px;
 }
@@ -218,8 +218,8 @@ turbo-frame#frame_panel {
 
 .timeline__card {
     flex: 1;
-    background-color: #fff;
-    border: 1px solid #e5e7eb;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-surface-2);
     border-radius: 6px;
     padding: 0.6rem 0.85rem;
     margin-bottom: 0.75rem;
@@ -234,14 +234,14 @@ turbo-frame#frame_panel {
 }
 
 .timeline__timestamp {
-    font-family: monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--color-fg-subtle);
 }
 
 .timeline__latency {
     font-size: 0.72rem;
-    color: #9ca3af;
+    color: var(--color-fg-subtle);
     margin-left: auto;
 }
 
@@ -310,7 +310,7 @@ turbo-frame#frame_panel {
 .timeline__metadata {
     margin-top: 0.5rem;
     padding-top: 0.5rem;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid var(--color-surface-2);
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 0.15rem 0.75rem;
@@ -322,7 +322,7 @@ turbo-frame#frame_panel {
 }
 
 .timeline__metadata-key {
-    color: #6b7280;
+    color: var(--color-fg-subtle);
     font-weight: 500;
     white-space: nowrap;
     text-transform: capitalize;
@@ -330,15 +330,15 @@ turbo-frame#frame_panel {
 
 .timeline__metadata-value {
     margin: 0;
-    color: #1f2937;
+    color: var(--color-fg);
     word-break: break-word;
 }
 
 /* Trace ID link in index table */
 .traces-table__trace-link {
-    color: #1d4ed8;
+    color: var(--color-accent);
     text-decoration: none;
-    font-family: monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.85rem;
 }
 
@@ -372,15 +372,15 @@ turbo-frame#frame_panel {
 
 .metrics-filter__input {
     padding: 0.3rem 0.6rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid var(--color-surface-2);
     border-radius: 4px;
     font-size: 0.875rem;
 }
 
 .metrics-filter__submit {
     padding: 0.3rem 0.75rem;
-    background-color: #3b82f6;
-    color: #fff;
+    background-color: var(--color-accent);
+    color: var(--color-bg);
     border: none;
     border-radius: 4px;
     font-size: 0.875rem;
@@ -388,7 +388,7 @@ turbo-frame#frame_panel {
 }
 
 .metrics-filter__submit:hover {
-    background-color: #2563eb;
+    background-color: color-mix(in srgb, var(--color-accent) 85%, var(--color-fg));
 }
 
 .metrics-empty {
@@ -405,7 +405,7 @@ turbo-frame#frame_panel {
 .metrics-table td {
     padding: 0.6rem 0.9rem;
     text-align: left;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-surface-2);
 }
 
 .metrics-table thead th {
@@ -413,14 +413,14 @@ turbo-frame#frame_panel {
 }
 
 .metrics-table__name {
-    font-family: monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.85rem;
 }
 
 .metrics-table__link {
-    color: #1d4ed8;
+    color: var(--color-accent);
     text-decoration: none;
-    font-family: monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 0.85rem;
 }
 
