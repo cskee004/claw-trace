@@ -37,8 +37,8 @@
       </div>
     <% end %>
     <div class="metrics-show__chart-wrapper"
-         data-controller="chart"
-         data-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
+         data-controller="apex-chart"
+         data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
     </div>
   <% else %>
     <p class="metrics-empty">No data recorded for this metric.</p>
