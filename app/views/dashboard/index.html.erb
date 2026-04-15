@@ -5,7 +5,7 @@
   <h1 class="text-xl font-bold text-[var(--color-fg)] mb-5">Dashboard</h1>
 
   <%# ── Stat strip ── %>
-  <div class="flex flex-wrap gap-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg px-5 py-4 mb-6">
+  <div class="flex flex-wrap gap-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4 mb-6">
     <div class="flex flex-col gap-0.5">
       <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Total Traces</span>
       <span class="font-mono text-2xl font-bold text-[var(--color-fg)]"><%= @total_traces %></span>
@@ -15,28 +15,59 @@
       <span class="font-mono text-2xl font-bold text-[var(--color-fg)]"><%= @active_agents %></span>
     </div>
     <div class="flex flex-col gap-0.5">
-      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Error Rate (30d)</span>
+      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Error Rate (<%= @period_label %>)</span>
       <span class="font-mono text-2xl font-bold <%= @error_rate_30d > 0 ? 'text-[var(--color-span-error)]' : 'text-[var(--color-success-fg)]' %>">
         <%= @error_rate_30d %>%
       </span>
     </div>
   </div>
 
+  <%# ── Period filter ── %>
+  <div class="flex items-center gap-2 flex-wrap mb-6"
+       data-controller="dashboard-filter">
+    <% [["12h", "12h"], ["24h", "24h"], ["7d", "7d"], ["30d", "30d"]].each do |period, label| %>
+      <%= link_to label, dashboard_path(period: period),
+            class: "filter-btn #{'filter-btn--active' if @current_period == period}" %>
+    <% end %>
+    <button type="button"
+            class="filter-btn <%= 'filter-btn--active' if @current_period == 'custom' %>"
+            data-action="click->dashboard-filter#showCustom">
+      Custom
+    </button>
+
+    <form data-dashboard-filter-target="customForm"
+          <%= @current_period == "custom" ? "" : "hidden" %>
+          action="<%= dashboard_path %>" method="get"
+          class="flex items-center gap-2">
+      <input type="hidden" name="period" value="custom">
+      <input type="date" name="from" value="<%= params[:from] %>"
+             class="date-input" required>
+      <span class="text-xs text-[var(--color-fg-subtle)]">to</span>
+      <input type="date" name="to" value="<%= params[:to] %>"
+             class="date-input" required>
+      <button type="submit" class="filter-btn">Apply</button>
+    </form>
+  </div>
+
   <%# ── Chart grid ── %>
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4">
-      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">Error Rate — last 30 days</h2>
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">
+        Error Rate — <%= @period_label %>
+      </h2>
       <turbo-frame id="dashboard_error_rate_chart"
-                   src="<%= error_rate_chart_dashboard_index_path %>"
+                   src="<%= error_rate_chart_dashboard_index_path(period: @current_period, from: params[:from], to: params[:to]) %>"
                    loading="lazy">
         <div class="min-h-[240px] flex items-center justify-center
                     text-xs italic text-[var(--color-fg-subtle)]">Loading…</div>
       </turbo-frame>
     </div>
     <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4">
-      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">Traces — last 30 days</h2>
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">
+        Traces — <%= @period_label %>
+      </h2>
       <turbo-frame id="dashboard_traces_volume_chart"
-                   src="<%= traces_volume_chart_dashboard_index_path %>"
+                   src="<%= traces_volume_chart_dashboard_index_path(period: @current_period, from: params[:from], to: params[:to]) %>"
                    loading="lazy">
         <div class="min-h-[240px] flex items-center justify-center
                     text-xs italic text-[var(--color-fg-subtle)]">Loading…</div>
