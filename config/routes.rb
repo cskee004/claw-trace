@@ -16,6 +16,10 @@ Rails.application.routes.draw do
 
   resources :logs, only: [:index]
 
+  resource :settings, only: [:show, :update] do
+    post :prune_logs, on: :member
+  end
+
   resources :traces, only: [:index, :show] do
     member do
       get :preview

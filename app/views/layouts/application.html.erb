@@ -34,6 +34,7 @@
         <%= link_to 'Traces',    traces_path,     class: "nav-link #{'nav-link--active' if controller_name == 'traces'}" %>
         <%= link_to 'Logs',      logs_path,       class: "nav-link #{'nav-link--active' if controller_name == 'logs'}" %>
         <%= link_to 'Metrics',   metrics_path,    class: "nav-link #{'nav-link--active' if controller_name == 'metrics'}" %>
+        <%= link_to 'Settings',  settings_path,   class: "nav-link #{'nav-link--active' if controller_name == 'settings'}" %>
       </div>
       <div id="main">
         <%= yield %>
