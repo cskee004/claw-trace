@@ -1,0 +1,95 @@
+<% content_for(:title) { "Logs" } %>
+
+<div class="p-4">
+  <h1 class="text-xl font-bold text-[var(--color-fg)] mb-5">Logs</h1>
+
+  <turbo-frame id="log_list">
+    <form class="flex items-center gap-2 flex-wrap mb-5"
+          action="<%= logs_path %>" method="get">
+
+      <label class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]"
+             for="severity">Severity</label>
+      <select name="severity" id="severity"
+              class="text-sm bg-[var(--color-surface)] border border-[var(--color-surface-2)]
+                     text-[var(--color-fg)] rounded px-2.5 py-1.5
+                     focus:outline-none focus:border-[var(--color-accent)]">
+        <option value="">All</option>
+        <% %w[DEBUG INFO WARN ERROR FATAL].each do |level| %>
+          <option value="<%= level %>" <%= "selected" if @severity == level %>><%= level %></option>
+        <% end %>
+      </select>
+
+      <label class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]"
+             for="trace_id">Trace ID</label>
+      <input class="font-mono text-sm bg-[var(--color-surface)] border border-[var(--color-surface-2)]
+                    text-[var(--color-fg)] rounded px-2.5 py-1.5 w-44
+                    focus:outline-none focus:border-[var(--color-accent)]
+                    placeholder:text-[var(--color-fg-subtle)]"
+             type="text" id="trace_id" name="trace_id"
+             value="<%= params[:trace_id] %>"
+             placeholder="Filter by trace ID…">
+
+      <button class="text-xs font-bold px-3 py-1.5 bg-[var(--color-surface-2)]
+                     text-[var(--color-fg)] rounded cursor-pointer hover:opacity-80"
+              type="submit">Filter</button>
+
+      <% if @severity.present? || @trace_id.present? %>
+        <%= link_to "Clear", logs_path,
+              class: "text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]" %>
+      <% end %>
+    </form>
+
+    <% if @logs.empty? %>
+      <p class="text-center py-12 text-sm italic text-[var(--color-fg-subtle)]">
+        No logs recorded yet.
+      </p>
+    <% else %>
+      <div class="rounded-lg overflow-hidden border border-[var(--color-surface-2)]">
+        <table class="w-full border-collapse bg-[var(--color-surface)]">
+          <thead>
+            <tr>
+              <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)] whitespace-nowrap">Timestamp</th>
+              <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Severity</th>
+              <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Message</th>
+              <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Trace</th>
+              <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Span</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @logs.each do |log| %>
+              <tr class="border-b border-[var(--color-surface-2)] last:border-0"
+                  onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
+                  onmouseout="this.style.backgroundColor=''">
+                <td class="px-4 py-2.5 align-middle font-mono text-[11px] text-[var(--color-fg-subtle)] whitespace-nowrap">
+                  <%= log.timestamp&.strftime("%b %-d %H:%M:%S.%3N") %>
+                </td>
+                <td class="px-4 py-2.5 align-middle">
+                  <span class="severity-badge <%= severity_badge_class(log.severity_text) %>">
+                    <%= log.severity_text || "?" %>
+                  </span>
+                </td>
+                <td class="px-4 py-2.5 align-middle text-xs text-[var(--color-fg)]">
+                  <%= truncate(log.body, length: 120) %>
+                </td>
+                <td class="px-4 py-2.5 align-middle">
+                  <% if log.trace_id.present? %>
+                    <%= link_to log.trace_id, trace_path(log.trace_id),
+                          class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
+                  <% else %>
+                    <span class="font-mono text-xs text-[var(--color-fg-subtle)]">—</span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
+                  <%= log.span_id || "—" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-3 text-xs text-[var(--color-fg-subtle)] text-right">
+        Showing last <%= @logs.size %> records
+      </p>
+    <% end %>
+  </turbo-frame>
+</div>

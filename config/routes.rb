@@ -10,6 +10,8 @@ Rails.application.routes.draw do
   resources :agents, only: [:index, :show], param: :agent_id,
             constraints: { agent_id: /[^\/]+/ }, format: false
 
+  resources :logs, only: [:index]
+
   resources :traces, only: [:index, :show] do
     member do
       get :preview
