@@ -577,7 +577,7 @@ turbo-frame#frame_panel {
 
 .severity-badge--error {
     background-color: color-mix(in srgb, var(--color-span-error) 15%, transparent);
-    color: var(--color-span-error);
+    color: var(--color-span-error-fg);
 }
 
 .severity-badge--warn {
