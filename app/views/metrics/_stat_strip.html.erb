@@ -15,8 +15,12 @@
         <span class="font-mono text-xs text-[var(--color-fg-muted)]"><%= chart_stats[:latest_timestamp]&.strftime("%H:%M %Z") %></span>
       </div>
     <% elsif chart_stats[:type] == "histogram" %>
-      <% [[:p50, "P50"], [:p95, "P95"], [:p99, "P99"]].each do |key, label| %>
-        <div class="flex items-baseline gap-1.5">
+      <% [
+           [:p50, "P50", "50th percentile — half of measurements were faster than this"],
+           [:p95, "P95", "95th percentile — 95% of measurements were faster than this"],
+           [:p99, "P99", "99th percentile — 99% of measurements were faster than this"]
+         ].each do |key, label, tip| %>
+        <div class="flex items-baseline gap-1.5" title="<%= tip %>">
           <span class="text-xs text-[var(--color-fg-muted)]"><%= label %></span>
           <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= chart_stats[key]&.round(1) %></span>
         </div>
