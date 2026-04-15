@@ -19,6 +19,7 @@ Rails.application.routes.draw do
       get :waterfall
       get :span_chart
       get :tool_calls_chart
+      get :logs
     end
   end
   post "/reset", to: "traces#reset"

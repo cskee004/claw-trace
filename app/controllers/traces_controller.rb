@@ -57,6 +57,12 @@ class TracesController < ApplicationController
     render partial: "tool_calls_chart"
   end
 
+  def logs
+    @trace = Trace.find_by!(trace_id: params[:id])
+    @logs  = Log.where(trace_id: @trace.trace_id).order(:timestamp).limit(500)
+    render partial: "all_logs", locals: { logs: @logs }
+  end
+
   def waterfall
     @trace = Trace.find_by!(trace_id: params[:id])
     spans = @trace.spans.order(:timestamp)
