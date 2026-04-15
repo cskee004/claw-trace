@@ -38,6 +38,7 @@ turbo-frame#frame_panel {
     text-decoration: none;
     font-size: 0.8rem;
     font-weight: 700;
+    min-height: 32px;
 }
 
 .nav-link i {
