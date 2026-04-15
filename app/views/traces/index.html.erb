@@ -29,9 +29,7 @@
   </form>
 
   <% if @traces.empty? %>
-    <p class="text-center py-12 text-sm italic text-[var(--color-fg-subtle)]">
-      No traces recorded yet.
-    </p>
+    <%= render "shared/connect_openclaw" %>
   <% else %>
     <div class="rounded-lg overflow-hidden border border-[var(--color-surface-2)]">
       <table class="w-full border-collapse bg-[var(--color-surface)]">

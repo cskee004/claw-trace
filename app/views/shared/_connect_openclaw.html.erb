@@ -1,0 +1,36 @@
+<div class="flex flex-col items-center py-12 gap-4">
+  <p class="text-sm font-bold text-[var(--color-fg)]">No data yet. Connect your OpenClaw instance to get started.</p>
+  <p class="text-xs text-[var(--color-fg-subtle)]">Add the following to your OpenClaw configuration file:</p>
+
+  <div class="w-full max-w-xl rounded-lg border border-[var(--color-surface-2)] overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-2 bg-[var(--color-surface-2)]">
+      <span class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">openclaw.config.json</span>
+      <button type="button"
+              class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]
+                     hover:text-[var(--color-fg)] cursor-pointer"
+              onclick="const pre = this.closest('.copy-block').querySelector('pre');
+                       navigator.clipboard.writeText(pre.innerText).then(() => {
+                         this.textContent = 'Copied!';
+                         setTimeout(() => this.textContent = 'Copy', 1500);
+                       })">
+        Copy
+      </button>
+    </div>
+    <div class="copy-block">
+      <pre class="bg-[var(--color-bg)] text-xs font-mono text-[var(--color-fg-muted)] px-5 py-4 overflow-x-auto leading-relaxed m-0"><span class="text-[var(--color-fg-subtle)]">"diagnostics"</span>: {
+  <span class="text-[var(--color-fg-subtle)]">"enabled"</span>: true,
+  <span class="text-[var(--color-fg-subtle)]">"otel"</span>: {
+    <span class="text-[var(--color-fg-subtle)]">"enabled"</span>: true,
+    <span class="text-[var(--color-fg-subtle)]">"endpoint"</span>: <span class="text-[var(--color-accent)]">"http://localhost:3000"</span>,
+    <span class="text-[var(--color-fg-subtle)]">"protocol"</span>: <span class="text-[var(--color-accent)]">"http/protobuf"</span>,
+    <span class="text-[var(--color-fg-subtle)]">"serviceName"</span>: <span class="text-[var(--color-accent)]">"openclaw-gateway"</span>,
+    <span class="text-[var(--color-fg-subtle)]">"traces"</span>: true,
+    <span class="text-[var(--color-fg-subtle)]">"metrics"</span>: true,
+    <span class="text-[var(--color-fg-subtle)]">"logs"</span>: true,
+    <span class="text-[var(--color-fg-subtle)]">"sampleRate"</span>: 1,
+    <span class="text-[var(--color-fg-subtle)]">"flushIntervalMs"</span>: 30000
+  }
+}</pre>
+    </div>
+  </div>
+</div>

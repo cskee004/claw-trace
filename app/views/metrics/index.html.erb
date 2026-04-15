@@ -23,7 +23,7 @@
   </turbo-frame>
 
   <% if @metric_names.empty? %>
-    <p class="metrics-empty">No metrics recorded yet.</p>
+    <%= render "shared/connect_openclaw" %>
   <% else %>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
       <% @metric_names.each do |m| %>

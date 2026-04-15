@@ -22,7 +22,7 @@
 
 ClawTrace is a Rails 8 agent observability platform built specifically for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs and surfacing them through a dashboard.
 
-The platform accepts telemetry over two paths: a Bearer token REST API for direct integration, and a native OTLP/HTTP endpoint that OpenClaw targets out of the box. Both paths write to the same storage layer and appear in the same UI.
+The platform accepts telemetry via a native OTLP/HTTP endpoint that OpenClaw targets out of the box. Traces, spans, metrics, and logs all write to the same storage layer and appear in the same UI.
 
 This project is part of a personal portfolio and demonstrates experience with Ruby, Rails, OpenTelemetry-inspired design, API development, and AI-assisted development using [Claude Code](https://claude.ai/code).
 
@@ -33,7 +33,6 @@ This project is part of a personal portfolio and demonstrates experience with Ru
 #### Trace & Span Ingestion
 - Trace → Span data model inspired by OpenTelemetry distributed tracing
 - OTLP/HTTP ingestion via `POST /v1/traces` — accepts `application/json` and `application/x-protobuf`
-- Bearer token ingestion via `POST /api/v1/telemetry` for direct API use
 - `parent_span_id` linking for full span hierarchy reconstruction
 - ERROR status span detection and storage
 
@@ -98,57 +97,16 @@ OpenClaw configuration:
     "otel": {
       "enabled": true,
       "endpoint": "https://your-clawtrace.com",
+      "protocol": "http/protobuf",
+      "serviceName": "openclaw-gateway",
       "traces": true,
-      "metrics": true
+      "metrics": true,
+      "logs": true,
+      "sampleRate": 1,
+      "flushIntervalMs": 30000
     }
   }
 }
-```
-
----
-
-#### Bearer Token API
-
-Register a key, then use the returned token to submit telemetry.
-
-**Register an API key**
-```
-POST /api/v1/keys
-Content-Type: application/json
-
-{ "agent_type": "support-agent" }
-```
-Response `201 Created`:
-```json
-{
-  "token": "<your-token>",
-  "agent_type": "support-agent",
-  "message": "Store this token securely — it will not be shown again."
-}
-```
-
-**Submit telemetry**
-```
-POST /api/v1/telemetry
-Authorization: Bearer <your-token>
-Content-Type: text/plain
-```
-
-Body is NDJSON — line 1 is the trace record, subsequent lines are span records:
-```
-{"trace_id":"a1b2c3d4e5f6a7b8","agent_id":"support-agent","task_name":"classify_ticket","start_time":"2026-04-02T12:00:00Z","status":"success"}
-{"trace_id":"a1b2c3d4e5f6a7b8","span_id":"s1","parent_span_id":null,"span_type":"agent_run_started","timestamp":"2026-04-02T12:00:01Z","agent_id":"support-agent","metadata":{}}
-```
-
-Response `201 Created`:
-```json
-{ "trace_id": "a1b2c3d4e5f6a7b8", "spans_ingested": 1 }
-```
-
-**Revoke a key**
-```
-DELETE /api/v1/keys/:id
-Authorization: Bearer <your-token>
 ```
 
 ---
@@ -186,14 +144,15 @@ Test coverage includes service class unit specs (`spec/lib/`), model specs, and 
 ### Roadmap
 
 - [x] Trace → Span data model and storage
-- [x] Bearer token ingestion API
 - [x] OTLP trace ingestion (`/v1/traces`)
 - [x] OTLP metrics ingestion (`/v1/metrics`)
 - [x] OTLP log ingestion (`/v1/logs`)
 - [x] Protobuf support across all three OTLP endpoints
 - [x] Analysis engine (duration, tool calls, error rate, histogram percentiles)
-- [x] Trace list and timeline dashboard
-- [x] Metrics dashboard
-- [ ] Tailwind CSS + waterfall span timeline
-- [ ] Real-time trace updates via Turbo Streams
-- [ ] Dashboard charts (Chartk
+- [x] Trace list with waterfall span timeline
+- [x] Real-time trace updates via Turbo Streams
+- [x] Metrics dashboard with ApexCharts
+- [x] Agents inventory and per-agent show page
+- [x] Logs index with severity and trace filtering
+- [x] Dashboard with error rate and trace volume charts
+- [x] Data retention settings (prune/delete per data type)
