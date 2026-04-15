@@ -458,7 +458,7 @@ turbo-frame#frame_panel {
 .metrics-show__back {
     display: inline-block;
     font-size: 0.8rem;
-    color: #374151;
+    color: var(--color-fg-muted);
     text-decoration: none;
     margin-bottom: 0.75rem;
 }
@@ -476,13 +476,13 @@ turbo-frame#frame_panel {
 
 .metrics-show__title-row .page-title {
     margin-bottom: 0;
-    font-family: monospace;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
     font-size: 1.1rem;
 }
 
 .metrics-show__chart-wrapper {
-    background: #fff;
-    border: 1px solid #e5e7eb;
+    background: var(--color-surface);
+    border: 1px solid var(--color-surface-2);
     border-radius: 6px;
     padding: 1rem;
     margin-top: 1rem;
