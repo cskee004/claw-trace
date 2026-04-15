@@ -19,7 +19,7 @@
     <div class="px-4 py-4">
 
       <%# ── Logs ── %>
-      <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Logs</p>
+      <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Logs</p>
 
       <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do %>
         <input type="hidden" name="setting_key" value="log_retention_days">
@@ -60,7 +60,7 @@
 
       <%# ── Traces ── %>
       <div class="border-t border-[var(--color-surface-2)] mt-4 pt-4">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Traces</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Traces</p>
 
         <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do %>
           <input type="hidden" name="setting_key" value="trace_retention_days">
@@ -103,7 +103,7 @@
 
       <%# ── Metrics ── %>
       <div class="border-t border-[var(--color-surface-2)] mt-4 pt-4">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Metrics</p>
+        <p class="text-[11px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)] mb-3">Metrics</p>
 
         <%= form_with url: settings_path, method: :patch, class: "flex items-center gap-3 mb-3" do %>
           <input type="hidden" name="setting_key" value="metric_retention_days">
