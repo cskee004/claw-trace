@@ -1,6 +1,8 @@
 class AgentsController < ApplicationController
+  include TimeWindowFilter
+
   def index
-    traces_by_agent = Trace.includes(:spans).all.group_by(&:agent_id)
+    traces_by_agent = Trace.includes(:spans).where(start_time: time_range).group_by(&:agent_id)
     @agents = traces_by_agent.map do |agent_id, traces|
       AgentAggregator.call(agent_id: agent_id, traces: traces)
     end.sort_by { |a| a.last_seen || Time.zone.at(0) }.reverse

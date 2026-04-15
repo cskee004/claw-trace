@@ -3,6 +3,33 @@
 <div class="p-4">
   <h1 class="text-xl font-bold text-[var(--color-fg)] mb-5">Agent Inventory</h1>
 
+  <%# ── Period filter ── %>
+  <div class="flex items-center gap-2 flex-wrap mb-5"
+       data-controller="dashboard-filter">
+    <% [["12h", "12h"], ["24h", "24h"], ["7d", "7d"], ["30d", "30d"]].each do |period, label| %>
+      <%= link_to label, agents_path(period: period),
+            class: "filter-btn #{'filter-btn--active' if @current_period == period}" %>
+    <% end %>
+    <button type="button"
+            class="filter-btn <%= 'filter-btn--active' if @current_period == 'custom' %>"
+            data-action="click->dashboard-filter#showCustom">
+      Custom
+    </button>
+
+    <form data-dashboard-filter-target="customForm"
+          <%= @current_period == "custom" ? "" : "hidden" %>
+          action="<%= agents_path %>" method="get"
+          class="flex items-center gap-2">
+      <input type="hidden" name="period" value="custom">
+      <input type="date" name="from" value="<%= params[:from] %>"
+             class="date-input" required>
+      <span class="text-xs text-[var(--color-fg-subtle)]">to</span>
+      <input type="date" name="to" value="<%= params[:to] %>"
+             class="date-input" required>
+      <button type="submit" class="filter-btn">Apply</button>
+    </form>
+  </div>
+
   <% if @agents.empty? %>
     <p class="text-center py-12 text-sm italic text-[var(--color-fg-subtle)]">
       No agents recorded yet.
