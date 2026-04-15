@@ -437,8 +437,14 @@ turbo-frame#frame_panel {
     text-transform: capitalize;
 }
 
-.metric-type-badge--sum       { background-color: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-.metric-type-badge--histogram { background-color: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.metric-type-badge--sum {
+    background-color: color-mix(in srgb, var(--color-accent) 15%, transparent);
+    color: var(--color-accent);
+}
+.metric-type-badge--histogram {
+    background-color: color-mix(in srgb, var(--color-warn-fg) 15%, transparent);
+    color: var(--color-warn-fg);
+}
 
 /* Metrics show page */
 .metrics-show {
