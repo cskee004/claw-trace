@@ -44,9 +44,8 @@
         <%= button_to "Prune Logs Now",
               prune_logs_settings_path,
               method: :post,
-              class: "text-xs font-bold px-3 py-1.5 bg-[var(--color-danger-bg)]
-                      text-[var(--color-danger-fg)] border border-[var(--color-danger-fg)]
-                      rounded cursor-pointer hover:opacity-80" %>
+              class: "btn--danger",
+              data: { turbo_confirm: "Delete all log records older than the configured retention window? This cannot be undone." } %>
         <p class="mt-2 text-xs text-[var(--color-fg-subtle)]">
           Immediately deletes all log records older than the configured retention window.
         </p>
