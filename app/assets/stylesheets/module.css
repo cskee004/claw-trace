@@ -512,3 +512,14 @@ turbo-frame#frame_panel {
     max-height: 600px;
     border-top: 1px solid var(--color-surface-2);
 }
+
+/* ApexCharts toolbar menu — override hardcoded light-theme styles */
+.apexcharts-menu {
+    background-color: var(--color-surface) !important;
+    border: 1px solid var(--color-surface-2) !important;
+    color: var(--color-fg) !important;
+}
+
+.apexcharts-menu-item:hover {
+    background-color: var(--color-row-hover) !important;
+}
