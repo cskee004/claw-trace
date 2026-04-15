@@ -1,0 +1,130 @@
+<% content_for(:title) { "Agent — #{@agent_id}" } %>
+
+<div class="p-4">
+  <%# ── Back link ── %>
+  <%= link_to "← Agent Inventory", agents_path,
+        class: "inline-block text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] mb-4" %>
+
+  <h1 class="font-mono text-xl font-bold text-[var(--color-fg)] mb-5"><%= @agent_id %></h1>
+
+  <%# ── Stat strip ── %>
+  <div class="flex flex-wrap gap-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4 mb-6">
+    <div class="flex flex-col gap-0.5">
+      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Total Runs</span>
+      <span class="font-mono text-2xl font-bold text-[var(--color-fg)]"><%= @aggregate.total_runs %></span>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Successes</span>
+      <span class="font-mono text-2xl font-bold text-[var(--color-success-fg)]"><%= @aggregate.success_count %></span>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Errors</span>
+      <span class="font-mono text-2xl font-bold <%= @aggregate.error_count > 0 ? 'text-[var(--color-span-error)]' : 'text-[var(--color-fg-muted)]' %>">
+        <%= @aggregate.error_count %>
+      </span>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Error Rate</span>
+      <span class="font-mono text-2xl font-bold <%= @aggregate.error_rate > 0 ? 'text-[var(--color-span-error)]' : 'text-[var(--color-success-fg)]' %>">
+        <%= @aggregate.error_rate %>%
+      </span>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Avg Duration</span>
+      <span class="font-mono text-2xl font-bold text-[var(--color-fg)]">
+        <%= format_duration(@aggregate.avg_duration_ms) %>
+      </span>
+    </div>
+    <div class="flex flex-col gap-0.5">
+      <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Last Seen</span>
+      <span class="font-mono text-2xl font-bold text-[var(--color-fg)]">
+        <%= @aggregate.last_seen ? format_time_relative(@aggregate.last_seen) : "—" %>
+      </span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <%# ── Top Tools ── %>
+    <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">Top Tools</h2>
+      <% if @aggregate.top_tools.empty? %>
+        <p class="text-xs italic text-[var(--color-fg-subtle)]">No tool calls recorded.</p>
+      <% else %>
+        <table class="w-full border-collapse">
+          <thead>
+            <tr>
+              <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] pb-2 text-left">Tool</th>
+              <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] pb-2 text-right">Calls</th>
+              <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] pb-2 text-right">Success</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @aggregate.top_tools.each do |tool_name, stats| %>
+              <tr class="border-t border-[var(--color-surface-2)]">
+                <td class="font-mono text-xs text-[var(--color-fg)] py-2"><%= tool_name %></td>
+                <td class="font-mono text-xs text-[var(--color-fg-muted)] py-2 text-right"><%= stats[:calls] %></td>
+                <td class="font-mono text-xs py-2 text-right
+                           <%= stats[:success_rate] >= 1.0 ? 'text-[var(--color-success-fg)]' : 'text-[var(--color-span-error)]' %>">
+                  <%= (stats[:success_rate] * 100).round %>%
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Recent Traces ── %>
+  <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg overflow-hidden">
+    <div class="px-4 py-3 border-b border-[var(--color-surface-2)]">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">
+        Recent Traces <span class="font-normal normal-case tracking-normal">(last <%= @traces.size %>)</span>
+      </h2>
+    </div>
+    <table class="w-full border-collapse">
+      <thead>
+        <tr>
+          <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Trace ID</th>
+          <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Task</th>
+          <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Started</th>
+          <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Duration</th>
+          <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @traces.each do |trace| %>
+          <tr class="border-b border-[var(--color-surface-2)] last:border-0"
+              onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
+              onmouseout="this.style.backgroundColor=''">
+            <td class="px-4 py-2.5 align-middle">
+              <%= link_to trace.trace_id, trace_path(trace),
+                    class: "font-mono text-xs text-[var(--color-accent)] hover:underline",
+                    data: { turbo_frame: "_top" } %>
+            </td>
+            <td class="px-4 py-2.5 align-middle text-sm font-medium text-[var(--color-fg)]">
+              <%= trace.task_name %>
+            </td>
+            <td class="px-4 py-2.5 align-middle">
+              <span class="block text-xs font-medium text-[var(--color-fg-muted)]">
+                <%= format_time_relative(trace.start_time) %>
+              </span>
+              <span class="block font-mono text-[10px] text-[var(--color-fg-subtle)]">
+                <%= format_time_absolute(trace.start_time) %>
+              </span>
+            </td>
+            <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
+              <%= format_duration(@durations[trace.trace_id]) %>
+            </td>
+            <td class="px-4 py-2.5 align-middle">
+              <span class="status-badge status-badge--<%= trace.status %>
+                           inline-block px-2 py-0.5 rounded text-xs font-bold tracking-wide capitalize">
+                <%= trace.status.tr("_", " ") %>
+              </span>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
