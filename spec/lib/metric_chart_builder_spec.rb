@@ -46,6 +46,10 @@ RSpec.describe MetricChartBuilder do
       expect(result[:options].dig(:xaxis, :type)).to eq("datetime")
     end
 
+    it "uses the accent CSS variable for color" do
+      expect(result[:options][:colors]).to eq(["var(--color-accent)"])
+    end
+
     # stats — derived from the last record
     it "returns stats with type 'sum'" do
       expect(result[:stats][:type]).to eq("sum")
@@ -109,6 +113,12 @@ RSpec.describe MetricChartBuilder do
           expect(point[:y]).to be_a(Numeric).or be_nil
         end
       end
+    end
+
+    it "uses CSS variable colors for the three series" do
+      expect(result[:options][:colors]).to eq(
+        ["var(--color-accent)", "var(--color-warn-fg)", "var(--color-span-error)"]
+      )
     end
 
     # stats — derived from the last record's percentiles

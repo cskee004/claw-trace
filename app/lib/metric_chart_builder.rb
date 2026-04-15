@@ -45,7 +45,7 @@ class MetricChartBuilder
       series: [{ name: "Value", data: series_data }],
       xaxis:  { type: "datetime" },
       stroke: { curve: "smooth" },
-      colors: ["#3b82f6"]
+      colors: ["var(--color-accent)"]
     }
   end
 
@@ -84,7 +84,7 @@ class MetricChartBuilder
       ],
       xaxis:  { type: "datetime" },
       stroke: { curve: "smooth" },
-      colors: ["#3b82f6", "#f59e0b", "#ef4444"]
+      colors: ["var(--color-accent)", "var(--color-warn-fg)", "var(--color-span-error)"]
     }
   end
 
