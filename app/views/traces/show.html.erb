@@ -27,4 +27,25 @@
         span_latencies: @span_latencies,
         total_duration_ms: @total_duration_ms %>
 
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+    <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">Span Durations</h2>
+      <turbo-frame id="trace_span_chart_<%= @trace.trace_id %>"
+                   src="<%= span_chart_trace_path(@trace) %>"
+                   loading="lazy">
+        <div class="min-h-[180px] flex items-center justify-center
+                    text-xs italic text-[var(--color-fg-subtle)]">Loading…</div>
+      </turbo-frame>
+    </div>
+    <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-3">Tool Calls</h2>
+      <turbo-frame id="trace_tool_calls_chart_<%= @trace.trace_id %>"
+                   src="<%= tool_calls_chart_trace_path(@trace) %>"
+                   loading="lazy">
+        <div class="min-h-[300px] flex items-center justify-center
+                    text-xs italic text-[var(--color-fg-subtle)]">Loading…</div>
+      </turbo-frame>
+    </div>
+  </div>
+
 </div>

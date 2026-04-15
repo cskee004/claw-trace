@@ -40,6 +40,45 @@ class TracesController < ApplicationController
     }
   end
 
+  def span_chart
+    @trace        = Trace.find_by!(trace_id: params[:id])
+    spans         = @trace.spans.order(:timestamp)
+    ordered_spans = TracesHelper.dfs_ordered_spans(spans.to_a)
+    latencies     = compute_latencies_ms(spans)
+    @chart_options = SpanChartBuilder.call(spans: ordered_spans, latencies: latencies)[:options]
+    render partial: "span_chart"
+  end
+
+  def tool_calls_chart
+    @trace         = Trace.find_by!(trace_id: params[:id])
+    spans          = @trace.spans.where(span_type: "tool_result")
+    data           = ToolCallAnalyzer.call(spans)
+    @chart_options = data.any? ? trace_tool_calls_chart_options(data) : {}
+    render partial: "tool_calls_chart"
+  end
+
+  def error_chart
+    traces_by_day = Trace.includes(:spans)
+                         .where(start_time: 30.days.ago..)
+                         .order(:start_time)
+                         .group_by { |t| t.start_time.to_date }
+
+    series_data = traces_by_day.map do |date, day_traces|
+      result = ErrorRateAnalyzer.call(day_traces)
+      { x: date.to_time.to_i * 1000, y: result.error_rate.round(1) }
+    end
+
+    @chart_options = {
+      chart:  { type: "line", height: 240, toolbar: { show: false }, zoom: { enabled: false } },
+      series: [{ name: "Error Rate %", data: series_data }],
+      xaxis:  { type: "datetime" },
+      yaxis:  { min: 0, max: 100, title: { text: "%" } },
+      stroke: { curve: "smooth" },
+      colors: ["var(--color-span-error)"]
+    }
+    render partial: "error_chart"
+  end
+
   def waterfall
     @trace = Trace.find_by!(trace_id: params[:id])
     spans = @trace.spans.order(:timestamp)
@@ -71,6 +110,28 @@ class TracesController < ApplicationController
     else
       "metadata->>'agent.session.id' = ?"
     end
+  end
+
+  def trace_tool_calls_chart_options(data)
+    sorted        = data.sort_by { |_, v| -v[:calls] }
+    tool_names    = sorted.map(&:first)
+    call_counts   = sorted.map { |_, v| v[:calls] }
+    success_rates = sorted.map { |_, v| (v[:success_rate] * 100).round(1) }
+
+    {
+      chart:       { type: "bar", height: 300, toolbar: { show: false } },
+      series:      [
+        { name: "Calls",          data: call_counts },
+        { name: "Success Rate %", data: success_rates }
+      ],
+      xaxis:       { categories: tool_names },
+      yaxis:       [
+        { title: { text: "Calls" } },
+        { opposite: true, title: { text: "Success %" }, max: 100 }
+      ],
+      colors:      ["var(--color-accent)", "var(--color-success-fg)"],
+      plotOptions: { bar: { borderRadius: 4, columnWidth: "50%" } }
+    }
   end
 
   def compute_latencies_ms(spans)

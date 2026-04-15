@@ -4,10 +4,15 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   resources :traces, only: [:index, :show] do
+    collection do
+      get :error_chart
+    end
     member do
       get :preview
       get :summary
       get :waterfall
+      get :span_chart
+      get :tool_calls_chart
     end
   end
   post "/reset", to: "traces#reset"
