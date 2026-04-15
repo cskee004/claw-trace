@@ -21,20 +21,40 @@
     <%# Tailwind loads first; existing custom stylesheets can override during transition %>
     <%= stylesheet_link_tag "tailwind", "application", "base", "layout", "module", "state", "theme", "data-turbo-track": Rails.env.production? ? "reload" : "" %>
     <%= javascript_importmap_tags %>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      document.addEventListener("turbo:load", () => lucide.createIcons());
+      document.addEventListener("DOMContentLoaded", () => lucide.createIcons());
+    </script>
   </head>
 
   <body class="bg-[var(--color-bg)] text-[var(--color-fg)] font-sans antialiased">
     <div id="container">
-      <div id="header">
-        <div id="logo">ClawTrace</div>
+      <div id="logo">
+        <span style="color: var(--color-accent);">Claw</span><span style="color: var(--color-fg-subtle);">Trace</span>
       </div>
+      <div id="header"></div>
       <div id="nav">
-        <%= link_to 'Dashboard', dashboard_path,  class: "nav-link #{'nav-link--active' if controller_name == 'dashboard'}" %>
-        <%= link_to 'Agents',    agents_path,     class: "nav-link #{'nav-link--active' if controller_name == 'agents'}" %>
-        <%= link_to 'Traces',    traces_path,     class: "nav-link #{'nav-link--active' if controller_name == 'traces'}" %>
-        <%= link_to 'Logs',      logs_path,       class: "nav-link #{'nav-link--active' if controller_name == 'logs'}" %>
-        <%= link_to 'Metrics',   metrics_path,    class: "nav-link #{'nav-link--active' if controller_name == 'metrics'}" %>
-        <%= link_to 'Settings',  settings_path,   class: "nav-link #{'nav-link--active' if controller_name == 'settings'}" %>
+        <%= link_to traces_path, class: "nav-link #{'nav-link--active' if controller_name == 'traces'}" do %>
+          <i data-lucide="activity"></i>Traces
+        <% end %>
+        <%= link_to agents_path, class: "nav-link #{'nav-link--active' if controller_name == 'agents'}" do %>
+          <i data-lucide="bot"></i>Agents
+        <% end %>
+        <%= link_to metrics_path, class: "nav-link #{'nav-link--active' if controller_name == 'metrics'}" do %>
+          <i data-lucide="bar-chart-2"></i>Metrics
+        <% end %>
+        <%= link_to logs_path, class: "nav-link #{'nav-link--active' if controller_name == 'logs'}" do %>
+          <i data-lucide="scroll-text"></i>Logs
+        <% end %>
+        <%= link_to dashboard_path, class: "nav-link #{'nav-link--active' if controller_name == 'dashboard'}" do %>
+          <i data-lucide="layout-dashboard"></i>Dashboard
+        <% end %>
+        <div style="margin-top: auto;">
+          <%= link_to settings_path, class: "nav-link #{'nav-link--active' if controller_name == 'settings'}" do %>
+            <i data-lucide="settings"></i>Settings
+          <% end %>
+        </div>
       </div>
       <div id="main">
         <%= yield %>

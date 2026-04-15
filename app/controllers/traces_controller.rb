@@ -60,7 +60,7 @@ class TracesController < ApplicationController
   def logs
     @trace = Trace.find_by!(trace_id: params[:id])
     logs   = Log.where(trace_id: @trace.trace_id).order(:timestamp).limit(500)
-    render partial: "all_logs", locals: { logs: logs }
+    render partial: "all_logs", locals: { logs: logs, trace_id: @trace.trace_id }
   end
 
   def waterfall

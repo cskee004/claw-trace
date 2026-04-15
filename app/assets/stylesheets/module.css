@@ -31,16 +31,22 @@ turbo-frame#frame_panel {
 }
 
 .nav-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     margin-top: 1rem;
     text-decoration: none;
     font-size: 0.8rem;
-    text-align: center;
     font-weight: 500;
 }
 
+.nav-link i {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
 #logo {
-    padding-left: 1rem;
 }
 
 /* Traces page */

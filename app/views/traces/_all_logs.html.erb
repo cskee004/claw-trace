@@ -1,3 +1,4 @@
+<%= turbo_frame_tag "trace_all_logs_#{trace_id}" do %>
 <% if logs.empty? %>
   <p class="px-4 py-8 text-sm italic text-center text-[var(--color-fg-subtle)]">
     No logs recorded for this trace.
@@ -38,4 +39,5 @@
   <p class="px-4 py-2 text-xs text-[var(--color-fg-subtle)] text-right border-t border-[var(--color-surface-2)]">
     Showing <%= logs.size %> record<%= logs.size == 1 ? "" : "s" %>
   </p>
+<% end %>
 <% end %>

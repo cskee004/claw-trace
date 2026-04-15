@@ -1,7 +1,9 @@
+<%= turbo_frame_tag "agent_recent_logs_#{agent_id}" do %>
 <% if logs.empty? %>
   <p class="px-4 py-8 text-sm italic text-center text-[var(--color-fg-subtle)]">
     No logs recorded for this agent.
   </p>
+
 <% else %>
   <table class="w-full border-collapse bg-[var(--color-surface)]">
     <thead>
@@ -47,4 +49,5 @@
   <p class="px-4 py-2 text-xs text-[var(--color-fg-subtle)] text-right border-t border-[var(--color-surface-2)]">
     Showing <%= logs.size %> record<%= logs.size == 1 ? "" : "s" %>
   </p>
+<% end %>
 <% end %>

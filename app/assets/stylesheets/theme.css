@@ -24,8 +24,8 @@ turbo-frame#frame_panel {
 }
 
 #logo {
-    font-size: 1rem;
-    font-weight: 400;
+    font-size: 1.2rem;
+    font-weight: 700;
     color: var(--color-fg);
     letter-spacing: 0.05em;
     font-family: 'JetBrains Mono', monospace;
