@@ -1,0 +1,10 @@
+<%# app/views/dashboard/_error_rate_chart.html.erb %>
+<turbo-frame id="dashboard_error_rate_chart">
+  <% if @chart_options.dig(:series, 0, :data)&.any? %>
+    <div data-controller="apex-chart"
+         data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
+    </div>
+  <% else %>
+    <p class="text-xs italic text-[var(--color-fg-subtle)] py-4">No data in the last 30 days.</p>
+  <% end %>
+</turbo-frame>

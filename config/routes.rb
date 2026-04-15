@@ -3,10 +3,11 @@ Rails.application.routes.draw do
 
   get "up" => "rails/health#show", as: :rails_health_check
 
+  get "/dashboard", to: "dashboard#index", as: :dashboard
+  get "/dashboard/error_rate_chart",    to: "dashboard#error_rate_chart",    as: :error_rate_chart_dashboard_index
+  get "/dashboard/traces_volume_chart", to: "dashboard#traces_volume_chart", as: :traces_volume_chart_dashboard_index
+
   resources :traces, only: [:index, :show] do
-    collection do
-      get :error_chart
-    end
     member do
       get :preview
       get :summary

@@ -29,8 +29,9 @@
         <div id="logo">ClawTrace</div>
       </div>
       <div id="nav">
-        <%= link_to 'Traces',  traces_path,  class: "nav-link #{'nav-link--active' if controller_name == 'traces'}" %>
-        <%= link_to 'Metrics', metrics_path, class: "nav-link #{'nav-link--active' if controller_name == 'metrics'}" %>
+        <%= link_to 'Dashboard', dashboard_path,  class: "nav-link #{'nav-link--active' if controller_name == 'dashboard'}" %>
+        <%= link_to 'Traces',    traces_path,     class: "nav-link #{'nav-link--active' if controller_name == 'traces'}" %>
+        <%= link_to 'Metrics',   metrics_path,    class: "nav-link #{'nav-link--active' if controller_name == 'metrics'}" %>
       </div>
       <div id="main">
         <%= yield %>
