@@ -13,11 +13,11 @@
         <thead>
           <tr>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Agent ID</th>
-            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Runs</th>
-            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Successes</th>
-            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Errors</th>
-            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Error Rate</th>
-            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Avg Duration</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Runs</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Successes</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Errors</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Error Rate</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Avg Duration</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Last Seen</th>
           </tr>
         </thead>
@@ -30,21 +30,21 @@
                 <%= link_to agent.agent_id, agent_path(agent.agent_id),
                       class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
               </td>
-              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)] text-right">
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
                 <%= agent.total_runs %>
               </td>
-              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-success-fg)] text-right">
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-success-fg)]">
                 <%= agent.success_count %>
               </td>
-              <td class="px-4 py-2.5 align-middle font-mono text-xs text-right
+              <td class="px-4 py-2.5 align-middle font-mono text-xs
                          <%= agent.error_count > 0 ? 'text-[var(--color-span-error)]' : 'text-[var(--color-fg-muted)]' %>">
                 <%= agent.error_count %>
               </td>
-              <td class="px-4 py-2.5 align-middle font-mono text-xs text-right
+              <td class="px-4 py-2.5 align-middle font-mono text-xs
                          <%= agent.error_rate > 0 ? 'text-[var(--color-span-error)]' : 'text-[var(--color-fg-muted)]' %>">
                 <%= agent.error_rate %>%
               </td>
-              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)] text-right">
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
                 <%= format_duration(agent.avg_duration_ms) %>
               </td>
               <td class="px-4 py-2.5 align-middle text-xs text-[var(--color-fg-muted)]">
