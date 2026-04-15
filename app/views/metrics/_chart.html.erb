@@ -1,27 +1,7 @@
 <%# app/views/metrics/_chart.html.erb %>
 <turbo-frame id="metric_chart_<%= @metric_name.parameterize %>">
   <% if @has_data %>
-    <% if @chart_stats %>
-      <div class="flex gap-6 mb-3">
-        <% if @chart_stats[:type] == "sum" %>
-          <div class="flex items-baseline gap-1.5">
-            <span class="text-xs text-[var(--color-fg-muted)]">Latest</span>
-            <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= @chart_stats[:latest_value]&.round(4) %></span>
-          </div>
-          <div class="flex items-baseline gap-1.5">
-            <span class="text-xs text-[var(--color-fg-muted)]">At</span>
-            <span class="font-mono text-xs text-[var(--color-fg-muted)]"><%= @chart_stats[:latest_timestamp]&.strftime("%H:%M %Z") %></span>
-          </div>
-        <% elsif @chart_stats[:type] == "histogram" %>
-          <% [[:p50, "P50"], [:p95, "P95"], [:p99, "P99"]].each do |key, label| %>
-            <div class="flex items-baseline gap-1.5">
-              <span class="text-xs text-[var(--color-fg-muted)]"><%= label %></span>
-              <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= @chart_stats[key]&.round(1) %></span>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
-    <% end %>
+    <%= render "metrics/stat_strip", chart_stats: @chart_stats, mb: "mb-3" %>
     <div class="min-h-[320px]"
          data-controller="apex-chart"
          data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
