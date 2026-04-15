@@ -57,7 +57,7 @@ class MetricsController < ApplicationController
         { title: { text: "Calls" } },
         { opposite: true, title: { text: "Success %" }, max: 100 }
       ],
-      colors:      ["#3b82f6", "#22c55e"],
+      colors:      ["var(--color-accent)", "var(--color-success-fg)"],
       plotOptions: { bar: { borderRadius: 4, columnWidth: "50%" } }
     }
   end
