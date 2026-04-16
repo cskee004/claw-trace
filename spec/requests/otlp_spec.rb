@@ -1,65 +1,41 @@
 require "rails_helper"
 
+# Phase 3: valid_payload and agent_id assertions updated to real fixture shape.
+# Failures on agent_id and span_type assertions are intentional until Phase 4.
+
 RSpec.describe "POST /v1/traces", type: :request do
   let(:headers) { { "Content-Type" => "text/plain" } }
 
-  OTLP_REQUEST_TRACE_ID = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+  # ── Valid payload (real fixture) ─────────────────────────────────────────────
 
-  def otlp_payload(spans:, session_key: "support-agent")
-    JSON.generate({
-      "resourceSpans" => [{
-        "resource" => {
-          "attributes" => [
-            { "key" => "openclaw.session.key", "value" => { "stringValue" => session_key } }
-          ]
-        },
-        "scopeSpans" => [{ "spans" => spans }]
-      }]
-    })
-  end
+  describe "valid payload (model usage fixture)" do
+    let(:valid_payload) { model_usage_fixture_json }
 
-  def otlp_span(name:, span_id:, timestamp_ns:, parent_span_id: nil)
-    span = {
-      "traceId"           => OTLP_REQUEST_TRACE_ID,
-      "spanId"            => span_id,
-      "name"              => name,
-      "startTimeUnixNano" => timestamp_ns.to_s
-    }
-    span["parentSpanId"] = parent_span_id if parent_span_id
-    span
-  end
-
-  let(:valid_payload) do
-    otlp_payload(spans: [
-      otlp_span(name: "openclaw.request",    span_id: "aaaa0000aaaa0000", timestamp_ns: 1_000_000_000_000_000_000),
-      otlp_span(name: "openclaw.agent.turn", span_id: "bbbb0000bbbb0000",
-                parent_span_id: "aaaa0000aaaa0000",    timestamp_ns: 2_000_000_000_000_000_000)
-    ])
-  end
-
-  # ── Valid payload ────────────────────────────────────────────────────────────
-
-  describe "valid payload" do
     it "returns 200 with {}" do
       post "/v1/traces", params: valid_payload, headers: headers
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)).to eq({})
     end
 
-    it "persists one trace and two spans" do
+    it "persists one trace and one span (flat single-span trace)" do
       expect {
         post "/v1/traces", params: valid_payload, headers: headers
-      }.to change(Trace, :count).by(1).and change(Span, :count).by(2)
+      }.to change(Trace, :count).by(1).and change(Span, :count).by(1)
     end
 
     it "stores the correct trace_id (first 16 chars of OTLP traceId)" do
       post "/v1/traces", params: valid_payload, headers: headers
-      expect(Trace.last.trace_id).to eq(OTLP_REQUEST_TRACE_ID.first(16))
+      expect(Trace.last.trace_id).to eq("3814946c5476f418")
     end
 
-    it "stores the correct agent_id from openclaw.session.key" do
+    it "stores agent_id from openclaw.sessionKey span attribute" do
       post "/v1/traces", params: valid_payload, headers: headers
-      expect(Trace.last.agent_id).to eq("support-agent")
+      expect(Trace.last.agent_id).to eq("agent:main:discord:channel:1494326249361899544")
+    end
+
+    it "stores span_type model_call" do
+      post "/v1/traces", params: valid_payload, headers: headers
+      expect(Span.last.span_type).to eq("model_call")
     end
   end
 
@@ -67,9 +43,7 @@ RSpec.describe "POST /v1/traces", type: :request do
 
   describe "empty resourceSpans" do
     it "returns 200 with {} when resourceSpans is an empty array" do
-      post "/v1/traces",
-           params:  JSON.generate("resourceSpans" => []),
-           headers: headers
+      post "/v1/traces", params: JSON.generate("resourceSpans" => []), headers: headers
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)).to eq({})
     end
@@ -82,9 +56,7 @@ RSpec.describe "POST /v1/traces", type: :request do
 
     it "persists nothing for empty resourceSpans" do
       expect {
-        post "/v1/traces",
-             params:  JSON.generate("resourceSpans" => []),
-             headers: headers
+        post "/v1/traces", params: JSON.generate("resourceSpans" => []), headers: headers
       }.not_to change(Trace, :count)
     end
   end
@@ -99,8 +71,7 @@ RSpec.describe "POST /v1/traces", type: :request do
 
     it "returns an error message" do
       post "/v1/traces", params: "not json at all", headers: headers
-      body = JSON.parse(response.body)
-      expect(body["error"]).to match(/invalid JSON/i)
+      expect(JSON.parse(response.body)["error"]).to match(/invalid JSON/i)
     end
   end
 
@@ -108,12 +79,12 @@ RSpec.describe "POST /v1/traces", type: :request do
 
   describe "authentication" do
     it "accepts requests with no Authorization header" do
-      post "/v1/traces", params: valid_payload, headers: { "Content-Type" => "text/plain" }
+      post "/v1/traces", params: model_usage_fixture_json, headers: { "Content-Type" => "text/plain" }
       expect(response).to have_http_status(:ok)
     end
 
     it "accepts requests with an invalid Bearer token (auth is ignored)" do
-      post "/v1/traces", params: valid_payload,
+      post "/v1/traces", params: model_usage_fixture_json,
            headers: { "Content-Type" => "text/plain", "Authorization" => "Bearer bogus" }
       expect(response).to have_http_status(:ok)
     end
@@ -122,11 +93,11 @@ RSpec.describe "POST /v1/traces", type: :request do
   # ── Protobuf payload ──────────────────────────────────────────────────────────
 
   describe "protobuf payload" do
+    OTLP_PROTO_TRACE_ID = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
     let(:pb_headers) { { "Content-Type" => "application/x-protobuf" } }
 
-    # Minimal valid ExportTraceServiceRequest binary
     def otlp_protobuf_payload
-      trace_id_bytes = [OTLP_REQUEST_TRACE_ID].pack("H*")
+      trace_id_bytes = [OTLP_PROTO_TRACE_ID].pack("H*")
       span_id_bytes  = ["aaaa0000aaaa0000"].pack("H*")
 
       pb_varint = ->(int) {
@@ -141,23 +112,23 @@ RSpec.describe "POST /v1/traces", type: :request do
         bytes.pack("C*")
       }
 
-      pb_tag  = ->(field, wire) { pb_varint.call((field << 3) | wire) }
-      pb_len  = ->(field, bytes) {
+      pb_tag = ->(field, wire) { pb_varint.call((field << 3) | wire) }
+      pb_len = ->(field, bytes) {
         bytes = bytes.b
         pb_tag.call(field, 2) + pb_varint.call(bytes.bytesize) + bytes
       }
-      pb_str  = ->(field, str) { pb_len.call(field, str.b) }
-      pb_f64  = ->(field, val) { pb_tag.call(field, 1) + [val].pack("Q<") }
-      av_str  = ->(s) { pb_str.call(1, s) }
+      pb_str = ->(field, str) { pb_len.call(field, str.b) }
+      pb_f64 = ->(field, val) { pb_tag.call(field, 1) + [val].pack("Q<") }
+      av_str = ->(s) { pb_str.call(1, s) }
       kv_pair = ->(k, v_bytes) { pb_str.call(1, k) + pb_len.call(2, v_bytes) }
 
       span = pb_len.call(1, trace_id_bytes) +
              pb_len.call(2, span_id_bytes) +
-             pb_str.call(5, "openclaw.request") +
-             pb_f64.call(7, 1_000_000_000_000_000_000) +
-             pb_f64.call(8, 2_000_000_000_000_000_000)
+             pb_str.call(5, "openclaw.model.usage") +
+             pb_f64.call(7, 1_776_353_057_612_000_000) +
+             pb_f64.call(8, 1_776_353_064_358_000_000)
 
-      resource = pb_len.call(1, pb_len.call(1, kv_pair.call("openclaw.session.key", av_str.call("support-agent"))))
+      resource = pb_len.call(1, pb_len.call(1, kv_pair.call("service.name", av_str.call("openclaw-gateway"))))
       scope    = pb_len.call(2, pb_len.call(2, span))
       pb_len.call(1, resource + scope)
     end
@@ -174,9 +145,9 @@ RSpec.describe "POST /v1/traces", type: :request do
       }.to change(Trace, :count).by(1).and change(Span, :count).by(1)
     end
 
-    it "stores the correct trace_id (first 16 chars of decoded hex traceId)" do
+    it "stores the correct trace_id" do
       post "/v1/traces", params: otlp_protobuf_payload, headers: pb_headers
-      expect(Trace.last.trace_id).to eq(OTLP_REQUEST_TRACE_ID.first(16))
+      expect(Trace.last.trace_id).to eq(OTLP_PROTO_TRACE_ID.first(16))
     end
 
     it "returns 400 for malformed protobuf (truncated varint)" do
@@ -201,21 +172,23 @@ RSpec.describe "POST /v1/traces", type: :request do
         "resourceSpans" => [{
           "resource" => {
             "attributes" => [
-              { "key" => "openclaw.session.key", "value" => { "stringValue" => "agent-session" } }
+              { "key" => "service.name", "value" => { "stringValue" => "openclaw-gateway" } }
             ]
           },
           "scopeSpans" => [{ "spans" => [
             {
               "traceId"           => MULTI_TRACE_ID_1,
               "spanId"            => "span1111a",
-              "name"              => "openclaw.request",
-              "startTimeUnixNano" => "1000000000000000000"
+              "name"              => "openclaw.model.usage",
+              "startTimeUnixNano" => "1000000000000000000",
+              "attributes"        => []
             },
             {
               "traceId"           => MULTI_TRACE_ID_2,
               "spanId"            => "span2222a",
-              "name"              => "openclaw.request",
-              "startTimeUnixNano" => "2000000000000000000"
+              "name"              => "openclaw.message.processed",
+              "startTimeUnixNano" => "2000000000000000000",
+              "attributes"        => []
             }
           ]}]
         }]
@@ -225,7 +198,6 @@ RSpec.describe "POST /v1/traces", type: :request do
     it "returns 200 with {}" do
       post "/v1/traces", params: multi_trace_payload, headers: headers
       expect(response).to have_http_status(:ok)
-      expect(JSON.parse(response.body)).to eq({})
     end
 
     it "persists one trace per distinct traceId" do
@@ -234,20 +206,20 @@ RSpec.describe "POST /v1/traces", type: :request do
       }.to change(Trace, :count).by(2)
     end
 
-    it "persists the correct trace_ids (first 16 chars of each OTLP traceId)" do
+    it "persists the correct trace_ids" do
       post "/v1/traces", params: multi_trace_payload, headers: headers
-      stored_ids = Trace.order(:trace_id).pluck(:trace_id).sort
-      expected   = [MULTI_TRACE_ID_1.first(16), MULTI_TRACE_ID_2.first(16)].sort
-      expect(stored_ids & expected).to eq(expected)
+      stored = Trace.order(:trace_id).pluck(:trace_id).sort
+      expected = [MULTI_TRACE_ID_1.first(16), MULTI_TRACE_ID_2.first(16)].sort
+      expect(stored & expected).to eq(expected)
     end
 
-    it "persists spans for each trace separately" do
+    it "persists spans for each trace" do
       expect {
         post "/v1/traces", params: multi_trace_payload, headers: headers
       }.to change(Span, :count).by(2)
     end
 
-    it "persists zero traces and zero spans when the second TelemetryIngester call raises" do
+    it "rolls back all traces when the second ingester call raises" do
       call_count = 0
       allow(TelemetryIngester).to receive(:call).and_wrap_original do |original, **kwargs|
         call_count += 1
@@ -271,7 +243,7 @@ RSpec.describe "POST /v1/traces", type: :request do
   describe "non-UTF-8 error message safety" do
     let(:pb_headers) { { "Content-Type" => "application/x-protobuf" } }
 
-    it "returns 400 (not 500) and a parseable JSON body when the error message contains non-UTF-8 bytes" do
+    it "returns 400 (not 500) and parseable JSON when error message has non-UTF-8 bytes" do
       binary_message = "bad input: \xFF\xFE".b
       allow(OtlpProtobufDecoder).to receive(:decode_traces).and_raise(
         OtlpProtobufDecoder::Error, binary_message

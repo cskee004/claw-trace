@@ -1,4 +1,7 @@
 # spec/lib/logs_normalizer_spec.rb
+# Phase 3: real fixture section added. Failures in "real log fixture" are
+# intentional — they define the Phase 4 LogsNormalizer contract for openclaw.*
+# log attributes.
 require "rails_helper"
 
 RSpec.describe LogsNormalizer do
@@ -213,6 +216,54 @@ RSpec.describe LogsNormalizer do
     it "raises LogsNormalizer::Error on invalid JSON" do
       expect { LogsNormalizer.call("not json") }
         .to raise_error(LogsNormalizer::Error, /invalid JSON/)
+    end
+  end
+
+  # ── Real fixture: openclaw agent execution logs ───────────────────────────────
+  # log-openclaw-agent-execution-001.json — 4 records from a timeout + failover run.
+  # Failures here are intentional until Phase 4 LogsNormalizer handles openclaw.* attrs.
+
+  describe "real log fixture (log-openclaw-agent-execution-001.json)" do
+    subject(:records) { LogsNormalizer.call(log_fixture_json) }
+
+    it "returns 4 log records" do
+      expect(records.length).to eq(4)
+    end
+
+    it "record 0: severity INFO, subsystem gateway/ws" do
+      expect(records[0]["severity_text"]).to eq("INFO")
+      expect(records[0]["log_attributes"]["openclaw.subsystem"]).to eq("gateway/ws")
+    end
+
+    it "record 1: severity WARN, subsystem agent/embedded, no log.args" do
+      expect(records[1]["severity_text"]).to eq("WARN")
+      expect(records[1]["log_attributes"]["openclaw.subsystem"]).to eq("agent/embedded")
+      expect(records[1]["log_attributes"]).not_to have_key("openclaw.log.args")
+    end
+
+    it "record 2: severity WARN, has openclaw.log.args as raw JSON string" do
+      r = records[2]
+      expect(r["severity_text"]).to eq("WARN")
+      expect(r["log_attributes"]["openclaw.log.args"]).to be_a(String)
+      parsed = JSON.parse(r["log_attributes"]["openclaw.log.args"])
+      expect(parsed.first["event"]).to eq("embedded_run_failover_decision")
+      expect(parsed.first["decision"]).to eq("surface_error")
+      expect(parsed.first["failoverReason"]).to eq("timeout")
+    end
+
+    it "record 3: severity ERROR, subsystem openclaw" do
+      expect(records[3]["severity_text"]).to eq("ERROR")
+      expect(records[3]["severity_number"]).to eq(17)
+      expect(records[3]["log_attributes"]["openclaw.subsystem"]).to eq("openclaw")
+    end
+
+    it "all records have openclaw.log.level in log_attributes" do
+      levels = records.map { |r| r["log_attributes"]["openclaw.log.level"] }
+      expect(levels).to eq(%w[INFO WARN WARN ERROR])
+    end
+
+    it "no record has a trace_id (logs are not linked to spans in this fixture)" do
+      records.each { |r| expect(r["trace_id"]).to be_nil }
     end
   end
 end

@@ -1,250 +1,213 @@
 require "rails_helper"
 
+# Phase 3: e2e specs rebuilt on real OpenClaw fixtures.
+# Failures on span_type, agent_id, and first-class column assertions are
+# intentional — they define the Phase 4 implementation contract.
+
 RSpec.describe "OTLP end-to-end: POST /v1/traces → DB → UI", type: :request do
-  E2E_HEADERS = { "Content-Type" => "text/plain" }.freeze
+  let(:headers) { { "Content-Type" => "text/plain" }.freeze }
 
-  TRACE_ID    = "a1b2c3d4e5f6a7b8"
-  TRACE_ID_32 = "#{TRACE_ID}#{"0" * 16}"
+  # ── Model usage fixture ───────────────────────────────────────────────────────
 
-  # Post-normalization span types the DB will contain after the round-trip.
-  # model_response and tool_result have no distinct OTLP names, so they come
-  # back as model_call and tool_call respectively (expected lossy mapping).
-  E2E_EXPECTED_SPAN_TYPES = %w[
-    agent_run_started
-    model_call
-    model_call
-    tool_call
-    tool_call
-    decision
-    run_completed
-  ].freeze
+  describe "model usage fixture (openclaw.model.usage)" do
+    MODEL_TRACE_ID = "3814946c5476f418"
 
-  # Static 7-span OTLP payload. Timestamps are strictly increasing (1ms apart)
-  # so OtlpNormalizer's final-span detection (max startTimeUnixNano) reliably
-  # promotes s7 to run_completed. s1 carries a metadata attribute to satisfy
-  # the "non-empty metadata for agent_run_started" assertion.
-  E2E_PAYLOAD = JSON.generate({
-    "resourceSpans" => [{
-      "resource" => {
-        "attributes" => [
-          { "key" => "openclaw.session.key", "value" => { "stringValue" => "support-agent" } }
-        ]
-      },
-      "scopeSpans" => [{
-        "spans" => [
-          {
-            "traceId"           => TRACE_ID_32,
-            "spanId"            => "s1",
-            "name"              => "openclaw.request",
-            "startTimeUnixNano" => "1000000000000000000",
-            "attributes"        => [{ "key" => "task", "value" => { "stringValue" => "classify_customer_ticket" } }]
-          },
-          {
-            "traceId"           => TRACE_ID_32,
-            "spanId"            => "s2",
-            "parentSpanId"      => "s1",
-            "name"              => "openclaw.agent.turn",
-            "startTimeUnixNano" => "1000001000000000000",
-            "attributes"        => []
-          },
-          {
-            "traceId"           => TRACE_ID_32,
-            "spanId"            => "s3",
-            "parentSpanId"      => "s2",
-            "name"              => "openclaw.agent.turn",
-            "startTimeUnixNano" => "1000002000000000000",
-            "attributes"        => []
-          },
-          {
-            "traceId"           => TRACE_ID_32,
-            "spanId"            => "s4",
-            "parentSpanId"      => "s2",
-            "name"              => "tool.use",
-            "startTimeUnixNano" => "1000003000000000000",
-            "attributes"        => []
-          },
-          {
-            "traceId"           => TRACE_ID_32,
-            "spanId"            => "s5",
-            "parentSpanId"      => "s2",
-            "name"              => "tool.use",
-            "startTimeUnixNano" => "1000004000000000000",
-            "attributes"        => []
-          },
-          {
-            "traceId"           => TRACE_ID_32,
-            "spanId"            => "s6",
-            "parentSpanId"      => "s1",
-            "name"              => "openclaw.command.decide",
-            "startTimeUnixNano" => "1000005000000000000",
-            "attributes"        => []
-          },
-          {
-            "traceId"           => TRACE_ID_32,
-            "spanId"            => "s7",
-            "parentSpanId"      => "s1",
-            "name"              => "openclaw.agent.turn",
-            "startTimeUnixNano" => "1000006000000000000",
-            "attributes"        => []
-          }
-        ]
-      }]
-    }]
-  }).freeze
+    before { post "/v1/traces", params: model_usage_fixture_json, headers: headers }
 
-  def post_trace
-    post "/v1/traces", params: E2E_PAYLOAD, headers: E2E_HEADERS
-  end
+    describe "HTTP response" do
+      it "returns 200 OK" do
+        expect(response).to have_http_status(:ok)
+      end
 
-  # ── HTTP response ─────────────────────────────────────────────────────────
-
-  describe "HTTP response" do
-    it "returns 200 OK" do
-      post_trace
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "returns an empty JSON object body" do
-      post_trace
-      expect(JSON.parse(response.body)).to eq({})
-    end
-  end
-
-  # ── DB persistence ────────────────────────────────────────────────────────
-
-  describe "DB persistence" do
-    before { post_trace }
-
-    it "creates exactly one Trace record" do
-      expect(Trace.count).to eq(1)
-    end
-
-    it "creates exactly 7 Span records" do
-      expect(Span.count).to eq(7)
-    end
-
-    it "stores the correct trace_id (simulator trace_id = first 16 chars of padded OTLP traceId)" do
-      expect(Trace.last.trace_id).to eq(TRACE_ID)
-    end
-
-    it "stores the correct agent_id" do
-      expect(Trace.last.agent_id).to eq("support-agent")
-    end
-
-    it "stores task_name as the OTLP root span name, not the simulator task string" do
-      expect(Trace.last.task_name).to eq("openclaw.request")
-    end
-
-    it "stores status as success (failure_rate: 0 guarantees no error injection)" do
-      expect(Trace.last.status).to eq("success")
-    end
-
-    it "stores a parseable start_time" do
-      expect(Trace.last.start_time).to be_a(Time)
-    end
-
-    it "persists span_types in post-normalization order (sorted by timestamp)" do
-      stored = Span.where(trace_id: TRACE_ID).order(:timestamp).pluck(:span_type)
-      expect(stored).to eq(E2E_EXPECTED_SPAN_TYPES)
-    end
-
-    it "stores the root span (s1) with nil parent_span_id" do
-      root = Span.where(trace_id: TRACE_ID).order(:timestamp).first
-      expect(root.parent_span_id).to be_nil
-    end
-
-    it "stores s2 parented to s1 (model_call child of agent_run_started)" do
-      ordered = Span.where(trace_id: TRACE_ID).order(:timestamp).to_a
-      expect(ordered[1].parent_span_id).to eq(ordered[0].span_id)
-    end
-
-    it "stores a non-nil metadata Hash for every span" do
-      Span.where(trace_id: TRACE_ID).each do |span|
-        expect(span.metadata).to be_a(Hash)
+      it "returns an empty JSON object" do
+        expect(JSON.parse(response.body)).to eq({})
       end
     end
 
-    it "stores non-empty metadata for the agent_run_started span" do
-      root_span = Span.where(trace_id: TRACE_ID).order(:timestamp).first
-      expect(root_span.span_type).to eq("agent_run_started")
-      expect(root_span.metadata).not_to be_empty
+    describe "DB persistence" do
+      it "creates exactly one Trace" do
+        expect(Trace.count).to eq(1)
+      end
+
+      it "creates exactly one Span (flat single-span trace)" do
+        expect(Span.count).to eq(1)
+      end
+
+      it "stores the correct trace_id" do
+        expect(Trace.last.trace_id).to eq(MODEL_TRACE_ID)
+      end
+
+      it "stores agent_id from openclaw.sessionKey span attribute" do
+        expect(Trace.last.agent_id).to eq("agent:main:discord:channel:1494326249361899544")
+      end
+
+      it "stores task_name as the OTLP span name" do
+        expect(Trace.last.task_name).to eq("openclaw.model.usage")
+      end
+
+      it "stores status as success" do
+        expect(Trace.last.status).to eq("success")
+      end
+
+      it "stores span_type as model_call" do
+        expect(Span.last.span_type).to eq("model_call")
+      end
+
+      it "stores span_name as openclaw.model.usage" do
+        expect(Span.last.span_name).to eq("openclaw.model.usage")
+      end
+
+      it "stores parent_span_id as nil (root span)" do
+        expect(Span.last.parent_span_id).to be_nil
+      end
+
+      it "stores end_time (endTimeUnixNano present in fixture)" do
+        expect(Span.last.end_time).not_to be_nil
+      end
+
+      # First-class columns — RED until Phase 4 migration
+      it "stores span_model" do
+        expect(Span.last.span_model).to eq("claude-haiku-4-5-20251001")
+      end
+
+      it "stores span_provider" do
+        expect(Span.last.span_provider).to eq("anthropic")
+      end
+
+      it "stores span_input_tokens" do
+        expect(Span.last.span_input_tokens).to eq(2)
+      end
+
+      it "stores span_output_tokens" do
+        expect(Span.last.span_output_tokens).to eq(246)
+      end
+
+      it "stores span_cache_read_tokens" do
+        expect(Span.last.span_cache_read_tokens).to eq(94270)
+      end
+
+      it "stores span_cache_write_tokens" do
+        expect(Span.last.span_cache_write_tokens).to eq(94649)
+      end
+
+      it "stores span_total_tokens" do
+        expect(Span.last.span_total_tokens).to eq(94714)
+      end
+
+      it "stores span_outcome as nil" do
+        expect(Span.last.span_outcome).to be_nil
+      end
+    end
+
+    describe "GET /traces (trace list)" do
+      it "returns 200 OK" do
+        get "/traces"
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "renders the trace_id" do
+        get "/traces"
+        expect(response.body).to include(MODEL_TRACE_ID)
+      end
+
+      it "renders the agent_id" do
+        get "/traces"
+        expect(response.body).to include("agent:main:discord:channel:1494326249361899544")
+      end
+
+      it "renders the success status badge" do
+        get "/traces"
+        expect(response.body).to include("status-badge--success")
+      end
+    end
+
+    describe "GET /traces/:trace_id (show)" do
+      it "returns 200 OK" do
+        get "/traces/#{MODEL_TRACE_ID}"
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "renders the trace_id" do
+        get "/traces/#{MODEL_TRACE_ID}"
+        expect(response.body).to include(MODEL_TRACE_ID)
+      end
+
+      it "renders the model_call span type badge" do
+        get "/traces/#{MODEL_TRACE_ID}"
+        expect(response.body).to include("span-type-badge--model_call")
+      end
     end
   end
 
-  # ── Trace list view ───────────────────────────────────────────────────────
+  # ── Message processed fixture ─────────────────────────────────────────────────
 
-  describe "GET /traces (trace list)" do
-    before { post_trace }
+  describe "message processed fixture (openclaw.message.processed)" do
+    MESSAGE_TRACE_ID = "ea38f13d10ee6301"
 
-    it "returns 200 OK" do
-      get "/traces"
-      expect(response).to have_http_status(:ok)
+    before { post "/v1/traces", params: message_processed_fixture_json, headers: headers }
+
+    describe "HTTP response" do
+      it "returns 200 OK" do
+        expect(response).to have_http_status(:ok)
+      end
     end
 
-    it "renders the trace_id as a link" do
-      get "/traces"
-      expect(response.body).to include(TRACE_ID)
+    describe "DB persistence" do
+      it "creates exactly one Trace" do
+        expect(Trace.count).to eq(1)
+      end
+
+      it "creates exactly one Span" do
+        expect(Span.count).to eq(1)
+      end
+
+      it "stores the correct trace_id" do
+        expect(Trace.last.trace_id).to eq(MESSAGE_TRACE_ID)
+      end
+
+      it "stores agent_id from openclaw.sessionKey span attribute" do
+        expect(Trace.last.agent_id).to eq("agent:main:discord:channel:1494326249361899544")
+      end
+
+      it "stores span_type as message_event" do
+        expect(Span.last.span_type).to eq("message_event")
+      end
+
+      it "stores span_outcome as completed" do
+        expect(Span.last.span_outcome).to eq("completed")
+      end
+
+      it "stores span_model as nil" do
+        expect(Span.last.span_model).to be_nil
+      end
+
+      it "stores span_input_tokens as nil" do
+        expect(Span.last.span_input_tokens).to be_nil
+      end
     end
 
-    it "renders the agent_id" do
-      get "/traces"
-      expect(response.body).to include("support-agent")
+    describe "GET /traces (trace list)" do
+      it "returns 200 OK" do
+        get "/traces"
+        expect(response).to have_http_status(:ok)
+      end
+
+      it "renders the trace_id" do
+        get "/traces"
+        expect(response.body).to include(MESSAGE_TRACE_ID)
+      end
     end
 
-    it "renders the success status badge" do
-      get "/traces"
-      expect(response.body).to include("status-badge--success")
-    end
+    describe "GET /traces/:trace_id (show)" do
+      it "returns 200 OK" do
+        get "/traces/#{MESSAGE_TRACE_ID}"
+        expect(response).to have_http_status(:ok)
+      end
 
-    it "renders the task_name (OTLP root span name)" do
-      get "/traces"
-      expect(response.body).to include("openclaw.request")
-    end
-  end
-
-  # ── Timeline view ─────────────────────────────────────────────────────────
-
-  describe "GET /traces/:trace_id (timeline)" do
-    before { post_trace }
-
-    it "returns 200 OK" do
-      get "/traces/#{TRACE_ID}"
-      expect(response).to have_http_status(:ok)
-    end
-
-    it "renders the trace_id in the metadata section" do
-      get "/traces/#{TRACE_ID}"
-      expect(response.body).to include(TRACE_ID)
-    end
-
-    it "renders the agent_id" do
-      get "/traces/#{TRACE_ID}"
-      expect(response.body).to include("support-agent")
-    end
-
-    it "renders the success status badge" do
-      get "/traces/#{TRACE_ID}"
-      expect(response.body).to include("status-badge--success")
-    end
-
-    it "renders the agent_run_started span type badge" do
-      get "/traces/#{TRACE_ID}"
-      expect(response.body).to include("span-type-badge--agent_run_started")
-    end
-
-    it "renders the decision span type badge" do
-      get "/traces/#{TRACE_ID}"
-      expect(response.body).to include("span-type-badge--decision")
-    end
-
-    it "renders the run_completed span type badge" do
-      get "/traces/#{TRACE_ID}"
-      expect(response.body).to include("span-type-badge--run_completed")
-    end
-
-    it "renders the span count (7) in the metadata section" do
-      get "/traces/#{TRACE_ID}"
-      expect(response.body).to include(">7<")
+      it "renders the message_event span type badge" do
+        get "/traces/#{MESSAGE_TRACE_ID}"
+        expect(response.body).to include("span-type-badge--message_event")
+      end
     end
   end
 end
