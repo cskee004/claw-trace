@@ -1,0 +1,12 @@
+<%# Footer status bar — log-based activity indicator %>
+<div class="status-bar">
+  <% if status_bar[:last_log_at] %>
+    <span class="status-bar__dot status-bar__dot--<%= status_bar[:live] ? 'live' : 'idle' %>"></span>
+    <span class="status-bar__label"><%= status_bar[:live] ? 'Live' : 'Idle' %></span>
+    <span class="status-bar__sep">—</span>
+    <span class="status-bar__text">Last log <%= format_time_relative(status_bar[:last_log_at]) %></span>
+  <% else %>
+    <span class="status-bar__dot status-bar__dot--idle"></span>
+    <span class="status-bar__label">No logs received</span>
+  <% end %>
+</div>

@@ -65,7 +65,9 @@
       <div id="main">
         <%= yield %>
       </div>
-      <div id="footer"></div>
+      <div id="footer">
+        <%= render "layouts/status_bar", status_bar: @status_bar %>
+      </div>
     </div>
   </body>
 </html>
