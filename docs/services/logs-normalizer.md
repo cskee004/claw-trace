@@ -96,6 +96,30 @@ Converted via `Time.at(nano.to_i / 1_000_000_000.0).utc.iso8601(3)`. Returns nil
 
 ---
 
+## openclaw.log.args — Raw String Policy
+
+OpenClaw emits a `openclaw.log.args` attribute on some log records. Its value is a JSON-encoded string containing a structured event payload, for example:
+
+```json
+{ "key": "openclaw.log.args", "value": { "stringValue": "[{\"event\":\"embedded_run_failover_decision\",\"decision\":\"surface_error\",\"failoverReason\":\"timeout\"}]" } }
+```
+
+**Policy: store as-is.** `LogsNormalizer` does not parse `openclaw.log.args`. It is stored as a plain string in `log_attributes["openclaw.log.args"]`.
+
+Rationale:
+- The internal schema of `log.args` is OpenClaw-specific and may change between versions.
+- Parsing in the normalizer would couple ClawTrace to that internal format.
+- The UI layer can parse and render the JSON string on demand without any normalizer changes.
+
+To read the structured event in the UI or in a Ruby context:
+
+```ruby
+raw = log.log_attributes["openclaw.log.args"]
+events = JSON.parse(raw) if raw  # => [{ "event" => "...", "decision" => "...", ... }]
+```
+
+---
+
 ## Error Handling
 
 ```ruby

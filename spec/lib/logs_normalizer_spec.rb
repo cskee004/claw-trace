@@ -1,7 +1,4 @@
 # spec/lib/logs_normalizer_spec.rb
-# Phase 3: real fixture section added. Failures in "real log fixture" are
-# intentional — they define the Phase 4 LogsNormalizer contract for openclaw.*
-# log attributes.
 require "rails_helper"
 
 RSpec.describe LogsNormalizer do
@@ -221,7 +218,6 @@ RSpec.describe LogsNormalizer do
 
   # ── Real fixture: openclaw agent execution logs ───────────────────────────────
   # log-openclaw-agent-execution-001.json — 4 records from a timeout + failover run.
-  # Failures here are intentional until Phase 4 LogsNormalizer handles openclaw.* attrs.
 
   describe "real log fixture (log-openclaw-agent-execution-001.json)" do
     subject(:records) { LogsNormalizer.call(log_fixture_json) }
