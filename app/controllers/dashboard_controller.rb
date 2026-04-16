@@ -6,6 +6,7 @@ class DashboardController < ApplicationController
     @active_agents  = Trace.distinct.count(:agent_id)
     recent_traces   = Trace.includes(:spans).where(start_time: time_range)
     @error_rate_30d = ErrorRateAnalyzer.call(recent_traces).error_rate.round(1)
+    @token_stats    = TokenAggregator.call(Span.where(timestamp: time_range))
   end
 
   def error_rate_chart

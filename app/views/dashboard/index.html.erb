@@ -20,6 +20,38 @@
     </div>
   </div>
 
+  <%# ── Token strip ── %>
+  <% if @token_stats[:total_tokens] > 0 %>
+    <div class="flex flex-wrap gap-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4 mb-6">
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Total Tokens (<%= @period_label %>)</span>
+        <span class="font-mono text-2xl font-bold text-[var(--color-fg)]"><%= number_with_delimiter(@token_stats[:total_tokens]) %></span>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Input</span>
+        <span class="font-mono text-2xl font-bold text-[var(--color-fg-muted)]"><%= number_with_delimiter(@token_stats[:input_tokens]) %></span>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Output</span>
+        <span class="font-mono text-2xl font-bold text-[var(--color-fg-muted)]"><%= number_with_delimiter(@token_stats[:output_tokens]) %></span>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Cache Read</span>
+        <span class="font-mono text-2xl font-bold text-[var(--color-fg-muted)]"><%= number_with_delimiter(@token_stats[:cache_read_tokens]) %></span>
+      </div>
+      <div class="flex flex-col gap-0.5">
+        <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Cache Write</span>
+        <span class="font-mono text-2xl font-bold text-[var(--color-fg-muted)]"><%= number_with_delimiter(@token_stats[:cache_write_tokens]) %></span>
+      </div>
+      <% if @token_stats[:cache_hit_ratio] %>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-[10px] font-bold uppercase tracking-widest text-[var(--color-fg-subtle)]">Cache Hit Ratio</span>
+          <span class="font-mono text-2xl font-bold text-[var(--color-success-fg)]"><%= @token_stats[:cache_hit_ratio] %>%</span>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
   <%# ── Period filter ── %>
   <div class="flex items-center gap-2 flex-wrap mb-6"
        data-controller="dashboard-filter">
