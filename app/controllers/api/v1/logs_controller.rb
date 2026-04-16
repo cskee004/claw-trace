@@ -18,6 +18,7 @@ module Api
           request.raw_post
         end
 
+        OtlpPayloadDumper.dump(:logs, body)
         rows = LogsNormalizer.call(body)
         Rails.logger.debug("[LogsController] normalized #{rows.size} rows")
         Log.insert_all!(rows) if rows.any?

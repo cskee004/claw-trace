@@ -299,7 +299,7 @@ RSpec.describe OtlpProtobufDecoder do
 
       let(:metric_bytes) do
         pb_str(1, "gen_ai.client.token.usage") +  # Metric.name = field 1
-          pb_len(7, pb_len(2, dp_bytes))            # Metric.sum = field 7, Sum.data_points = field 2
+          pb_len(7, pb_len(1, dp_bytes))            # Metric.sum = field 7, Sum.data_points = field 1
       end
 
       let(:binary) { wrap_in_export_metrics(metric_bytes) }
@@ -331,7 +331,7 @@ RSpec.describe OtlpProtobufDecoder do
 
       let(:metric_bytes) do
         pb_str(1, "gen_ai.client.token.usage") +
-          pb_len(7, pb_len(2, dp_bytes))
+          pb_len(7, pb_len(1, dp_bytes))
       end
 
       it "decodes asDouble" do
@@ -356,7 +356,7 @@ RSpec.describe OtlpProtobufDecoder do
 
       let(:metric_bytes) do
         pb_str(1, "gen_ai.client.operation.duration") +
-          pb_len(9, pb_len(2, dp_bytes))  # Metric.histogram = field 9, Histogram.data_points = field 2
+          pb_len(9, pb_len(1, dp_bytes))  # Metric.histogram = field 9, Histogram.data_points = field 1
       end
 
       let(:binary) { wrap_in_export_metrics(metric_bytes) }

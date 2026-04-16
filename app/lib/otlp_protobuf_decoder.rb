@@ -372,7 +372,9 @@ class OtlpProtobufDecoder
   def parse_scope_metrics(cur)
     metrics = []
     while (field, wire = cur.read_tag)
-      if field == 3 && wire == 2
+      # field 3: ScopeMetrics.metrics (OTLP ≥0.10 / new format)
+      # field 2: InstrumentationLibraryMetrics.metrics (old OTEL SDK format)
+      if (field == 3 || field == 2) && wire == 2
         metrics << parse_metric(cur.sub_cursor)
       else
         cur.skip_field(wire)
@@ -386,6 +388,7 @@ class OtlpProtobufDecoder
     while (field, wire = cur.read_tag)
       case [field, wire]
       when [1, 2] then metric["name"] = cur.sub_cursor.buf.force_encoding("UTF-8")
+      when [5, 2] then metric["gauge"] = parse_gauge(cur.sub_cursor)
       when [7, 2] then metric["sum"] = parse_sum(cur.sub_cursor)
       when [9, 2] then metric["histogram"] = parse_histogram(cur.sub_cursor)
       else cur.skip_field(wire)
@@ -394,10 +397,22 @@ class OtlpProtobufDecoder
     metric
   end
 
+  def parse_gauge(cur)
+    data_points = []
+    while (field, wire = cur.read_tag)
+      if field == 1 && wire == 2
+        data_points << parse_number_data_point(cur.sub_cursor)
+      else
+        cur.skip_field(wire)
+      end
+    end
+    { "dataPoints" => data_points }
+  end
+
   def parse_sum(cur)
     data_points = []
     while (field, wire = cur.read_tag)
-      if field == 2 && wire == 2
+      if field == 1 && wire == 2
         data_points << parse_number_data_point(cur.sub_cursor)
       else
         cur.skip_field(wire)
@@ -424,7 +439,7 @@ class OtlpProtobufDecoder
   def parse_histogram(cur)
     data_points = []
     while (field, wire = cur.read_tag)
-      if field == 2 && wire == 2
+      if field == 1 && wire == 2
         data_points << parse_histogram_data_point(cur.sub_cursor)
       else
         cur.skip_field(wire)

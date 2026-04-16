@@ -13,12 +13,15 @@ module Api
           data = OtlpProtobufDecoder.decode_traces(request.raw_post)
           return render json: {}, status: :ok if data["resourceSpans"].blank?
 
-          results = OtlpNormalizer.call(data.to_json)
+          json_body = data.to_json
+          OtlpPayloadDumper.dump(:traces, json_body)
+          results = OtlpNormalizer.call(json_body)
         else
           body = request.raw_post
           data = JSON.parse(body)
           return render json: {}, status: :ok if data["resourceSpans"].blank?
 
+          OtlpPayloadDumper.dump(:traces, body)
           results = OtlpNormalizer.call(body)
         end
 

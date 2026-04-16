@@ -18,6 +18,7 @@ module Api
           request.raw_post
         end
 
+        OtlpPayloadDumper.dump(:metrics, body)
         rows = MetricsNormalizer.call(body)
         Rails.logger.debug("[MetricsController] normalized #{rows.size} rows: #{rows.map { |r| r['metric_name'] }.inspect}")
         Metric.insert_all!(rows) if rows.any?
