@@ -14,7 +14,7 @@
 
 * Ruby 3.2 or higher
 * Rails 8.0 or higher
-* SQLite3 (development / test) or PostgreSQL (production via `DATABASE_URL`)
+* SQLite3 (stored locally on your machine)
 
 ---
 
@@ -75,6 +75,20 @@ Visit `http://localhost:3000`.
 
 ---
 
+### Network & Security
+
+ClawTrace binds to `127.0.0.1` by default. The server is only reachable from the machine it's running on — your agent telemetry stays local even if the machine is on an untrusted network.
+
+To expose over your LAN (for example, viewing traces from a laptop while the server runs on a desktop), set `CLAWTRACE_BIND`:
+
+```bash
+CLAWTRACE_BIND=0.0.0.0 rails server
+```
+
+Only do this on networks you trust. ClawTrace's OTLP endpoints are unauthenticated by convention, so anyone on the same LAN can ingest or read traces once the server is exposed.
+
+---
+
 ### API
 
 #### OTLP Endpoints (OpenClaw native)
@@ -96,7 +110,7 @@ OpenClaw configuration:
     "enabled": true,
     "otel": {
       "enabled": true,
-      "endpoint": "https://your-clawtrace.com",
+      "endpoint": "http://localhost:3000",
       "protocol": "http/protobuf",
       "serviceName": "openclaw-gateway",
       "traces": true,

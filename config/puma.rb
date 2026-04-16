@@ -27,8 +27,16 @@
 threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
 threads threads_count, threads_count
 
-# Specifies the `port` that Puma will listen on to receive requests; default is 3000.
-port ENV.fetch("PORT", 3000)
+# Specifies the address and port Puma will listen on.
+#
+# ClawTrace is a local-first tool that holds your agent telemetry. The default
+# bind is `127.0.0.1` so the server is only reachable from this machine — running
+# ClawTrace on an untrusted network (coffee shop, conference wifi, shared LAN)
+# will not accidentally expose your traces.
+#
+# To expose over your LAN (e.g. view traces on a laptop while the server runs
+# on a desktop), set CLAWTRACE_BIND=0.0.0.0. Only do this on networks you trust.
+bind "tcp://#{ENV.fetch('CLAWTRACE_BIND', '127.0.0.1')}:#{ENV.fetch('PORT', 3000)}"
 
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
