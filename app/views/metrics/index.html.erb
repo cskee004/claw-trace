@@ -2,10 +2,6 @@
 <% content_for(:title) { "Metrics" } %>
 
 <div class="metrics-page">
-  <div class="metrics-header">
-    <h1 class="page-title">Metrics</h1>
-  </div>
-
   <%= form_with url: metrics_path, method: :get, local: true, class: "metrics-filter" do |f| %>
     <%= f.text_field :q,        value: params[:q],        placeholder: "Name…",     class: "metrics-filter__input" %>
     <%= f.text_field :model,    value: params[:model],    placeholder: "Model…",    class: "metrics-filter__input" %>

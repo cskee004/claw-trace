@@ -1,10 +1,13 @@
 <% content_for(:title) { "Agent — #{@agent_id}" } %>
+<% content_for(:breadcrumbs) do %>
+  <nav class="flex items-center gap-2 text-sm">
+    <%= link_to "Agents", agents_path, class: "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]" %>
+    <span class="text-[var(--color-fg-subtle)] font-light">/</span>
+    <span class="font-mono font-bold text-[var(--color-fg)] truncate"><%= @agent_id %></span>
+  </nav>
+<% end %>
 
 <div class="p-4">
-  <%# ── Back link ── %>
-  <%= link_to "← Agent Inventory", agents_path,
-        class: "inline-block text-xs text-[var(--color-fg-muted)] hover:text-[var(--color-fg)] mb-4" %>
-
   <h1 class="font-mono text-xl font-bold text-[var(--color-fg)] mb-5"><%= @agent_id %></h1>
 
   <%# ── Stat strip ── %>

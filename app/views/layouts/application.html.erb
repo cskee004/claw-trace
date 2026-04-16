@@ -33,7 +33,13 @@
       <div id="logo">
         <span style="color: var(--color-accent);">Claw</span><span style="color: var(--color-fg-subtle);">Trace</span>
       </div>
-      <div id="header"></div>
+      <div id="header">
+        <% if content_for?(:breadcrumbs) %>
+          <%= yield :breadcrumbs %>
+        <% elsif content_for?(:title) %>
+          <span class="text-sm font-bold text-[var(--color-fg)]"><%= yield :title %></span>
+        <% end %>
+      </div>
       <div id="nav">
         <%= link_to traces_path, class: "nav-link #{'nav-link--active' if controller_name == 'traces'}" do %>
           <i data-lucide="activity"></i>Traces

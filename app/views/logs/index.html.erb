@@ -1,8 +1,6 @@
 <% content_for(:title) { "Logs" } %>
 
 <div class="p-4">
-  <h1 class="text-xl font-bold text-[var(--color-fg)] mb-5">Logs</h1>
-
   <turbo-frame id="log_list">
     <form class="flex items-center gap-2 flex-wrap mb-5"
           action="<%= logs_path %>" method="get">

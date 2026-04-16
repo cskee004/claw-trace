@@ -1,19 +1,22 @@
 <%= turbo_stream_from "trace:#{@trace.trace_id}" %>
 <% content_for(:title) { "#{@trace.task_name} — Trace" } %>
+<% content_for(:breadcrumbs) do %>
+  <nav class="flex items-center gap-2 text-sm">
+    <%= link_to "Traces", traces_path, class: "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]" %>
+    <span class="text-[var(--color-fg-subtle)] font-light">/</span>
+    <span class="font-bold text-[var(--color-fg)] truncate"><%= @trace.task_name %></span>
+  </nav>
+<% end %>
 
 <div class="p-4">
 
-  <%# ── Back link + title row ── %>
-  <div class="mb-5">
-    <%= link_to "← All Traces", traces_path,
-          class: "text-xs font-bold text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]" %>
-    <div class="flex items-center gap-3 mt-2">
-      <h1 class="text-xl font-bold text-[var(--color-fg)]"><%= @trace.task_name %></h1>
-      <span class="status-badge status-badge--<%= @trace.status %>
-                   inline-block px-2 py-0.5 rounded text-xs font-bold tracking-wide capitalize">
-        <%= @trace.status.tr("_", " ") %>
-      </span>
-    </div>
+  <%# ── Title row ── %>
+  <div class="flex items-center gap-3 mb-5">
+    <h1 class="text-xl font-bold text-[var(--color-fg)]"><%= @trace.task_name %></h1>
+    <span class="status-badge status-badge--<%= @trace.status %>
+                 inline-block px-2 py-0.5 rounded text-xs font-bold tracking-wide capitalize">
+      <%= @trace.status.tr("_", " ") %>
+    </span>
   </div>
 
   <%= render "summary",

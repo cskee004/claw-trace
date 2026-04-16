@@ -1,9 +1,15 @@
 <%# app/views/metrics/show.html.erb %>
 <% content_for(:title) { @metric_name } %>
+<% content_for(:breadcrumbs) do %>
+  <nav class="flex items-center gap-2 text-sm">
+    <%= link_to "Metrics", metrics_path, class: "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]" %>
+    <span class="text-[var(--color-fg-subtle)] font-light">/</span>
+    <span class="font-mono font-bold text-[var(--color-fg)] truncate"><%= @metric_name %></span>
+  </nav>
+<% end %>
 
 <div class="metrics-show">
   <div class="metrics-show__header">
-    <%= link_to "← All Metrics", metrics_path, class: "metrics-show__back" %>
     <div class="metrics-show__title-row">
       <h1 class="page-title"><%= @metric_name %></h1>
       <% if @metric_type %>
