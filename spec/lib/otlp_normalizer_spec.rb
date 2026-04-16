@@ -399,6 +399,18 @@ RSpec.describe OtlpNormalizer do
       expect(OtlpNormalizer.call(payload).first[:trace]["status"]).to eq("error")
     end
 
+    it "sets status to error when any span has openclaw.outcome in the error set, even with status.code != 2" do
+      attrs = [{ "key" => "openclaw.outcome", "value" => { "stringValue" => "error" } }]
+      payload = realistic_single_span(span_name: "openclaw.message.processed", extra_span_attrs: attrs)
+      expect(OtlpNormalizer.call(payload).first[:trace]["status"]).to eq("error")
+    end
+
+    it "does not set status to error when openclaw.outcome is non-error (e.g. completed)" do
+      attrs = [{ "key" => "openclaw.outcome", "value" => { "stringValue" => "completed" } }]
+      payload = realistic_single_span(span_name: "openclaw.message.processed", extra_span_attrs: attrs)
+      expect(OtlpNormalizer.call(payload).first[:trace]["status"]).to eq("success")
+    end
+
     it "trace has the expected top-level fields" do
       trace = OtlpNormalizer.call(model_usage_fixture_json).first[:trace]
       expect(trace.keys).to include("trace_id", "agent_id", "task_name", "start_time", "status")

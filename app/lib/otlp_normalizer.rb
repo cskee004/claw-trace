@@ -144,7 +144,7 @@ class OtlpNormalizer
       "agent_id"   => agent_id,
       "task_name"  => root_span["name"],
       "start_time" => nano_to_iso8601(earliest_nano),
-      "status"     => spans.any? { |s| error_status?(s) } ? "error" : "success"
+      "status"     => spans.any? { |s| error_in_span?(s) } ? "error" : "success"
     }
   end
 
@@ -186,6 +186,12 @@ class OtlpNormalizer
     return "error" if error_status?(span)
     outcome = span_attrs["openclaw.outcome"]
     OUTCOME_ERROR_SET.include?(outcome) ? "error" : outcome
+  end
+
+  def error_in_span?(span)
+    return true if error_status?(span)
+    outcome = attrs_to_hash(span["attributes"] || [])["openclaw.outcome"]
+    OUTCOME_ERROR_SET.include?(outcome)
   end
 
   def error_status?(span)
