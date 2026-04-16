@@ -228,6 +228,11 @@ RSpec.describe OtlpNormalizer do
         expect(span_outcome_for("openclaw.model.usage", extra_span_attrs: attrs)).to eq("error")
       end
 
+      it "openclaw.outcome=timed_out sets span_outcome to error" do
+        attrs = [{ "key" => "openclaw.outcome", "value" => { "stringValue" => "timed_out" } }]
+        expect(span_outcome_for("openclaw.model.usage", extra_span_attrs: attrs)).to eq("error")
+      end
+
       it "openclaw.outcome=completed does NOT set error span_outcome" do
         attrs = [{ "key" => "openclaw.outcome", "value" => { "stringValue" => "completed" } }]
         expect(span_outcome_for("openclaw.message.processed", extra_span_attrs: attrs)).to eq("completed")

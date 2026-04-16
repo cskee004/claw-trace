@@ -180,7 +180,7 @@ class OtlpNormalizer
     "span"
   end
 
-  OUTCOME_ERROR_SET = %w[error failed timeout].freeze
+  OUTCOME_ERROR_SET = %w[error failed timeout timed_out].freeze
 
   def resolve_span_outcome(span, span_attrs)
     return "error" if error_status?(span)
