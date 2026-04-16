@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_15_195117) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_16_132056) do
   create_table "logs", force: :cascade do |t|
     t.string "trace_id"
     t.string "span_id"
@@ -59,6 +59,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_15_195117) do
     t.datetime "end_time"
     t.string "span_name"
     t.index ["agent_id"], name: "index_spans_on_agent_id"
+    t.index ["parent_span_id"], name: "index_spans_on_parent_span_id"
     t.index ["span_type"], name: "index_spans_on_span_type"
     t.index ["trace_id", "span_id"], name: "index_spans_on_trace_id_and_span_id", unique: true
     t.index ["trace_id"], name: "index_spans_on_trace_id"

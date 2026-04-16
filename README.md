@@ -77,6 +77,45 @@ For active development with live Tailwind rebuilds, use `bin/dev`. On Windows, `
 
 ---
 
+### Data & Storage
+
+ClawTrace uses SQLite — no external database required. All data lives in a single file:
+
+```
+storage/development.sqlite3
+```
+
+**Wiping all data**
+
+Delete the file and recreate the database:
+
+```bash
+rm storage/development.sqlite3
+rails db:create db:migrate
+```
+
+Or use the **Settings** page to selectively prune or delete logs, traces, and metrics without touching the database file.
+
+**Retention defaults**
+
+All three data types default to a 30-day retention window. Adjust per-type in Settings — prune runs on demand via the "Prune Now" button. There is no automatic background pruning; run it manually or set up a cron job with:
+
+```bash
+rails logs:prune
+```
+
+**Seed data**
+
+A seed file is included for local development. It creates 5 traces, 30 spans, 5 metrics, and 5 logs:
+
+```bash
+rails db:seed
+```
+
+The seed is idempotent — running it multiple times is safe.
+
+---
+
 ### Network & Security
 
 ClawTrace binds to `127.0.0.1` by default. The server is only reachable from the machine it's running on — your agent telemetry stays local even if the machine is on an untrusted network.
