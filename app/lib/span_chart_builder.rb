@@ -9,14 +9,14 @@
 # Returns { options: <ApexCharts hash> }
 class SpanChartBuilder
   SPAN_TYPE_COLOR = {
-    "model_call"      => "var(--color-span-model)",
-    "message_event"   => "var(--color-span-message)",
-    "tool_call"       => "var(--color-span-tool)",
-    "session_event"   => "var(--color-span-lifecycle)",
-    "command_event"   => "var(--color-span-lifecycle)",
-    "webhook_event"   => "var(--color-span-lifecycle)",
-    "openclaw_event"  => "var(--color-span-openclaw)",
-    "span"            => "var(--color-fg-muted)"
+    "model_call"      => "var(--color-span-model-call)",
+    "message_event"   => "var(--color-span-message-event)",
+    "tool_call"       => "var(--color-span-tool-call)",
+    "session_event"   => "var(--color-span-session-event)",
+    "command_event"   => "var(--color-span-command-event)",
+    "webhook_event"   => "var(--color-span-webhook-event)",
+    "openclaw_event"  => "var(--color-span-openclaw-event)",
+    "span"            => "var(--color-span-span)"
   }.freeze
 
   FALLBACK_COLOR = "var(--color-fg-muted)".freeze

@@ -127,56 +127,55 @@ RSpec.describe TracesHelper, type: :helper do
   end
 
   describe "#span_accent" do
-    AccentStub = Struct.new(:span_name, :metadata)
+    AccentStub = Struct.new(:span_type, :span_model, :metadata)
 
-    it "returns the model name for llm.inference spans" do
-      span = AccentStub.new("llm.inference", { "llm.model" => "claude-sonnet-4-6" })
+    it "returns span_model for model_call spans (first-class column)" do
+      span = AccentStub.new("model_call", "claude-haiku-4-5-20251001", {})
+      expect(span_accent(span)).to eq("claude-haiku-4-5-20251001")
+    end
+
+    it "falls back to openclaw.model metadata for model_call when span_model is nil" do
+      span = AccentStub.new("model_call", nil, { "openclaw.model" => "claude-sonnet-4-6" })
       expect(span_accent(span)).to eq("claude-sonnet-4-6")
     end
 
-    it "returns nil for llm.inference spans with no llm.model" do
-      span = AccentStub.new("llm.inference", {})
+    it "returns nil for model_call with no model info" do
+      span = AccentStub.new("model_call", nil, {})
       expect(span_accent(span)).to be_nil
     end
 
-    it "returns METHOD host for http.client.request spans" do
-      span = AccentStub.new("http.client.request", {
-        "http.method" => "GET",
-        "http.url"    => "https://duckduckgo.com/?q=test"
-      })
-      expect(span_accent(span)).to eq("GET duckduckgo.com")
+    it "returns channel for message_event spans" do
+      span = AccentStub.new("message_event", nil, { "openclaw.channel" => "discord" })
+      expect(span_accent(span)).to eq("discord")
     end
 
-    it "returns nil for http.client.request spans with no method" do
-      span = AccentStub.new("http.client.request", { "http.url" => "https://example.com" })
+    it "returns nil for message_event spans with no channel" do
+      span = AccentStub.new("message_event", nil, {})
       expect(span_accent(span)).to be_nil
     end
 
-    it "returns nil for http.client.request spans with malformed url" do
-      span = AccentStub.new("http.client.request", {
-        "http.method" => "POST",
-        "http.url"    => "not a url"
-      })
-      expect(span_accent(span)).to be_nil
-    end
-
-    it "returns the tool name for tool.exec.* spans" do
-      span = AccentStub.new("tool.exec.web_search", { "tool.name" => "web_search" })
+    it "returns tool name for tool_call spans" do
+      span = AccentStub.new("tool_call", nil, { "tool.name" => "web_search" })
       expect(span_accent(span)).to eq("web_search")
     end
 
-    it "returns nil for tool.exec.* spans with no tool.name" do
-      span = AccentStub.new("tool.exec.bash", {})
+    it "returns nil for tool_call spans with no tool name" do
+      span = AccentStub.new("tool_call", nil, {})
       expect(span_accent(span)).to be_nil
     end
 
-    it "returns nil for unrecognised span names" do
-      span = AccentStub.new("agent.turn.process", { "anything" => "value" })
+    it "returns channel for session_event spans" do
+      span = AccentStub.new("session_event", nil, { "openclaw.channel" => "discord" })
+      expect(span_accent(span)).to eq("discord")
+    end
+
+    it "returns nil for unrecognised span types" do
+      span = AccentStub.new("openclaw_event", nil, { "anything" => "value" })
       expect(span_accent(span)).to be_nil
     end
 
     it "returns nil when metadata is nil" do
-      span = AccentStub.new("llm.inference", nil)
+      span = AccentStub.new("model_call", nil, nil)
       expect(span_accent(span)).to be_nil
     end
   end

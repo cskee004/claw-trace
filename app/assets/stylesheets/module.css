@@ -264,40 +264,48 @@ turbo-frame#frame_panel {
 }
 
 /* Span type badges — colors from :root tokens, never hardcoded hex */
-/* lifecycle is a muted grey — 20% keeps it perceptible on the dark surface background */
-.span-type-badge--agent_run_started,
-.span-type-badge--run_completed {
-    background-color: color-mix(in srgb, var(--color-span-lifecycle) 20%, transparent);
-    color: var(--color-span-lifecycle-fg);
+.span-type-badge--model_call {
+    background-color: color-mix(in srgb, var(--color-span-model-call) 15%, transparent);
+    color: var(--color-span-model-call-fg);
 }
-.span-type-badge--model_call,
-.span-type-badge--model_response {
-    background-color: color-mix(in srgb, var(--color-span-model) 15%, transparent);
-    color: var(--color-span-model-fg);
+.span-type-badge--message_event {
+    background-color: color-mix(in srgb, var(--color-span-message-event) 15%, transparent);
+    color: var(--color-span-message-event-fg);
 }
-.span-type-badge--tool_call,
-.span-type-badge--tool_result {
-    background-color: color-mix(in srgb, var(--color-span-tool) 15%, transparent);
-    color: var(--color-span-tool-fg);
+.span-type-badge--tool_call {
+    background-color: color-mix(in srgb, var(--color-span-tool-call) 15%, transparent);
+    color: var(--color-span-tool-call-fg);
 }
-.span-type-badge--decision {
-    background-color: color-mix(in srgb, var(--color-span-decision) 15%, transparent);
-    color: var(--color-span-decision-fg);
+.span-type-badge--session_event {
+    background-color: color-mix(in srgb, var(--color-span-session-event) 20%, transparent);
+    color: var(--color-span-session-event-fg);
 }
-.span-type-badge--error {
-    background-color: color-mix(in srgb, var(--color-span-error) 15%, transparent);
-    color: var(--color-span-error-fg);
+.span-type-badge--command_event {
+    background-color: color-mix(in srgb, var(--color-span-command-event) 15%, transparent);
+    color: var(--color-span-command-event-fg);
+}
+.span-type-badge--webhook_event {
+    background-color: color-mix(in srgb, var(--color-span-webhook-event) 15%, transparent);
+    color: var(--color-span-webhook-event-fg);
+}
+.span-type-badge--openclaw_event {
+    background-color: color-mix(in srgb, var(--color-span-openclaw-event) 20%, transparent);
+    color: var(--color-span-openclaw-event-fg);
+}
+.span-type-badge--span {
+    background-color: color-mix(in srgb, var(--color-span-span) 12%, transparent);
+    color: var(--color-span-span-fg);
 }
 
 /* Waterfall bars — reference :root span-type tokens, never hardcoded hex */
-.waterfall-bar--agent_run_started,
-.waterfall-bar--run_completed  { background-color: var(--color-span-lifecycle); }
-.waterfall-bar--model_call,
-.waterfall-bar--model_response { background-color: var(--color-span-model);     }
-.waterfall-bar--tool_call,
-.waterfall-bar--tool_result    { background-color: var(--color-span-tool);      }
-.waterfall-bar--decision       { background-color: var(--color-span-decision);  }
-.waterfall-bar--error          { background-color: var(--color-span-error);     }
+.waterfall-bar--model_call     { background-color: var(--color-span-model-call);     }
+.waterfall-bar--message_event  { background-color: var(--color-span-message-event);  }
+.waterfall-bar--tool_call      { background-color: var(--color-span-tool-call);      }
+.waterfall-bar--session_event  { background-color: var(--color-span-session-event);  }
+.waterfall-bar--command_event  { background-color: var(--color-span-command-event);  }
+.waterfall-bar--webhook_event  { background-color: var(--color-span-webhook-event);  }
+.waterfall-bar--openclaw_event { background-color: var(--color-span-openclaw-event); }
+.waterfall-bar--span           { background-color: var(--color-span-span);           }
 
 /* Waterfall drawer — max-height animation per CLAUDE.md motion policy (drawer open/close only) */
 .waterfall-drawer {

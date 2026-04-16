@@ -38,9 +38,9 @@ RSpec.describe SpanChartBuilder do
 
     it "assigns CSS variable colors matching span types" do
       expect(result[:options][:colors]).to eq([
-        "var(--color-span-model)",
-        "var(--color-span-tool)",
-        "var(--color-fg-muted)"
+        "var(--color-span-model-call)",
+        "var(--color-span-tool-call)",
+        "var(--color-span-span)"
       ])
     end
 

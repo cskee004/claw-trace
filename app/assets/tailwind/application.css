@@ -33,18 +33,24 @@
 
   /* Span-type bar colors — single source of truth for waterfall bars, badges, and future charts.
      Defined in :root so var() references work at runtime. Referenced in module.css via var(). */
-  --color-span-lifecycle:    var(--color-fg-subtle);  /* #565f89 — agent_run_started, run_completed */
-  --color-span-model:        #bb9af7;                 /* purple  — model_call, model_response */
-  --color-span-tool:         var(--color-accent);     /* #7aa2f7 — tool_call, tool_result */
-  --color-span-decision:     var(--color-warn-fg);    /* #e0af68 — decision */
-  --color-span-error:        var(--color-error-fg);   /* #f7768e — error */
+  --color-span-model-call:     #bb9af7;                 /* purple  — model_call */
+  --color-span-message-event:  #73daca;                 /* teal    — message_event */
+  --color-span-tool-call:      var(--color-accent);     /* #7aa2f7 — tool_call */
+  --color-span-session-event:  var(--color-fg-subtle);  /* #565f89 — session_event */
+  --color-span-command-event:  var(--color-warn-fg);    /* #e0af68 — command_event */
+  --color-span-webhook-event:  #ff9e64;                 /* orange  — webhook_event */
+  --color-span-openclaw-event: var(--color-fg-subtle);  /* #565f89 — openclaw_event catch-all */
+  --color-span-span:           var(--color-fg-muted);   /* #a9b1d6 — generic span fallback */
 
-  /* Badge foreground text */
-  --color-span-lifecycle-fg: var(--color-fg-muted);   /* #a9b1d6 */
-  --color-span-model-fg:     #bb9af7;
-  --color-span-tool-fg:      var(--color-accent);     /* #7aa2f7 */
-  --color-span-decision-fg:  var(--color-warn-fg);    /* #e0af68 */
-  --color-span-error-fg:     var(--color-error-fg);   /* #f7768e */
+  /* Badge foreground text — matches bar color for readability on dark surfaces */
+  --color-span-model-call-fg:     #bb9af7;
+  --color-span-message-event-fg:  #73daca;
+  --color-span-tool-call-fg:      var(--color-accent);
+  --color-span-session-event-fg:  var(--color-fg-muted);
+  --color-span-command-event-fg:  var(--color-warn-fg);
+  --color-span-webhook-event-fg:  #ff9e64;
+  --color-span-openclaw-event-fg: var(--color-fg-muted);
+  --color-span-span-fg:           var(--color-fg-muted);
 }
 
 @theme {

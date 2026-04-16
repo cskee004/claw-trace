@@ -53,23 +53,23 @@ module TracesHelper
     result
   end
 
-  # Returns a short display string for a span based on its name and metadata.
+  # Returns a short display string for a span based on its type and metadata.
   # Used to show contextual info (model name, HTTP method+host, tool name) next to each span.
+  # Checks first-class columns before falling back to the metadata hash.
   # Returns nil when no relevant metadata is available.
   def span_accent(span)
-    meta = span.metadata || {}
-    name = span.span_name.to_s
-
-    if name == "llm.inference"
-      meta["llm.model"].presence
-    elsif name == "http.client.request"
-      method = meta["http.method"].presence
-      url    = meta["http.url"].presence
-      return nil unless method && url
-      host = URI.parse(url).host rescue nil
-      host ? "#{method} #{host}" : nil
-    elsif name.start_with?("tool.exec.")
-      meta["tool.name"].presence
+    case span.span_type
+    when "model_call"
+      span.span_model.presence || span.metadata&.dig("openclaw.model")
+    when "message_event"
+      span.metadata&.dig("openclaw.channel")
+    when "tool_call"
+      span.metadata&.dig("openclaw.tool") ||
+        span.metadata&.dig("tool.name")
+    when "session_event"
+      span.metadata&.dig("openclaw.channel")
+    else
+      nil
     end
   end
 
