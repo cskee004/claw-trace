@@ -34,11 +34,14 @@
         <span style="color: var(--color-accent);">Claw</span><span style="color: var(--color-fg-subtle);">Trace</span>
       </div>
       <div id="header">
-        <% if content_for?(:breadcrumbs) %>
-          <%= yield :breadcrumbs %>
-        <% elsif content_for?(:title) %>
-          <span class="text-sm font-bold text-[var(--color-fg)]"><%= yield :title %></span>
-        <% end %>
+        <div>
+          <% if content_for?(:breadcrumbs) %>
+            <%= yield :breadcrumbs %>
+          <% elsif content_for?(:title) %>
+            <span class="text-sm font-bold text-[var(--color-fg)]"><%= yield :title %></span>
+          <% end %>
+        </div>
+        <%= render "layouts/status_bar", status_bar: @status_bar %>
       </div>
       <div id="nav">
         <%= link_to traces_path, class: "nav-link #{'nav-link--active' if controller_name == 'traces'}" do %>
@@ -60,13 +63,11 @@
           <%= link_to settings_path, class: "nav-link #{'nav-link--active' if controller_name == 'settings'}" do %>
             <i data-lucide="settings"></i>Settings
           <% end %>
+          <div class="nav-version">v<%= VERSION %></div>
         </div>
       </div>
       <div id="main">
         <%= yield %>
-      </div>
-      <div id="footer">
-        <%= render "layouts/status_bar", status_bar: @status_bar %>
       </div>
     </div>
   </body>
