@@ -17,6 +17,20 @@
         <% end %>
       </select>
 
+      <% if @subsystems.any? %>
+        <label class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]"
+               for="subsystem">Subsystem</label>
+        <select name="subsystem" id="subsystem"
+                class="text-sm bg-[var(--color-surface)] border border-[var(--color-surface-2)]
+                       text-[var(--color-fg)] rounded px-2.5 py-1.5
+                       focus:outline-none focus:border-[var(--color-accent)]">
+          <option value="">All</option>
+          <% @subsystems.each do |sub| %>
+            <option value="<%= sub %>" <%= "selected" if @subsystem == sub %>><%= sub %></option>
+          <% end %>
+        </select>
+      <% end %>
+
       <label class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]"
              for="trace_id">Trace ID</label>
       <input class="font-mono text-sm bg-[var(--color-surface)] border border-[var(--color-surface-2)]
@@ -31,7 +45,7 @@
                      text-[var(--color-fg)] rounded cursor-pointer hover:opacity-80"
               type="submit">Filter</button>
 
-      <% if @severity.present? || @trace_id.present? %>
+      <% if @severity.present? || @trace_id.present? || @subsystem.present? %>
         <%= link_to "Clear", logs_path,
               class: "text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]" %>
       <% end %>
