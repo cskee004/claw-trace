@@ -63,7 +63,7 @@
           <%= link_to settings_path, class: "nav-link #{'nav-link--active' if controller_name == 'settings'}" do %>
             <i data-lucide="settings"></i>Settings
           <% end %>
-          <div class="nav-version">v<%= VERSION %></div>
+          <div class="nav-version">v<%= ApplicationHelper::APP_VERSION %></div>
         </div>
       </div>
       <div id="main">

@@ -10,6 +10,14 @@
 
 ---
 
+![Trace list with status badges and session filter](docs/assets/screenshot-traces.png)
+
+![Waterfall span timeline with drawer metadata](docs/assets/screenshot-waterfall.png)
+
+![Dashboard with error rate and trace volume charts](docs/assets/screenshot-dashboard.png)
+
+---
+
 ### Requirements
 
 * Ruby 3.2 or higher
