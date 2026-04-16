@@ -14,8 +14,8 @@
         <li class="flex items-center gap-2 min-h-[1.75rem]"
             style="padding-left: <%= depth * 12 %>px">
           <span class="w-4 shrink-0 text-center text-xs leading-none">
-            <% if span.span_type == "error" %>
-              <span class="text-[var(--color-span-error-fg)]">✗</span>
+            <% if span.span_outcome == "error" %>
+              <span class="text-[var(--color-error-fg)]">✗</span>
             <% end %>
           </span>
           <span class="span-type-badge span-type-badge--<%= span.span_type %> shrink-0">
