@@ -152,6 +152,126 @@ RSpec.describe OtlpNormalizer do
     end
   end
 
+  # ── Synthetic fixture: openclaw.webhook.processed ─────────────────────────
+
+  describe "webhook processed fixture (span-openclaw-webhook-processed-001.json) [synthetic]" do
+    let(:result) { OtlpNormalizer.call(webhook_processed_fixture_json).first }
+    let(:trace)  { result[:trace] }
+    let(:span)   { result[:spans].first }
+
+    it "produces exactly one span" do
+      expect(result[:spans].length).to eq(1)
+    end
+
+    it "span_type is webhook_event" do
+      expect(span["span_type"]).to eq("webhook_event")
+    end
+
+    it "span_name is openclaw.webhook.processed" do
+      expect(span["span_name"]).to eq("openclaw.webhook.processed")
+    end
+
+    it "agent_id falls back to openclaw.chatId (no sessionKey on webhook spans)" do
+      expect(span["agent_id"]).to eq("channel:1494326249361899544")
+    end
+
+    it "trace status is success" do
+      expect(trace["status"]).to eq("success")
+    end
+
+    it "span_outcome is nil (no outcome attribute on webhook.processed)" do
+      expect(span["span_outcome"]).to be_nil
+    end
+
+    it "metadata preserves openclaw.webhook" do
+      expect(span["metadata"]["openclaw.webhook"]).to eq("message.create")
+    end
+
+    it "metadata preserves openclaw.channel" do
+      expect(span["metadata"]["openclaw.channel"]).to eq("discord")
+    end
+  end
+
+  # ── Synthetic fixture: openclaw.webhook.error ──────────────────────────────
+
+  describe "webhook error fixture (span-openclaw-webhook-error-001.json) [synthetic]" do
+    let(:result) { OtlpNormalizer.call(webhook_error_fixture_json).first }
+    let(:trace)  { result[:trace] }
+    let(:span)   { result[:spans].first }
+
+    it "produces exactly one span" do
+      expect(result[:spans].length).to eq(1)
+    end
+
+    it "span_type is webhook_event" do
+      expect(span["span_type"]).to eq("webhook_event")
+    end
+
+    it "span_name is openclaw.webhook.error" do
+      expect(span["span_name"]).to eq("openclaw.webhook.error")
+    end
+
+    it "agent_id falls back to openclaw.chatId (no sessionKey on webhook spans)" do
+      expect(span["agent_id"]).to eq("channel:1494326249361899544")
+    end
+
+    it "span_outcome is error (status.code == 2)" do
+      expect(span["span_outcome"]).to eq("error")
+    end
+
+    it "trace status is error" do
+      expect(trace["status"]).to eq("error")
+    end
+
+    it "metadata preserves openclaw.error message" do
+      expect(span["metadata"]["openclaw.error"]).to eq("Request timeout after 5000ms")
+    end
+  end
+
+  # ── Synthetic fixture: openclaw.session.stuck ──────────────────────────────
+
+  describe "session stuck fixture (span-openclaw-session-stuck-001.json) [synthetic]" do
+    let(:result) { OtlpNormalizer.call(session_stuck_fixture_json).first }
+    let(:trace)  { result[:trace] }
+    let(:span)   { result[:spans].first }
+
+    it "produces exactly one span" do
+      expect(result[:spans].length).to eq(1)
+    end
+
+    it "span_type is session_event" do
+      expect(span["span_type"]).to eq("session_event")
+    end
+
+    it "span_name is openclaw.session.stuck" do
+      expect(span["span_name"]).to eq("openclaw.session.stuck")
+    end
+
+    it "agent_id is derived from openclaw.sessionKey" do
+      expect(span["agent_id"]).to eq("agent:main:discord:channel:1494326249361899544")
+    end
+
+    it "trace status is success (stuck is a diagnostic event, not an error)" do
+      expect(trace["status"]).to eq("success")
+    end
+
+    it "span_outcome is nil" do
+      expect(span["span_outcome"]).to be_nil
+    end
+
+    it "metadata preserves openclaw.ageMs" do
+      expect(span["metadata"]["openclaw.ageMs"]).to eq(45000)
+    end
+
+    it "metadata preserves openclaw.queueDepth" do
+      expect(span["metadata"]["openclaw.queueDepth"]).to eq(3)
+    end
+
+    it "metadata preserves openclaw.state" do
+      expect(span["metadata"]["openclaw.state"]).to eq("waiting")
+    end
+  end
+
   # ── Pattern-based span_type rules ──────────────────────────────────────────
 
   describe "pattern-based span_type rules (first match wins)" do

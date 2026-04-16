@@ -13,6 +13,18 @@ module OtlpFixtures
     File.read(FIXTURE_DIR.join("log-openclaw-agent-execution-001.json"))
   end
 
+  def webhook_processed_fixture_json
+    File.read(FIXTURE_DIR.join("span-openclaw-webhook-processed-001.json"))
+  end
+
+  def webhook_error_fixture_json
+    File.read(FIXTURE_DIR.join("span-openclaw-webhook-error-001.json"))
+  end
+
+  def session_stuck_fixture_json
+    File.read(FIXTURE_DIR.join("span-openclaw-session-stuck-001.json"))
+  end
+
   # Builds a minimal single-span payload using real OpenClaw resource shape.
   # Used for testing pattern-based rules and structural behavior without
   # depending on the specific fixture span names.
