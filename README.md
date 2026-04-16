@@ -172,6 +172,8 @@ OpenClaw configuration:
 }
 ```
 
+For a full walkthrough of every OTLP attribute ClawTrace reads and example payloads for traces, metrics, and logs, see the [OpenClaw Integration Guide](docs/openclaw-integration.md).
+
 ---
 
 ### Service Layer
