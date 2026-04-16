@@ -1,0 +1,103 @@
+<%# Locals: span, latency (ms float or nil), total_duration_ms %>
+
+<div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg overflow-hidden">
+
+  <%# ── Header: type badge + name + outcome pill + timestamp + duration ── %>
+  <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-surface-2)]">
+    <span class="span-type-badge span-type-badge--<%= span.span_type %> shrink-0">
+      <%= span.span_type.tr("_", " ") %>
+    </span>
+    <% if span.span_name.present? %>
+      <span class="font-mono font-light text-xs text-[var(--color-fg-muted)] truncate"
+            title="<%= span.span_name %>">
+        <%= span.span_name %>
+      </span>
+    <% end %>
+    <% if span.span_outcome.present? %>
+      <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide shrink-0
+                   <%= span.span_outcome == 'error' ? 'bg-[color-mix(in_srgb,var(--color-error-fg)_15%,transparent)] text-[var(--color-error-fg)]'
+                                                    : 'bg-[color-mix(in_srgb,var(--color-success-fg)_15%,transparent)] text-[var(--color-success-fg)]' %>">
+        <%= span.span_outcome %>
+      </span>
+    <% end %>
+    <div class="ml-auto flex items-center gap-4 shrink-0">
+      <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)]">
+        <%= span.timestamp.strftime("%H:%M:%S.%3N") %>
+      </span>
+      <% if latency %>
+        <span class="font-mono text-xs font-bold text-[var(--color-fg-muted)]">
+          <%= format_duration(latency) %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Duration bar (full-width, type-coloured) ── %>
+  <% if latency && total_duration_ms.to_f > 0 %>
+    <div class="h-1.5 waterfall-bar--<%= span.span_type %> opacity-60"></div>
+  <% end %>
+
+  <div class="px-4 py-4 space-y-4">
+
+    <%# ── LLM call section (model_call spans only) ── %>
+    <% if span.span_type == "model_call" && (span.span_model || span.span_input_tokens) %>
+      <div class="pb-4 border-b border-[var(--color-surface-2)]">
+        <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-2">LLM call</p>
+        <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1">
+          <% if span.span_model.present? %>
+            <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Model</dt>
+            <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0"><%= span.span_model %></dd>
+          <% end %>
+          <% if span.span_provider.present? %>
+            <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Provider</dt>
+            <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0"><%= span.span_provider %></dd>
+          <% end %>
+          <% if span.span_input_tokens %>
+            <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Input tokens</dt>
+            <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0"><%= number_with_delimiter(span.span_input_tokens) %></dd>
+          <% end %>
+          <% if span.span_output_tokens %>
+            <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Output tokens</dt>
+            <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0"><%= number_with_delimiter(span.span_output_tokens) %></dd>
+          <% end %>
+          <% if span.span_cache_read_tokens %>
+            <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Cache read</dt>
+            <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0"><%= number_with_delimiter(span.span_cache_read_tokens) %></dd>
+          <% end %>
+          <% if span.span_cache_write_tokens %>
+            <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Cache write</dt>
+            <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0"><%= number_with_delimiter(span.span_cache_write_tokens) %></dd>
+          <% end %>
+          <% if span.span_total_tokens %>
+            <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Total tokens</dt>
+            <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0"><%= number_with_delimiter(span.span_total_tokens) %></dd>
+          <% end %>
+        </dl>
+      </div>
+    <% end %>
+
+    <%# ── Metadata ── %>
+    <% residual = (span.metadata || {}).reject { |k, _| k.to_s.start_with?("openclaw.model", "openclaw.provider", "openclaw.tokens", "openclaw.outcome") } %>
+    <% if residual.present? %>
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-2">Attributes</p>
+        <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1">
+          <% residual.each do |key, value| %>
+            <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] capitalize whitespace-nowrap">
+              <%= key.to_s.tr("_.", " ") %>
+            </dt>
+            <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] break-all m-0">
+              <%= value %>
+            </dd>
+          <% end %>
+        </dl>
+      </div>
+    <% end %>
+
+    <%# ── Logs ── %>
+    <turbo-frame id="logs-<%= span.span_id %>"
+                 src="<%= span_logs_path(span.span_id) %>">
+    </turbo-frame>
+
+  </div>
+</div>

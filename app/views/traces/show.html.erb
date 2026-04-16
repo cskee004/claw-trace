@@ -24,11 +24,18 @@
         span_count: @spans.size,
         total_duration_ms: @total_duration_ms %>
 
-  <%= render "waterfall",
-        trace: @trace,
-        spans: @spans,
-        span_latencies: @span_latencies,
-        total_duration_ms: @total_duration_ms %>
+  <% if @spans.size == 1 %>
+    <%= render "compact_span",
+          span: @spans.first,
+          latency: @span_latencies[@spans.first.span_id],
+          total_duration_ms: @total_duration_ms %>
+  <% else %>
+    <%= render "waterfall",
+          trace: @trace,
+          spans: @spans,
+          span_latencies: @span_latencies,
+          total_duration_ms: @total_duration_ms %>
+  <% end %>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
     <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4">
