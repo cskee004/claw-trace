@@ -6,7 +6,9 @@
 #
 # trace: — Hash with string keys: trace_id, agent_id, task_name, start_time, status
 # spans: — Array of hashes with string keys: span_id, parent_span_id, span_type,
-#           span_name, timestamp, agent_id, metadata
+#           span_name, timestamp, agent_id, metadata, span_model, span_provider,
+#           span_input_tokens, span_output_tokens, span_cache_read_tokens,
+#           span_cache_write_tokens, span_total_tokens, span_outcome
 #
 # Raises TelemetryIngester::Error on invalid input or validation failure.
 # All DB writes are wrapped in a single transaction — all succeed or all roll back.
@@ -54,15 +56,23 @@ class TelemetryIngester
 
   def persist_span(data, trace_id)
     Span.create!(
-      trace_id:       trace_id,
-      span_id:        data["span_id"],
-      parent_span_id: data["parent_span_id"],
-      span_type:      data["span_type"],
-      span_name:      data["span_name"],
-      timestamp:      data["timestamp"],
-      end_time:       data["end_time"],
-      agent_id:       data["agent_id"],
-      metadata:       data["metadata"] || {}
+      trace_id:                trace_id,
+      span_id:                 data["span_id"],
+      parent_span_id:          data["parent_span_id"],
+      span_type:               data["span_type"],
+      span_name:               data["span_name"],
+      timestamp:               data["timestamp"],
+      end_time:                data["end_time"],
+      agent_id:                data["agent_id"],
+      metadata:                data["metadata"] || {},
+      span_model:              data["span_model"],
+      span_provider:           data["span_provider"],
+      span_input_tokens:       data["span_input_tokens"],
+      span_output_tokens:      data["span_output_tokens"],
+      span_cache_read_tokens:  data["span_cache_read_tokens"],
+      span_cache_write_tokens: data["span_cache_write_tokens"],
+      span_total_tokens:       data["span_total_tokens"],
+      span_outcome:            data["span_outcome"]
     )
   end
 
