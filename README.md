@@ -73,6 +73,8 @@ rails server
 
 Visit `http://localhost:3000`.
 
+For active development with live Tailwind rebuilds, use `bin/dev`. On Windows, `bin/dev` (foreman) is not supported — run `rails server` and `rails tailwindcss:watch` in separate terminals instead.
+
 ---
 
 ### Network & Security
