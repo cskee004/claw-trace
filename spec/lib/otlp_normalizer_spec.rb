@@ -155,11 +155,19 @@ RSpec.describe OtlpNormalizer do
   # ── Pattern-based span_type rules ──────────────────────────────────────────
 
   describe "pattern-based span_type rules (first match wins)" do
-    def span_type_for(span_name, extra_span_attrs: [], status_code: nil)
+    def span_result_for(span_name, extra_span_attrs: [], status_code: nil)
       payload = realistic_single_span(span_name: span_name,
                                       extra_span_attrs: extra_span_attrs,
                                       status_code: status_code)
-      OtlpNormalizer.call(payload).first[:spans].first["span_type"]
+      OtlpNormalizer.call(payload).first[:spans].first
+    end
+
+    def span_type_for(span_name, extra_span_attrs: [], status_code: nil)
+      span_result_for(span_name, extra_span_attrs: extra_span_attrs, status_code: status_code)["span_type"]
+    end
+
+    def span_outcome_for(span_name, extra_span_attrs: [], status_code: nil)
+      span_result_for(span_name, extra_span_attrs: extra_span_attrs, status_code: status_code)["span_outcome"]
     end
 
     it "openclaw.model.* → model_call" do
@@ -203,33 +211,37 @@ RSpec.describe OtlpNormalizer do
       expect(span_type_for("custom.operation")).to eq("span")
     end
 
-    describe "error overlay" do
-      it "openclaw.outcome in error set overrides type to error" do
+    describe "error overlay (span_outcome, not span_type)" do
+      it "openclaw.outcome=error sets span_outcome to error" do
         attrs = [{ "key" => "openclaw.outcome", "value" => { "stringValue" => "error" } }]
-        expect(span_type_for("openclaw.message.processed", extra_span_attrs: attrs)).to eq("error")
+        expect(span_outcome_for("openclaw.message.processed", extra_span_attrs: attrs)).to eq("error")
+        expect(span_type_for("openclaw.message.processed",   extra_span_attrs: attrs)).to eq("message_event")
       end
 
-      it "openclaw.outcome=failed overrides to error" do
+      it "openclaw.outcome=failed sets span_outcome to error" do
         attrs = [{ "key" => "openclaw.outcome", "value" => { "stringValue" => "failed" } }]
-        expect(span_type_for("openclaw.model.usage", extra_span_attrs: attrs)).to eq("error")
+        expect(span_outcome_for("openclaw.model.usage", extra_span_attrs: attrs)).to eq("error")
       end
 
-      it "openclaw.outcome=timeout overrides to error" do
+      it "openclaw.outcome=timeout sets span_outcome to error" do
         attrs = [{ "key" => "openclaw.outcome", "value" => { "stringValue" => "timeout" } }]
-        expect(span_type_for("openclaw.model.usage", extra_span_attrs: attrs)).to eq("error")
+        expect(span_outcome_for("openclaw.model.usage", extra_span_attrs: attrs)).to eq("error")
       end
 
-      it "openclaw.outcome=completed does NOT override (not in error set)" do
+      it "openclaw.outcome=completed does NOT set error span_outcome" do
         attrs = [{ "key" => "openclaw.outcome", "value" => { "stringValue" => "completed" } }]
-        expect(span_type_for("openclaw.message.processed", extra_span_attrs: attrs)).to eq("message_event")
+        expect(span_outcome_for("openclaw.message.processed", extra_span_attrs: attrs)).to eq("completed")
+        expect(span_type_for("openclaw.message.processed",    extra_span_attrs: attrs)).to eq("message_event")
       end
 
-      it "OTLP status.code == 2 overrides type to error" do
-        expect(span_type_for("openclaw.model.usage", status_code: 2)).to eq("error")
+      it "OTLP status.code == 2 sets span_outcome to error" do
+        expect(span_outcome_for("openclaw.model.usage", status_code: 2)).to eq("error")
+        expect(span_type_for("openclaw.model.usage",    status_code: 2)).to eq("model_call")
       end
 
-      it "OTLP status.code == 0 does NOT override" do
-        expect(span_type_for("openclaw.model.usage", status_code: 0)).to eq("model_call")
+      it "OTLP status.code == 0 does NOT set error span_outcome" do
+        expect(span_outcome_for("openclaw.model.usage", status_code: 0)).to be_nil
+        expect(span_type_for("openclaw.model.usage",    status_code: 0)).to eq("model_call")
       end
     end
   end

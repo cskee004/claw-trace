@@ -10,27 +10,33 @@
 #     }]
 #   }
 #
-# Output: an Array of result hashes, one per distinct traceId in the payload.
-# Single-trace payloads return a one-element array.
+# Output: Array of result hashes, one per distinct traceId.
 #   [
 #     {
 #       trace: { "trace_id", "agent_id", "task_name", "start_time", "status" },
-#       spans: [{ "trace_id", "span_id", "parent_span_id", "span_type", "span_name", "timestamp", "agent_id", "metadata" }, ...]
-#     },
-#     ...
+#       spans: [{ "trace_id", "span_id", "parent_span_id", "span_type", "span_name",
+#                 "timestamp", "end_time", "agent_id", "metadata",
+#                 "span_model", "span_provider", "span_input_tokens", "span_output_tokens",
+#                 "span_cache_read_tokens", "span_cache_write_tokens", "span_total_tokens",
+#                 "span_outcome" }, ...]
+#     }, ...
 #   ]
 #
-# Span type mapping:
-#   openclaw.request      → agent_run_started
-#   openclaw.agent.turn   → model_call
-#   tool.*                → tool_call
-#   openclaw.command.*    → decision
-#   ERROR status (code 2) → error  (overrides name-based mapping)
-#   final span in trace   → run_completed (unless error)
+# Span type taxonomy (prefix-ordered rules):
+#   openclaw.model.*    → model_call
+#   openclaw.message.*  → message_event
+#   openclaw.session.*  → session_event
+#   openclaw.command.*  → command_event
+#   openclaw.webhook.*  → webhook_event
+#   openclaw.*          → openclaw_event
+#   tool.*              → tool_call
+#   (anything else)     → span
+#
+# agent_id derivation (first match wins):
+#   openclaw.sessionKey span attr → openclaw.chatId span attr → service.name resource attr → "unknown"
 #
 # Timestamps arrive as nanosecond strings and are converted to ISO8601.
 # OTLP traceIds (32 hex chars) are truncated to 16 chars to match the DB schema.
-# agent_id is read from the openclaw.session.key resource attribute.
 #
 # Usage:
 #   results = OtlpNormalizer.call(otlp_json_string)
@@ -40,12 +46,18 @@
 class OtlpNormalizer
   Error = Class.new(StandardError)
 
-  SPAN_NAME_MAP = {
-    "openclaw.request"    => "session_event",
-    "openclaw.agent.turn" => "model_call"
-  }.freeze
-
   OTLP_ERROR_CODE = 2
+
+  SPAN_TYPE_PREFIXES = [
+    ["openclaw.model.",   "model_call"],
+    ["openclaw.message.", "message_event"],
+    ["openclaw.session.", "session_event"],
+    ["openclaw.command.", "command_event"],
+    ["openclaw.webhook.", "webhook_event"],
+    ["openclaw.tool.",    "tool_call"],
+    ["openclaw.",         "openclaw_event"],
+    ["tool.",             "tool_call"]
+  ].freeze
 
   def self.call(json_string)
     new(json_string).call
@@ -68,11 +80,10 @@ class OtlpNormalizer
 
     grouped.map do |trace_id, entries|
       raw_spans     = entries.map { |e| e[:span] }
-      final_span    = find_final_span(raw_spans)
       primary_agent = entries.first[:agent_id]
 
-      trace_line = build_trace_record(raw_spans, trace_id, primary_agent, final_span)
-      span_lines = entries.map { |e| build_span_record(e[:span], trace_id, e[:agent_id], final_span) }
+      trace_line = build_trace_record(raw_spans, trace_id, primary_agent)
+      span_lines = entries.map { |e| build_span_record(e[:span], trace_id, e[:resource_attrs]) }
 
       { trace: trace_line, spans: span_lines }
     end
@@ -95,10 +106,20 @@ class OtlpNormalizer
 
   def spans_by_resource(resource_spans)
     resource_spans.flat_map do |rs|
-      attrs    = attrs_to_hash(rs.dig("resource", "attributes") || [])
-      agent_id = attrs["openclaw.session.key"] || attrs["service.name"] || "unknown"
-      (rs["scopeSpans"] || []).flat_map { |ss| ss["spans"] || [] }.map { |s| { span: s, agent_id: agent_id } }
+      resource_attrs = attrs_to_hash(rs.dig("resource", "attributes") || [])
+      (rs["scopeSpans"] || []).flat_map { |ss| ss["spans"] || [] }.map do |s|
+        span_attrs = attrs_to_hash(s["attributes"] || [])
+        agent_id   = resolve_agent_id(span_attrs, resource_attrs)
+        { span: s, agent_id: agent_id, resource_attrs: resource_attrs }
+      end
     end
+  end
+
+  def resolve_agent_id(span_attrs, resource_attrs)
+    span_attrs["openclaw.sessionKey"] ||
+      span_attrs["openclaw.chatId"] ||
+      resource_attrs["service.name"] ||
+      "unknown"
   end
 
   def normalize_trace_id(otlp_trace_id)
@@ -114,11 +135,7 @@ class OtlpNormalizer
     nano_to_iso8601(nano)
   end
 
-  def find_final_span(spans)
-    spans.max_by { |s| s["startTimeUnixNano"].to_i }
-  end
-
-  def build_trace_record(spans, trace_id, agent_id, final_span)
+  def build_trace_record(spans, trace_id, agent_id)
     earliest_nano = spans.map { |s| s["startTimeUnixNano"].to_i }.min
     root_span     = spans.find { |s| s["parentSpanId"].blank? } || spans.first
 
@@ -127,43 +144,51 @@ class OtlpNormalizer
       "agent_id"   => agent_id,
       "task_name"  => root_span["name"],
       "start_time" => nano_to_iso8601(earliest_nano),
-      "status"     => derive_trace_status(spans, final_span)
+      "status"     => spans.any? { |s| error_status?(s) } ? "error" : "success"
     }
   end
 
-  def derive_trace_status(spans, _final_span)
-    return "error" if spans.any? { |s| error_status?(s) }
+  def build_span_record(span, trace_id, resource_attrs)
+    span_attrs = attrs_to_hash(span["attributes"] || [])
+    agent_id   = resolve_agent_id(span_attrs, resource_attrs)
 
-    "success"
-  end
-
-  def build_span_record(span, trace_id, agent_id, final_span)
     {
-      "trace_id"       => trace_id,
-      "span_id"        => span["spanId"],
-      "parent_span_id" => span["parentSpanId"].presence,
-      "span_type"      => resolve_span_type(span, final_span),
-      "span_name"      => span["name"],
-      "timestamp"      => nano_to_iso8601(span["startTimeUnixNano"]),
-      "end_time"       => nano_to_iso8601_or_nil(span["endTimeUnixNano"]),
-      "agent_id"       => agent_id,
-      "metadata"       => attrs_to_hash(span["attributes"] || [])
+      "trace_id"               => trace_id,
+      "span_id"                => span["spanId"],
+      "parent_span_id"         => span["parentSpanId"].presence,
+      "span_type"              => resolve_span_type(span["name"]),
+      "span_name"              => span["name"],
+      "timestamp"              => nano_to_iso8601(span["startTimeUnixNano"]),
+      "end_time"               => nano_to_iso8601_or_nil(span["endTimeUnixNano"]),
+      "agent_id"               => agent_id,
+      "metadata"               => span_attrs,
+      "span_model"             => span_attrs["openclaw.model"],
+      "span_provider"          => span_attrs["openclaw.provider"],
+      "span_input_tokens"      => span_attrs["openclaw.tokens.input"],
+      "span_output_tokens"     => span_attrs["openclaw.tokens.output"],
+      "span_cache_read_tokens" => span_attrs["openclaw.tokens.cache_read"],
+      "span_cache_write_tokens"=> span_attrs["openclaw.tokens.cache_write"],
+      "span_total_tokens"      => span_attrs["openclaw.tokens.total"],
+      "span_outcome"           => resolve_span_outcome(span, span_attrs)
     }
   end
 
-  def resolve_span_type(span, _final_span)
-    map_span_name(span["name"])
+  def resolve_span_type(name)
+    SPAN_TYPE_PREFIXES.each do |prefix, type|
+      return type if name.to_s.start_with?(prefix)
+    end
+    "span"
+  end
+
+  OUTCOME_ERROR_SET = %w[error failed timeout].freeze
+
+  def resolve_span_outcome(span, span_attrs)
+    return "error" if error_status?(span)
+    outcome = span_attrs["openclaw.outcome"]
+    OUTCOME_ERROR_SET.include?(outcome) ? "error" : outcome
   end
 
   def error_status?(span)
     span.dig("status", "code") == OTLP_ERROR_CODE
-  end
-
-  def map_span_name(name)
-    return SPAN_NAME_MAP[name] if SPAN_NAME_MAP.key?(name)
-    return "tool_call"         if name.to_s.start_with?("tool.")
-    return "openclaw_event"    if name.to_s.start_with?("openclaw.command.")
-
-    "span"
   end
 end
