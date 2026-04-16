@@ -41,7 +41,7 @@ RSpec.describe TraceDurationCalculator do
       trace = create_trace
       create_span(trace, timestamp: Time.zone.parse("2026-04-03T10:00:00.000Z"))
       create_span(trace, timestamp: Time.zone.parse("2026-04-03T10:00:02.500Z"),
-                         overrides: { span_type: "run_completed" })
+                         overrides: { span_type: "span" })
       trace.reload
 
       expect(described_class.call(trace)).to eq(2500.0)
@@ -68,12 +68,12 @@ RSpec.describe TraceDurationCalculator do
       trace_a = create_trace
       create_span(trace_a, timestamp: Time.zone.parse("2026-04-03T10:00:00Z"))
       create_span(trace_a, timestamp: Time.zone.parse("2026-04-03T10:00:01Z"),
-                           overrides: { span_type: "run_completed" })
+                           overrides: { span_type: "span" })
 
       trace_b = create_trace
       create_span(trace_b, timestamp: Time.zone.parse("2026-04-03T10:00:00Z"))
       create_span(trace_b, timestamp: Time.zone.parse("2026-04-03T10:00:03Z"),
-                           overrides: { span_type: "run_completed" })
+                           overrides: { span_type: "span" })
 
       result = described_class.call_many([ trace_a, trace_b ])
 
@@ -86,7 +86,7 @@ RSpec.describe TraceDurationCalculator do
       trace_without_spans = create_trace
       create_span(trace_with_spans, timestamp: Time.zone.parse("2026-04-03T10:00:00Z"))
       create_span(trace_with_spans, timestamp: Time.zone.parse("2026-04-03T10:00:02Z"),
-                                    overrides: { span_type: "run_completed" })
+                                    overrides: { span_type: "span" })
 
       result = described_class.call_many([ trace_with_spans, trace_without_spans ])
 
@@ -98,7 +98,7 @@ RSpec.describe TraceDurationCalculator do
       trace = create_trace
       create_span(trace, timestamp: Time.zone.parse("2026-04-03T10:00:00Z"))
       create_span(trace, timestamp: Time.zone.parse("2026-04-03T10:00:01Z"),
-                         overrides: { span_type: "run_completed" })
+                         overrides: { span_type: "span" })
 
       result = described_class.call_many(Trace.where(trace_id: trace.trace_id))
 

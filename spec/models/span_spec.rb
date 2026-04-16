@@ -15,7 +15,7 @@ RSpec.describe Span, type: :model do
     {
       trace_id:  trace.trace_id,
       span_id:   "s1",
-      span_type: "agent_run_started",
+      span_type: "session_event",
       timestamp: Time.utc(2026, 4, 2, 12, 0, 1),
       agent_id:  "support-agent",
       metadata:  { "task" => "classify_customer_ticket" }

@@ -11,7 +11,7 @@ RSpec.describe SpanChartBuilder do
       [
         fake_span(span_type: "model_call", span_name: "agent.turn", span_id: "s1"),
         fake_span(span_type: "tool_call",  span_name: "Read",        span_id: "s2"),
-        fake_span(span_type: "error",      span_name: nil,           span_id: "s3")
+        fake_span(span_type: "span",        span_name: nil,           span_id: "s3")
       ]
     end
     let(:latencies) { { "s1" => 2100.0, "s2" => 120.0, "s3" => 0.0 } }
@@ -32,7 +32,7 @@ RSpec.describe SpanChartBuilder do
       expect(data).to eq([
         { x: "agent.turn", y: 2100 },
         { x: "Read",       y: 120 },
-        { x: "error",      y: 0 }
+        { x: "span",       y: 0 }
       ])
     end
 
@@ -40,7 +40,7 @@ RSpec.describe SpanChartBuilder do
       expect(result[:options][:colors]).to eq([
         "var(--color-span-model)",
         "var(--color-span-tool)",
-        "var(--color-span-error)"
+        "var(--color-fg-muted)"
       ])
     end
 
@@ -52,7 +52,7 @@ RSpec.describe SpanChartBuilder do
 
     it "uses span_type as label when span_name is nil" do
       data = result[:options].dig(:series, 0, :data)
-      expect(data[2][:x]).to eq("error")
+      expect(data[2][:x]).to eq("span")
     end
 
     it "suppresses the legend" do

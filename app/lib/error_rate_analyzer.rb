@@ -1,5 +1,5 @@
 # Computes error rate across a collection of Trace records.
-# A trace is considered errored if it contains at least one span with span_type "error".
+# A trace is considered errored if it contains at least one span with span_outcome "error".
 # Spans must be eager-loaded (e.g. Trace.includes(:spans)) to avoid N+1 queries.
 class ErrorRateAnalyzer
   Result = Data.define(:error_rate, :affected_trace_ids)
@@ -33,6 +33,6 @@ class ErrorRateAnalyzer
   private
 
   def error_trace?(trace)
-    trace.spans.any? { |s| s.span_type == "error" }
+    trace.spans.any? { |s| s.span_outcome == "error" }
   end
 end

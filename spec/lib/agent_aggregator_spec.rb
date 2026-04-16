@@ -11,12 +11,13 @@ RSpec.describe AgentAggregator do
     )
   end
 
-  def create_span(trace, span_type:, timestamp: Time.zone.now, metadata: {})
+  def create_span(trace, span_type: "span", timestamp: Time.zone.now, metadata: {}, span_outcome: nil)
     Span.create!(
       trace_id:       trace.trace_id,
       span_id:        SecureRandom.hex(4),
       parent_span_id: nil,
       span_type:      span_type,
+      span_outcome:   span_outcome,
       timestamp:      timestamp,
       agent_id:       trace.agent_id,
       metadata:       metadata
@@ -56,20 +57,20 @@ RSpec.describe AgentAggregator do
       let!(:t3) { create_trace(agent_id: agent_id, status: :error,   start_time: 1.hour.ago) }
 
       before do
-        # t1: two tool_result spans 10 seconds apart → duration 10s
-        create_span(t1, span_type: "tool_result",
+        # t1: two tool_call spans 10 seconds apart → duration 10s
+        create_span(t1, span_type: "tool_call",
                     timestamp: 2.days.ago,
                     metadata: { "tool_name" => "search", "success" => true })
-        create_span(t1, span_type: "tool_result",
+        create_span(t1, span_type: "tool_call",
                     timestamp: 2.days.ago + 10.seconds,
                     metadata: { "tool_name" => "search", "success" => true })
-        # t2: one tool_result span → duration 0
-        create_span(t2, span_type: "tool_result",
+        # t2: one tool_call span → duration 0
+        create_span(t2, span_type: "tool_call",
                     timestamp: 1.day.ago,
                     metadata: { "tool_name" => "read_file", "success" => false })
-        # t3: error span + run_completed 5 seconds later → duration 5s
-        create_span(t3, span_type: "error",        timestamp: 1.hour.ago)
-        create_span(t3, span_type: "run_completed", timestamp: 1.hour.ago + 5.seconds)
+        # t3: error-outcome span + terminal span 5 seconds later → duration 5s
+        create_span(t3, span_outcome: "error", timestamp: 1.hour.ago)
+        create_span(t3, timestamp: 1.hour.ago + 5.seconds)
       end
 
       let(:traces) { Trace.includes(:spans).where(agent_id: agent_id) }
@@ -84,8 +85,8 @@ RSpec.describe AgentAggregator do
         expect(result.error_count).to eq(1)
       end
 
-      it "computes error_rate from ErrorRateAnalyzer (span-based: t3 has an error span)" do
-        # 1 of 3 traces has an error span → 33.3%
+      it "computes error_rate from ErrorRateAnalyzer (span-based: t3 has an error-outcome span)" do
+        # 1 of 3 traces has an error-outcome span → 33.3%
         expect(result.error_rate).to be_within(0.1).of(33.3)
       end
 
@@ -93,7 +94,7 @@ RSpec.describe AgentAggregator do
         expect(result.last_seen.to_i).to be_within(5).of(1.hour.ago.to_i)
       end
 
-      it "includes top_tools from all tool_result spans, sorted by call count" do
+      it "includes top_tools from all tool_call spans, sorted by call count" do
         expect(result.top_tools.keys.first).to eq("search")
         expect(result.top_tools["search"][:calls]).to eq(2)
       end
@@ -101,7 +102,7 @@ RSpec.describe AgentAggregator do
       it "limits top_tools to at most 5 entries even when more than 5 tools exist" do
         # Create spans for 6 distinct tools to exercise the .first(5) slice
         %w[tool_a tool_b tool_c tool_d tool_e tool_f].each do |name|
-          create_span(t1, span_type: "tool_result",
+          create_span(t1, span_type: "tool_call",
                       timestamp: 2.days.ago + 1.second,
                       metadata: { "tool_name" => name, "success" => true })
         end

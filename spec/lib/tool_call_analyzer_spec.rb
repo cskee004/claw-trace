@@ -25,7 +25,7 @@ RSpec.describe ToolCallAnalyzer do
 
   def tool_result(trace, tool_name:, success:)
     create_span(trace,
-      span_type: "tool_result",
+      span_type: "tool_call",
       metadata:  { "tool_name" => tool_name, "success" => success, "result" => success ? "ok" : "error" }
     )
   end
@@ -35,11 +35,11 @@ RSpec.describe ToolCallAnalyzer do
       expect(described_class.call([])).to eq({})
     end
 
-    it "returns an empty hash when no tool_result spans are present" do
+    it "returns an empty hash when no tool_call spans are present" do
       trace = create_trace
       create_span(trace,
-        span_type: "tool_call",
-        metadata:  { "tool_name" => "search", "arguments" => { "query" => "test" } }
+        span_type: "model_call",
+        metadata:  { "model" => "claude-sonnet-4-6" }
       )
 
       expect(described_class.call(Span.all)).to eq({})
@@ -105,11 +105,11 @@ RSpec.describe ToolCallAnalyzer do
       expect(result["summarize"][:calls]).to eq(1)
     end
 
-    it "ignores spans of non-tool-result types" do
+    it "ignores spans of non-tool-call types" do
       trace = create_trace
       tool_result(trace, tool_name: "search", success: true)
-      create_span(trace, span_type: "model_call",   metadata: { "model" => "claude-sonnet-4-6" })
-      create_span(trace, span_type: "decision",     metadata: { "reasoning" => "proceed" })
+      create_span(trace, span_type: "model_call",     metadata: { "model" => "claude-sonnet-4-6" })
+      create_span(trace, span_type: "openclaw_event", metadata: { "reasoning" => "proceed" })
 
       result = described_class.call(Span.all)
 

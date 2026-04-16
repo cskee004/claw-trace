@@ -11,12 +11,13 @@ RSpec.describe ErrorRateAnalyzer do
     }.merge(overrides))
   end
 
-  def create_span(trace, span_type:, overrides: {})
+  def create_span(trace, span_type: "span", span_outcome: nil, overrides: {})
     Span.create!({
       trace_id:       trace.trace_id,
       span_id:        SecureRandom.hex(4),
       parent_span_id: nil,
       span_type:      span_type,
+      span_outcome:   span_outcome,
       timestamp:      Time.zone.parse("2026-04-03T10:00:01Z"),
       agent_id:       trace.agent_id,
       metadata:       { "generated" => true }
@@ -39,7 +40,7 @@ RSpec.describe ErrorRateAnalyzer do
     it "returns 0.0 error_rate when no traces have error spans" do
       trace = create_trace
       create_span(trace, span_type: "model_call")
-      create_span(trace, span_type: "run_completed")
+      create_span(trace, span_type: "span")
 
       result = described_class.call(load_traces([trace.trace_id]))
 
@@ -50,8 +51,8 @@ RSpec.describe ErrorRateAnalyzer do
     it "returns 100.0 error_rate when all traces have error spans" do
       trace_a = create_trace
       trace_b = create_trace
-      create_span(trace_a, span_type: "error")
-      create_span(trace_b, span_type: "error")
+      create_span(trace_a, span_outcome: "error")
+      create_span(trace_b, span_outcome: "error")
 
       result = described_class.call(load_traces([trace_a.trace_id, trace_b.trace_id]))
 
@@ -62,9 +63,9 @@ RSpec.describe ErrorRateAnalyzer do
       errored = create_trace
       clean_a = create_trace
       clean_b = create_trace
-      create_span(errored, span_type: "error")
-      create_span(clean_a, span_type: "run_completed")
-      create_span(clean_b, span_type: "run_completed")
+      create_span(errored, span_outcome: "error")
+      create_span(clean_a)
+      create_span(clean_b)
 
       result = described_class.call(load_traces([errored, clean_a, clean_b].map(&:trace_id)))
 
@@ -75,8 +76,8 @@ RSpec.describe ErrorRateAnalyzer do
     it "includes the trace_id of each affected trace" do
       errored = create_trace
       clean   = create_trace
-      create_span(errored, span_type: "error")
-      create_span(clean,   span_type: "run_completed")
+      create_span(errored, span_outcome: "error")
+      create_span(clean)
 
       result = described_class.call(load_traces([errored.trace_id, clean.trace_id]))
 
@@ -85,8 +86,8 @@ RSpec.describe ErrorRateAnalyzer do
 
     it "counts a trace with multiple error spans only once" do
       trace = create_trace
-      create_span(trace, span_type: "error")
-      create_span(trace, span_type: "error")
+      create_span(trace, span_outcome: "error")
+      create_span(trace, span_outcome: "error")
 
       result = described_class.call(load_traces([trace.trace_id]))
 
@@ -103,7 +104,7 @@ RSpec.describe ErrorRateAnalyzer do
 
     it "accepts an ActiveRecord::Relation as input" do
       trace = create_trace
-      create_span(trace, span_type: "error")
+      create_span(trace, span_outcome: "error")
 
       result = described_class.call(Trace.includes(:spans).where(trace_id: trace.trace_id))
 

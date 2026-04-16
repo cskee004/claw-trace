@@ -41,7 +41,7 @@ class OtlpNormalizer
   Error = Class.new(StandardError)
 
   SPAN_NAME_MAP = {
-    "openclaw.request"    => "agent_run_started",
+    "openclaw.request"    => "session_event",
     "openclaw.agent.turn" => "model_call"
   }.freeze
 
@@ -151,10 +151,7 @@ class OtlpNormalizer
     }
   end
 
-  def resolve_span_type(span, final_span)
-    return "error"         if error_status?(span)
-    return "run_completed" if span.equal?(final_span)
-
+  def resolve_span_type(span, _final_span)
     map_span_name(span["name"])
   end
 
@@ -165,8 +162,8 @@ class OtlpNormalizer
   def map_span_name(name)
     return SPAN_NAME_MAP[name] if SPAN_NAME_MAP.key?(name)
     return "tool_call"         if name.to_s.start_with?("tool.")
-    return "decision"          if name.to_s.start_with?("openclaw.command.")
+    return "openclaw_event"    if name.to_s.start_with?("openclaw.command.")
 
-    "model_call"
+    "span"
   end
 end

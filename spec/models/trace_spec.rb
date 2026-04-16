@@ -117,7 +117,7 @@ RSpec.describe Trace, type: :model do
     end
 
     context "when the trace has one span" do
-      before { create_span("s1", "agent_run_started", Time.utc(2026, 4, 2, 12, 0, 5)) }
+      before { create_span("s1", "session_event", Time.utc(2026, 4, 2, 12, 0, 5)) }
 
       it "returns 0.0" do
         loaded = Trace.includes(:spans).find_by(trace_id: trace.trace_id)
@@ -127,9 +127,9 @@ RSpec.describe Trace, type: :model do
 
     context "when the trace has multiple spans" do
       before do
-        create_span("s1", "agent_run_started", Time.utc(2026, 4, 2, 12, 0, 0))
+        create_span("s1", "session_event", Time.utc(2026, 4, 2, 12, 0, 0))
         create_span("s2", "model_call",        Time.utc(2026, 4, 2, 12, 0, 2))
-        create_span("s3", "run_completed",     Time.utc(2026, 4, 2, 12, 0, 5))
+        create_span("s3", "span",     Time.utc(2026, 4, 2, 12, 0, 5))
       end
 
       it "returns elapsed seconds between earliest and latest span" do

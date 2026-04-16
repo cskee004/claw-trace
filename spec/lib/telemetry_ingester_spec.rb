@@ -16,7 +16,7 @@ RSpec.describe TelemetryIngester do
       "trace_id"       => "a1b2c3d4e5f6a7b8",
       "span_id"        => "s1",
       "parent_span_id" => nil,
-      "span_type"      => "agent_run_started",
+      "span_type"      => "session_event",
       "timestamp"      => "2026-04-02T12:00:01Z",
       "agent_id"       => "support-agent",
       "metadata"       => { "task" => "classify_customer_ticket" }
@@ -41,7 +41,7 @@ RSpec.describe TelemetryIngester do
 
     it "persists multiple spans" do
       spans = [
-        span_data(span_id: "s1", span_type: "agent_run_started"),
+        span_data(span_id: "s1", span_type: "session_event"),
         span_data(span_id: "s2", span_type: "model_call",
                   parent_span_id: "s1",
                   metadata: { "model_name" => "claude-sonnet-4-6", "prompt_tokens" => 100 })
@@ -114,7 +114,7 @@ RSpec.describe TelemetryIngester do
 
     it "broadcasts one append per span when multiple spans are ingested" do
       spans = [
-        span_data(span_id: "s1", span_type: "agent_run_started"),
+        span_data(span_id: "s1", span_type: "session_event"),
         span_data(span_id: "s2", span_type: "model_call", parent_span_id: "s1")
       ]
       expect(Turbo::StreamsChannel).to receive(:broadcast_append_to)

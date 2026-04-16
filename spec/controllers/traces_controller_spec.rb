@@ -51,8 +51,8 @@ RSpec.describe TracesController, type: :controller do
     it 'assigns @durations as a hash of trace_id => milliseconds' do
       trace = create_trace(trace_id: "c" * 16)
       t0 = Time.utc(2026, 4, 2, 12, 0, 0)
-      create_span(trace, span_id: "sp1", span_type: "agent_run_started", timestamp: t0)
-      create_span(trace, span_id: "sp2", span_type: "run_completed",     timestamp: t0 + 4)
+      create_span(trace, span_id: "sp1", span_type: "session_event", timestamp: t0)
+      create_span(trace, span_id: "sp2", span_type: "span",     timestamp: t0 + 4)
 
       get :index
 
@@ -81,9 +81,9 @@ RSpec.describe TracesController, type: :controller do
 
       it 'assigns @spans ordered chronologically' do
         t0 = Time.utc(2026, 4, 2, 12, 0, 0)
-        s1 = create_span(trace, span_id: "sp1", span_type: "agent_run_started", timestamp: t0)
+        s1 = create_span(trace, span_id: "sp1", span_type: "session_event", timestamp: t0)
         s2 = create_span(trace, span_id: "sp2", span_type: "model_call",        timestamp: t0 + 2)
-        s3 = create_span(trace, span_id: "sp3", span_type: "run_completed",     timestamp: t0 + 5)
+        s3 = create_span(trace, span_id: "sp3", span_type: "span",     timestamp: t0 + 5)
 
         get :show, params: { id: trace.trace_id }
 
@@ -92,9 +92,9 @@ RSpec.describe TracesController, type: :controller do
 
       it 'assigns @span_latencies keyed by span_id in milliseconds' do
         t0 = Time.utc(2026, 4, 2, 12, 0, 0)
-        s1 = create_span(trace, span_id: "sp1", span_type: "agent_run_started", timestamp: t0)
+        s1 = create_span(trace, span_id: "sp1", span_type: "session_event", timestamp: t0)
         s2 = create_span(trace, span_id: "sp2", span_type: "model_call",        timestamp: t0 + 3)
-        s3 = create_span(trace, span_id: "sp3", span_type: "run_completed",     timestamp: t0 + 7)
+        s3 = create_span(trace, span_id: "sp3", span_type: "span",     timestamp: t0 + 7)
 
         get :show, params: { id: trace.trace_id }
 
@@ -111,8 +111,8 @@ RSpec.describe TracesController, type: :controller do
 
       it 'assigns @total_duration_ms as elapsed milliseconds across all spans' do
         t0 = Time.utc(2026, 4, 2, 12, 0, 0)
-        create_span(trace, span_id: "sp1", span_type: "agent_run_started", timestamp: t0)
-        create_span(trace, span_id: "sp2", span_type: "run_completed",     timestamp: t0 + 9)
+        create_span(trace, span_id: "sp1", span_type: "session_event", timestamp: t0)
+        create_span(trace, span_id: "sp2", span_type: "span",     timestamp: t0 + 9)
 
         get :show, params: { id: trace.trace_id }
 

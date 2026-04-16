@@ -141,7 +141,7 @@ RSpec.describe "POST /v1/metrics", type: :request do
       dp = pb_f64.call(3, METRICS_ENDPOINT_BASE_TS) +
            pb_tag.call(6, 1) + [1200].pack("q<")   # asInt as sfixed64
 
-      sum    = pb_len.call(2, dp)                            # Sum.data_points = field 2
+      sum    = pb_len.call(1, dp)                            # Sum.data_points = field 1
       metric = pb_str.call(1, "gen_ai.client.token.usage") + pb_len.call(7, sum)
       scope  = pb_len.call(3, metric)                        # ScopeMetrics.metrics = field 3
       pb_len.call(1, pb_len.call(2, scope))                  # ResourceMetrics.scope_metrics = field 2, ExportMetricsServiceRequest.resource_metrics = field 1

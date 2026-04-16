@@ -3,8 +3,8 @@
 # Derived from scenario shapes in .claude/open-claw-test-files/TEST_CASES.md.
 #
 # trace_id: exactly 16 hex chars (matches Trace model validation)
-# span_type: one of Span::SPAN_TYPES — agent_run_started, model_call, model_response,
-#            tool_call, tool_result, decision, error, run_completed
+# span_type: one of Span::SPAN_TYPES — model_call, message_event, tool_call,
+#            session_event, command_event, webhook_event, openclaw_event, span
 
 if Trace.exists?(trace_id: "a1b2c3d4e5f60001")
   puts "Seed data already present — skipping."
@@ -41,12 +41,12 @@ Trace.create!(trace_id: t1_id, agent_id: t1_agent,
               start_time: t1_base, status: :success)
 
 [
-  { span_id: "s01-root",    parent_span_id: nil,          span_name: "agent.turn.process",   span_type: "agent_run_started", offset_ms: 0,    duration_ms: 1240, metadata: { "agent.channel" => "discord" } },
+  { span_id: "s01-root",    parent_span_id: nil,          span_name: "agent.turn.process",   span_type: "session_event", offset_ms: 0,    duration_ms: 1240, metadata: { "agent.channel" => "discord" } },
   { span_id: "s01-mem",     parent_span_id: "s01-root",   span_name: "memory.search",         span_type: "tool_call",         offset_ms: 5,    duration_ms: 23,   metadata: { "memory.hits" => 3 } },
   { span_id: "s01-llm1",    parent_span_id: "s01-root",   span_name: "llm.inference",         span_type: "model_call",        offset_ms: 35,   duration_ms: 650,  metadata: { "llm.model" => "claude-sonnet-4-6", "llm.thinking" => true,  "llm.tokens.input" => 6144, "llm.tokens.output" => 320 } },
-  { span_id: "s01-parse",   parent_span_id: "s01-llm1",   span_name: "llm.tool_call_parse",   span_type: "model_response",    offset_ms: 681,  duration_ms: 4,    metadata: { "llm.tool_calls" => 2 } },
+  { span_id: "s01-parse",   parent_span_id: "s01-llm1",   span_name: "llm.tool_call_parse",   span_type: "model_call",    offset_ms: 681,  duration_ms: 4,    metadata: { "llm.tool_calls" => 2 } },
   { span_id: "s01-search",  parent_span_id: "s01-root",   span_name: "tool.exec.web_search",  span_type: "tool_call",         offset_ms: 690,  duration_ms: 205,  metadata: { "tool.name" => "web_search",  "tool.input" => "OpenClaw Discord mentions" } },
-  { span_id: "s01-http1",   parent_span_id: "s01-search", span_name: "http.client.request",   span_type: "tool_result",       offset_ms: 692,  duration_ms: 190,  metadata: { "http.method" => "GET", "http.url" => "https://duckduckgo.com/html", "http.status_code" => 200 } },
+  { span_id: "s01-http1",   parent_span_id: "s01-search", span_name: "http.client.request",   span_type: "tool_call",       offset_ms: 692,  duration_ms: 190,  metadata: { "http.method" => "GET", "http.url" => "https://duckduckgo.com/html", "http.status_code" => 200 } },
   { span_id: "s01-llm2",    parent_span_id: "s01-root",   span_name: "llm.inference",         span_type: "model_call",        offset_ms: 900,  duration_ms: 125,  metadata: { "llm.model" => "claude-sonnet-4-6", "llm.thinking" => false, "llm.tokens.input" => 2048, "llm.tokens.output" => 160 } },
   { span_id: "s01-send",    parent_span_id: "s01-root",   span_name: "discord.message.send",  span_type: "tool_call",         offset_ms: 1030, duration_ms: 16,   metadata: { "discord.channel" => "general" } },
 ].each { |s| mk_span.call(trace_id: t1_id, agent_id: t1_agent, base: t1_base, **s) }
@@ -62,10 +62,10 @@ Trace.create!(trace_id: t2_id, agent_id: t2_agent,
               start_time: t2_base, status: :success)
 
 [
-  { span_id: "s02-root",  parent_span_id: nil,          span_name: "agent.turn.process",  span_type: "agent_run_started", offset_ms: 0,   duration_ms: 950,  metadata: { "agent.channel" => "discord" } },
+  { span_id: "s02-root",  parent_span_id: nil,          span_name: "agent.turn.process",  span_type: "session_event", offset_ms: 0,   duration_ms: 950,  metadata: { "agent.channel" => "discord" } },
   { span_id: "s02-llm1",  parent_span_id: "s02-root",   span_name: "llm.inference",        span_type: "model_call",        offset_ms: 10,  duration_ms: 400,  metadata: { "llm.model" => "claude-sonnet-4-6", "llm.tokens.input" => 3200, "llm.tokens.output" => 80 } },
   { span_id: "s02-fetch", parent_span_id: "s02-root",   span_name: "tool.exec.web_fetch",  span_type: "tool_call",         offset_ms: 415, duration_ms: 280,  metadata: { "tool.name" => "web_fetch", "tool.url" => "https://github.com/openclaw/openclaw/issues" } },
-  { span_id: "s02-http",  parent_span_id: "s02-fetch",  span_name: "http.client.request",  span_type: "tool_result",       offset_ms: 418, duration_ms: 265,  metadata: { "http.method" => "GET", "http.url" => "https://github.com/openclaw/openclaw/issues", "http.status_code" => 200 } },
+  { span_id: "s02-http",  parent_span_id: "s02-fetch",  span_name: "http.client.request",  span_type: "tool_call",       offset_ms: 418, duration_ms: 265,  metadata: { "http.method" => "GET", "http.url" => "https://github.com/openclaw/openclaw/issues", "http.status_code" => 200 } },
   { span_id: "s02-llm2",  parent_span_id: "s02-root",   span_name: "llm.inference",        span_type: "model_call",        offset_ms: 700, duration_ms: 200,  metadata: { "llm.model" => "claude-sonnet-4-6", "llm.tokens.input" => 4096, "llm.tokens.output" => 240 } },
 ].each { |s| mk_span.call(trace_id: t2_id, agent_id: t2_agent, base: t2_base, **s) }
 
@@ -80,12 +80,12 @@ Trace.create!(trace_id: t3_id, agent_id: t3_agent,
               start_time: t3_base, status: :error)
 
 [
-  { span_id: "s03-root",       parent_span_id: nil,            span_name: "agent.turn.process",   span_type: "agent_run_started", offset_ms: 0,    duration_ms: 3800, metadata: { "agent.channel" => "discord" } },
+  { span_id: "s03-root",       parent_span_id: nil,            span_name: "agent.turn.process",   span_type: "session_event", offset_ms: 0,    duration_ms: 3800, metadata: { "agent.channel" => "discord" } },
   { span_id: "s03-llm1",       parent_span_id: "s03-root",     span_name: "llm.inference",         span_type: "model_call",        offset_ms: 10,   duration_ms: 610,  metadata: { "llm.model" => "claude-sonnet-4-6", "llm.tokens.input" => 1800, "llm.tokens.output" => 60 } },
-  { span_id: "s03-err",        parent_span_id: "s03-root",     span_name: "tool.exec.web_search",  span_type: "error",             offset_ms: 625,  duration_ms: 1000, metadata: { "tool.name" => "web_search", "tool.attempt" => 1, "error.type" => "TimeoutError" } },
-  { span_id: "s03-err-http",   parent_span_id: "s03-err",      span_name: "http.client.request",   span_type: "error",             offset_ms: 627,  duration_ms: 998,  metadata: { "http.method" => "GET", "http.url" => "https://duckduckgo.com/html", "http.status_code" => 0 } },
+  { span_id: "s03-err",        parent_span_id: "s03-root",     span_name: "tool.exec.web_search",  span_type: "span",             offset_ms: 625,  duration_ms: 1000, metadata: { "tool.name" => "web_search", "tool.attempt" => 1, "error.type" => "TimeoutError" } },
+  { span_id: "s03-err-http",   parent_span_id: "s03-err",      span_name: "http.client.request",   span_type: "span",             offset_ms: 627,  duration_ms: 998,  metadata: { "http.method" => "GET", "http.url" => "https://duckduckgo.com/html", "http.status_code" => 0 } },
   { span_id: "s03-retry",      parent_span_id: "s03-root",     span_name: "tool.exec.web_search",  span_type: "tool_call",         offset_ms: 1825, duration_ms: 715,  metadata: { "tool.name" => "web_search", "tool.attempt" => 2, "tool.retry_backoff_ms" => 200 } },
-  { span_id: "s03-retry-http", parent_span_id: "s03-retry",    span_name: "http.client.request",   span_type: "tool_result",       offset_ms: 1827, duration_ms: 700,  metadata: { "http.method" => "GET", "http.url" => "https://duckduckgo.com/html", "http.status_code" => 200 } },
+  { span_id: "s03-retry-http", parent_span_id: "s03-retry",    span_name: "http.client.request",   span_type: "tool_call",       offset_ms: 1827, duration_ms: 700,  metadata: { "http.method" => "GET", "http.url" => "https://duckduckgo.com/html", "http.status_code" => 200 } },
   { span_id: "s03-llm2",       parent_span_id: "s03-root",     span_name: "llm.inference",         span_type: "model_call",        offset_ms: 2545, duration_ms: 250,  metadata: { "llm.model" => "claude-sonnet-4-6", "llm.tokens.input" => 2200, "llm.tokens.output" => 95 } },
   { span_id: "s03-send",       parent_span_id: "s03-root",     span_name: "discord.message.send",  span_type: "tool_call",         offset_ms: 2800, duration_ms: 50,   metadata: { "discord.channel" => "general" } },
 ].each { |s| mk_span.call(trace_id: t3_id, agent_id: t3_agent, base: t3_base, **s) }
@@ -101,7 +101,7 @@ Trace.create!(trace_id: t4_id, agent_id: t4_agent,
               start_time: t4_base, status: :success)
 
 [
-  { span_id: "s04-root", parent_span_id: nil,        span_name: "agent.turn.process",  span_type: "agent_run_started", offset_ms: 0,    duration_ms: 2100, metadata: { "agent.channel" => "discord" } },
+  { span_id: "s04-root", parent_span_id: nil,        span_name: "agent.turn.process",  span_type: "session_event", offset_ms: 0,    duration_ms: 2100, metadata: { "agent.channel" => "discord" } },
   { span_id: "s04-mem",  parent_span_id: "s04-root", span_name: "memory.search",        span_type: "tool_call",         offset_ms: 5,    duration_ms: 45,   metadata: { "memory.hits" => 7 } },
   { span_id: "s04-llm",  parent_span_id: "s04-root", span_name: "llm.inference",        span_type: "model_call",        offset_ms: 55,   duration_ms: 1980, metadata: { "llm.model" => "claude-sonnet-4-6", "llm.tokens.input" => 8192, "llm.tokens.output" => 620 } },
   { span_id: "s04-send", parent_span_id: "s04-root", span_name: "discord.message.send", span_type: "tool_call",         offset_ms: 2040, duration_ms: 20,   metadata: { "discord.channel" => "weekly-reports" } },
@@ -118,7 +118,7 @@ Trace.create!(trace_id: t5_id, agent_id: t5_agent,
               start_time: t5_base, status: :success)
 
 [
-  { span_id: "s05-root",    parent_span_id: nil,           span_name: "pipeline.run",   span_type: "agent_run_started", offset_ms: 0,       duration_ms: 142_000, metadata: { "pipeline.commit" => "a3f9c21", "pipeline.result" => "success" } },
+  { span_id: "s05-root",    parent_span_id: nil,           span_name: "pipeline.run",   span_type: "session_event", offset_ms: 0,       duration_ms: 142_000, metadata: { "pipeline.commit" => "a3f9c21", "pipeline.result" => "success" } },
   { span_id: "s05-build",   parent_span_id: "s05-root",    span_name: "stage.build",    span_type: "tool_call",         offset_ms: 11_500,  duration_ms: 49_500,  metadata: { "stage.name" => "build" } },
   { span_id: "s05-test",    parent_span_id: "s05-root",    span_name: "stage.test",     span_type: "tool_call",         offset_ms: 61_000,  duration_ms: 45_800,  metadata: { "stage.name" => "test", "test.passed" => 554 } },
   { span_id: "s05-deploy",  parent_span_id: "s05-root",    span_name: "stage.deploy",   span_type: "tool_call",         offset_ms: 106_800, duration_ms: 33_000,  metadata: { "stage.name" => "deploy" } },
