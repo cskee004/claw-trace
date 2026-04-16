@@ -469,4 +469,161 @@ RSpec.describe OtlpProtobufDecoder do
         .to raise_error(OtlpProtobufDecoder::Error, /truncated/)
     end
   end
+
+  # ── Round-trip fixture encoder helpers ───────────────────────────────────────
+
+  def model_usage_fixture_proto
+    trace_id = ["3814946c5476f41811f4a6fbb49e81e2"].pack("H*")
+    span_id  = ["6e65a51a6055906b"].pack("H*")
+
+    span_attrs =
+      pb_len(9, kv("openclaw.channel",             av_string("discord"))) +
+      pb_len(9, kv("openclaw.provider",            av_string("anthropic"))) +
+      pb_len(9, kv("openclaw.model",               av_string("claude-haiku-4-5-20251001"))) +
+      pb_len(9, kv("openclaw.sessionKey",          av_string("agent:main:discord:channel:1494326249361899544"))) +
+      pb_len(9, kv("openclaw.sessionId",           av_string("994956de-f338-41b7-988d-5076b236c2a9"))) +
+      pb_len(9, kv("openclaw.tokens.input",        av_int(2))) +
+      pb_len(9, kv("openclaw.tokens.output",       av_int(246))) +
+      pb_len(9, kv("openclaw.tokens.cache_read",   av_int(94_270))) +
+      pb_len(9, kv("openclaw.tokens.cache_write",  av_int(94_649))) +
+      pb_len(9, kv("openclaw.tokens.total",        av_int(94_714)))
+
+    span =
+      pb_len(1, trace_id) +
+      pb_len(2, span_id) +
+      pb_str(5, "openclaw.model.usage") +
+      pb_fixed64(7, 1_776_353_057_612_000_000) +
+      pb_fixed64(8, 1_776_353_064_358_000_000) +
+      span_attrs +
+      pb_len(15, pb_int(3, 0))
+
+    res_attrs =
+      pb_len(1, kv("host.name",               av_string("VM-0-5-ubuntu"))) +
+      pb_len(1, kv("host.arch",               av_string("amd64"))) +
+      pb_len(1, kv("process.pid",             av_int(1135))) +
+      pb_len(1, kv("process.executable.name", av_string("openclaw-gateway"))) +
+      pb_len(1, kv("service.name",            av_string("openclaw-gateway")))
+
+    resource = pb_len(1, res_attrs)
+    scope    = pb_len(2, pb_len(2, span))
+    pb_len(1, resource + scope)
+  end
+
+  def log_fixture_record0_proto
+    log_attrs =
+      pb_len(6, kv("openclaw.log.level", av_string("INFO"))) +
+      pb_len(6, kv("openclaw.subsystem",  av_string("gateway/ws")))
+
+    log_record =
+      pb_fixed64(1, 1_776_353_108_071_000_000) +
+      pb_int(2, 9) +
+      pb_str(3, "INFO") +
+      pb_len(5, av_string("⇄ res ✓ agent.wait 45001ms")) +
+      log_attrs
+
+    scope        = pb_len(2, log_record)
+    resource_log = pb_len(2, scope)
+    pb_len(1, resource_log)
+  end
+
+  # ── Round-trip: model usage fixture → proto3 → decode_traces ─────────────────
+  # Encodes span-openclaw-model-usage-001.json as proto3 and asserts the decoder
+  # reconstructs the same structure. Catches field-number drift and multi-byte
+  # varint regressions that synthetic single-field specs cannot detect.
+
+  describe "round-trip: model usage fixture → proto3 → decode_traces" do
+    subject(:decoded) { OtlpProtobufDecoder.decode_traces(model_usage_fixture_proto) }
+
+    let(:span)           { decoded.dig("resourceSpans", 0, "scopeSpans", 0, "spans", 0) }
+    let(:resource_attrs) { decoded.dig("resourceSpans", 0, "resource", "attributes") }
+
+    it "reconstructs traceId as a hex string" do
+      expect(span["traceId"]).to eq("3814946c5476f41811f4a6fbb49e81e2")
+    end
+
+    it "reconstructs spanId as a hex string" do
+      expect(span["spanId"]).to eq("6e65a51a6055906b")
+    end
+
+    it "reconstructs span name" do
+      expect(span["name"]).to eq("openclaw.model.usage")
+    end
+
+    it "reconstructs startTimeUnixNano as a decimal nanosecond string" do
+      expect(span["startTimeUnixNano"]).to eq("1776353057612000000")
+    end
+
+    it "reconstructs endTimeUnixNano as a decimal nanosecond string" do
+      expect(span["endTimeUnixNano"]).to eq("1776353064358000000")
+    end
+
+    it "reconstructs all 10 span attributes" do
+      expect(span["attributes"].length).to eq(10)
+    end
+
+    it "reconstructs string attribute openclaw.channel" do
+      attr = span["attributes"].find { |a| a["key"] == "openclaw.channel" }
+      expect(attr["value"]).to eq({ "stringValue" => "discord" })
+    end
+
+    it "reconstructs large int attribute openclaw.tokens.cache_read (multi-byte varint: 94270)" do
+      attr = span["attributes"].find { |a| a["key"] == "openclaw.tokens.cache_read" }
+      expect(attr["value"]).to eq({ "intValue" => 94270 })
+    end
+
+    it "reconstructs large int attribute openclaw.tokens.total (multi-byte varint: 94714)" do
+      attr = span["attributes"].find { |a| a["key"] == "openclaw.tokens.total" }
+      expect(attr["value"]).to eq({ "intValue" => 94714 })
+    end
+
+    it "reconstructs status code 0" do
+      expect(span["status"]).to eq({ "code" => 0 })
+    end
+
+    it "reconstructs resource service.name attribute" do
+      attr = resource_attrs.find { |a| a["key"] == "service.name" }
+      expect(attr["value"]).to eq({ "stringValue" => "openclaw-gateway" })
+    end
+
+    it "reconstructs resource process.pid as intValue" do
+      attr = resource_attrs.find { |a| a["key"] == "process.pid" }
+      expect(attr["value"]).to eq({ "intValue" => 1135 })
+    end
+  end
+
+  # ── Round-trip: log fixture record 0 → proto3 → decode_logs ──────────────────
+  # Encodes the first record of log-openclaw-agent-execution-001.json as proto3
+  # and asserts the decoder reconstructs it. Covers Unicode body strings (⇄ ✓)
+  # and openclaw.* log attributes.
+
+  describe "round-trip: log fixture record 0 → proto3 → decode_logs" do
+    subject(:decoded) { OtlpProtobufDecoder.decode_logs(log_fixture_record0_proto) }
+
+    let(:record) { decoded.dig("resourceLogs", 0, "scopeLogs", 0, "logRecords", 0) }
+
+    it "reconstructs timeUnixNano as a decimal nanosecond string" do
+      expect(record["timeUnixNano"]).to eq("1776353108071000000")
+    end
+
+    it "reconstructs severityNumber" do
+      expect(record["severityNumber"]).to eq(9)
+    end
+
+    it "reconstructs severityText" do
+      expect(record["severityText"]).to eq("INFO")
+    end
+
+    it "reconstructs body stringValue including Unicode characters" do
+      expect(record["body"]).to eq({ "stringValue" => "⇄ res ✓ agent.wait 45001ms" })
+    end
+
+    it "reconstructs 2 log attributes" do
+      expect(record["attributes"].length).to eq(2)
+    end
+
+    it "reconstructs openclaw.subsystem attribute" do
+      attr = record["attributes"].find { |a| a["key"] == "openclaw.subsystem" }
+      expect(attr["value"]).to eq({ "stringValue" => "gateway/ws" })
+    end
+  end
 end
