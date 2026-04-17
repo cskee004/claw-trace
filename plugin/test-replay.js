@@ -25,6 +25,9 @@ function handleAfterToolCall(event) {
     status:     d.result?.details?.status ?? "completed",
     durationMs: d.durationMs,
     timestamp:  ts,
+    exitCode:   d.result?.details?.exitCode,
+    sessionId:  d.result?.details?.sessionId,
+    error:      d.error || d.result?.details?.error,
   });
 }
 
@@ -96,16 +99,20 @@ function buildTrace(messages) {
       traceId, spanId: turnSpanId, parentId: rootSpanId,
       name: "openclaw.agent.turn",
       startMs: msg.timestamp, endMs: turnEnd,
+      status: msg.isError ? "ERROR" : "OK",
       attrs: {
         "openclaw.run_id":                 runId,
         "openclaw.model":                  msg.model,
         "openclaw.provider":               msg.provider,
         "openclaw.stop_reason":            msg.stopReason,
         "openclaw.response_id":            msg.responseId,
+        "openclaw.error_message":          msg.errorMessage,
         "gen_ai.usage.input_tokens":       msg.usage?.input,
         "gen_ai.usage.output_tokens":      msg.usage?.output,
         "gen_ai.usage.cache_read_tokens":  msg.usage?.cacheRead,
         "gen_ai.usage.cache_write_tokens": msg.usage?.cacheWrite,
+        "gen_ai.usage.cost_usd":           msg.usage?.cost?.total ?? msg.usage?.cost,
+        "gen_ai.usage.total_tokens":       msg.usage?.totalTokens,
       },
     }));
 
@@ -122,6 +129,9 @@ function buildTrace(messages) {
           "tool.name":        tc.name || buf?.toolName,
           "tool.call_id":     tc.id,
           "tool.duration_ms": buf?.durationMs,
+          "tool.exit_code":   buf?.exitCode,
+          "tool.session_id":  buf?.sessionId,
+          "tool.error":       buf?.error,
         },
       }));
     });
