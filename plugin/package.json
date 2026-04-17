@@ -1,0 +1,11 @@
+{
+  "name": "openclaw-clawtrace",
+  "version": "0.1.0",
+  "description": "OpenClaw plugin that sends traces to ClawTrace via OTLP",
+  "main": "index.js",
+  "keywords": ["openclaw", "clawtrace", "otlp", "observability"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
