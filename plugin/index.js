@@ -41,6 +41,10 @@ export default definePluginEntry({
         exitCode:   d.result?.details?.exitCode,
         sessionId:  d.result?.details?.sessionId,
         error:      d.error || d.result?.details?.error,
+        cwd:        d.result?.details?.cwd,
+        pid:        d.result?.details?.pid,
+        subModel:   d.result?.details?.model,
+        subProvider: d.result?.details?.provider,
       });
     });
 
@@ -123,6 +127,7 @@ function buildAndSend(messages) {
       status: msg.isError ? "ERROR" : "OK",
       attrs: {
         "openclaw.run_id":                 runId,
+        "openclaw.api":                    msg.api,
         "openclaw.model":                  msg.model,
         "openclaw.provider":               msg.provider,
         "openclaw.stop_reason":            msg.stopReason,
@@ -134,6 +139,7 @@ function buildAndSend(messages) {
         "gen_ai.usage.cache_write_tokens": msg.usage?.cacheWrite,
         "gen_ai.usage.cost_usd":           msg.usage?.cost?.total ?? msg.usage?.cost,
         "gen_ai.usage.total_tokens":       msg.usage?.totalTokens,
+        "gen_ai.usage.tokens_before":      msg.tokensBefore,
       },
     }));
 
@@ -153,6 +159,10 @@ function buildAndSend(messages) {
           "tool.exit_code":   buf?.exitCode,
           "tool.session_id":  buf?.sessionId,
           "tool.error":       buf?.error,
+          "tool.cwd":         buf?.cwd,
+          "tool.pid":         buf?.pid,
+          "tool.model":       buf?.subModel,
+          "tool.provider":    buf?.subProvider,
         },
       }));
     });
