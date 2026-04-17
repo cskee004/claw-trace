@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_16_132056) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_16_181623) do
   create_table "logs", force: :cascade do |t|
     t.string "trace_id"
     t.string "span_id"
@@ -58,6 +58,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_16_132056) do
     t.datetime "updated_at", null: false
     t.datetime "end_time"
     t.string "span_name"
+    t.string "span_model"
+    t.string "span_provider"
+    t.integer "span_input_tokens"
+    t.integer "span_output_tokens"
+    t.integer "span_cache_read_tokens"
+    t.integer "span_cache_write_tokens"
+    t.integer "span_total_tokens"
+    t.string "span_outcome"
     t.index ["agent_id"], name: "index_spans_on_agent_id"
     t.index ["parent_span_id"], name: "index_spans_on_parent_span_id"
     t.index ["span_type"], name: "index_spans_on_span_type"

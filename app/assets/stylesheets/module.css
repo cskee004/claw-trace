@@ -296,6 +296,14 @@ turbo-frame#frame_panel {
     background-color: color-mix(in srgb, var(--color-span-span) 12%, transparent);
     color: var(--color-span-span-fg);
 }
+.span-type-badge--agent_request {
+    background-color: color-mix(in srgb, var(--color-span-agent-request) 15%, transparent);
+    color: var(--color-span-agent-request-fg);
+}
+.span-type-badge--agent_turn {
+    background-color: color-mix(in srgb, var(--color-span-agent-turn) 15%, transparent);
+    color: var(--color-span-agent-turn-fg);
+}
 
 /* Waterfall bars — reference :root span-type tokens, never hardcoded hex */
 .waterfall-bar--model_call     { background-color: var(--color-span-model-call);     }
@@ -306,6 +314,8 @@ turbo-frame#frame_panel {
 .waterfall-bar--webhook_event  { background-color: var(--color-span-webhook-event);  }
 .waterfall-bar--openclaw_event { background-color: var(--color-span-openclaw-event); }
 .waterfall-bar--span           { background-color: var(--color-span-span);           }
+.waterfall-bar--agent_request  { background-color: var(--color-span-agent-request);  }
+.waterfall-bar--agent_turn     { background-color: var(--color-span-agent-turn);     }
 
 /* Waterfall drawer — max-height animation per CLAUDE.md motion policy (drawer open/close only) */
 .waterfall-drawer {

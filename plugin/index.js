@@ -178,6 +178,17 @@ function buildAndSend(messages) {
         startMs: msg.timestamp, endMs: msg.timestamp,
         attrs: {
           "openclaw.tokens_before": msg.tokensBefore,
+          "openclaw.summary":       msg.summary,
+        },
+      }));
+    } else if (msg.role === "branchSummary") {
+      spans.push(makeSpan({
+        traceId, spanId: makeSpanId(), parentId: rootId,
+        name: "openclaw.context.branch_summary",
+        startMs: msg.timestamp, endMs: msg.timestamp,
+        attrs: {
+          "openclaw.tokens_before": msg.tokensBefore,
+          "openclaw.summary":       msg.summary,
         },
       }));
     } else if (msg.role === "custom" && msg.customType === "openclaw.sessions_yield") {
