@@ -175,6 +175,25 @@ function buildOtlpTrace(messages) {
     });
   });
 
+  turn.forEach((msg) => {
+    if (!msg.timestamp) return;
+    if (msg.role === "compactionSummary") {
+      spans.push(makeSpan({
+        traceId, spanId: makeSpanId(), parentId: rootId,
+        name: "openclaw.context.compaction",
+        startMs: msg.timestamp, endMs: msg.timestamp,
+        attrs: { "openclaw.tokens_before": msg.tokensBefore },
+      }));
+    } else if (msg.role === "custom" && msg.customType === "openclaw.sessions_yield") {
+      spans.push(makeSpan({
+        traceId, spanId: makeSpanId(), parentId: rootId,
+        name: "openclaw.session.yield",
+        startMs: msg.timestamp, endMs: msg.timestamp,
+        attrs: { "openclaw.yield_message": msg.details?.message },
+      }));
+    }
+  });
+
   return wrapOtlp(spans);
 }
 
