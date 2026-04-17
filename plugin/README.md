@@ -10,12 +10,19 @@ openclaw plugins install openclaw-clawtrace
 
 ## Config
 
-Set these environment variables where OpenClaw runs:
+Create `~/.openclaw/clawtrace.json`:
 
-| Variable | Default | Description |
+```json
+{
+  "endpoint": "http://your-clawtrace-host:3000",
+  "enabled": true
+}
+```
+
+| Field | Default | Description |
 |---|---|---|
-| `CLAWTRACE_ENDPOINT` | `http://localhost:3000` | ClawTrace base URL |
-| `CLAWTRACE_ENABLED` | `true` | Set to `false` to disable without uninstalling |
+| `endpoint` | `http://localhost:3000` | ClawTrace base URL |
+| `enabled` | `true` | Set to `false` to disable without uninstalling |
 
 ## What it sends
 
@@ -27,4 +34,4 @@ openclaw.request        ← root span (channel, sender, message_id)
     └── openclaw.tool.* ← one per tool call (tool name, duration, status)
 ```
 
-Traces appear in ClawTrace at the endpoint configured above.
+Traces appear in ClawTrace at the configured endpoint.

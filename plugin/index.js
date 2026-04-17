@@ -1,11 +1,20 @@
 "use strict";
 
-const http  = require("http");
-const https = require("https");
+const http   = require("http");
+const https  = require("https");
 const crypto = require("crypto");
+const fs     = require("fs");
+const os     = require("os");
+const path   = require("path");
 
-const ENDPOINT = (process.env.CLAWTRACE_ENDPOINT || "http://localhost:3000").replace(/\/$/, "");
-const ENABLED  = process.env.CLAWTRACE_ENABLED !== "false";
+function loadConfig() {
+  const configPath = path.join(os.homedir(), ".openclaw", "clawtrace.json");
+  try { return JSON.parse(fs.readFileSync(configPath, "utf8")); } catch { return {}; }
+}
+
+const config   = loadConfig();
+const ENDPOINT = (config.endpoint || "http://localhost:3000").replace(/\/$/, "");
+const ENABLED  = config.enabled !== false;
 
 // Buffer keyed by toolCallId — holds tool call data until agent_end
 const toolBuffer = new Map();

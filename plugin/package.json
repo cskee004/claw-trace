@@ -9,16 +9,6 @@
     "node": ">=18"
   },
   "openclaw": {
-    "extensions": ["./index.js"],
-    "env": {
-      "CLAWTRACE_ENDPOINT": {
-        "description": "ClawTrace base URL to send OTLP traces to",
-        "default": "http://localhost:3000"
-      },
-      "CLAWTRACE_ENABLED": {
-        "description": "Set to false to disable tracing without uninstalling",
-        "default": "true"
-      }
-    }
+    "extensions": ["./index.js"]
   }
 }
