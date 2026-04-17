@@ -28,13 +28,16 @@ export default definePluginEntry({
 
     api.on("after_tool_call", (event) => {
       const d = event.data || event;
+      const ts = event.timestamp
+        ? new Date(event.timestamp).getTime()
+        : Date.now() - (d.durationMs || 0);
       toolBuffer.set(d.toolCallId, {
         toolCallId: d.toolCallId,
         runId:      d.runId,
         toolName:   d.toolName,
         status:     d.result?.details?.status ?? "completed",
         durationMs: d.durationMs,
-        timestamp:  event.timestamp,
+        timestamp:  ts,
       });
     });
 
@@ -95,7 +98,7 @@ function buildAndSend(messages) {
     traceId, spanId: rootId, parentId: null,
     name: "openclaw.request",
     startMs: requestStart, endMs: requestEnd,
-    attrs: extractRequestAttrs(userMessages[0]),
+    attrs: { ...extractRequestAttrs(userMessages[0]), "openclaw.run_id": runId },
   }));
 
   assistMessages.forEach((msg) => {
@@ -115,6 +118,7 @@ function buildAndSend(messages) {
       name: "openclaw.agent.turn",
       startMs: msg.timestamp, endMs: turnEnd,
       attrs: {
+        "openclaw.run_id":                 runId,
         "openclaw.model":                  msg.model,
         "openclaw.provider":               msg.provider,
         "openclaw.stop_reason":            msg.stopReason,

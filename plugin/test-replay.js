@@ -14,6 +14,9 @@ const toolBuffer = new Map();
 
 function handleAfterToolCall(event) {
   const d = event.data || event;
+  const ts = event.timestamp
+    ? new Date(event.timestamp).getTime()
+    : Date.now() - (d.durationMs || 0);
   toolBuffer.set(d.toolCallId, {
     toolCallId: d.toolCallId,
     runId:      d.runId,
@@ -21,7 +24,7 @@ function handleAfterToolCall(event) {
     params:     d.params,
     status:     d.result?.details?.status ?? "completed",
     durationMs: d.durationMs,
-    timestamp:  event.timestamp,
+    timestamp:  ts,
   });
 }
 
@@ -74,7 +77,7 @@ function buildTrace(messages) {
     traceId, spanId: rootSpanId, parentId: null,
     name: "openclaw.request",
     startMs: requestStart, endMs: requestEnd,
-    attrs: extractRequestAttrs(userMessages[userMessages.length - 1]),
+    attrs: { ...extractRequestAttrs(userMessages[userMessages.length - 1]), "openclaw.run_id": runId },
   }));
 
   assistMessages.forEach((msg) => {
@@ -94,6 +97,7 @@ function buildTrace(messages) {
       name: "openclaw.agent.turn",
       startMs: msg.timestamp, endMs: turnEnd,
       attrs: {
+        "openclaw.run_id":                 runId,
         "openclaw.model":                  msg.model,
         "openclaw.provider":               msg.provider,
         "openclaw.stop_reason":            msg.stopReason,
