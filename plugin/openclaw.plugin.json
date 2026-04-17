@@ -1,0 +1,21 @@
+{
+  "id": "openclaw-clawtrace",
+  "name": "ClawTrace",
+  "description": "Sends OpenClaw agent traces to ClawTrace via OTLP",
+  "configSchema": {
+    "type": "object",
+    "properties": {
+      "endpoint": {
+        "type": "string",
+        "default": "http://localhost:3000",
+        "description": "ClawTrace base URL"
+      },
+      "enabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Set to false to disable tracing without uninstalling"
+      }
+    },
+    "additionalProperties": false
+  }
+}

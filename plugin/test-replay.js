@@ -1,11 +1,12 @@
-"use strict";
-
 // Replays spike JSON files through the plugin logic and prints the OTLP
 // payload that would be sent to ClawTrace. No network calls are made.
 
-const fs     = require("fs");
-const path   = require("path");
-const crypto = require("crypto");
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import { createHash, randomBytes } from "crypto";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── Inline the plugin's core logic (without the api.on wiring) ───────────────
 
@@ -56,7 +57,7 @@ function buildTrace(messages) {
 
   if (!runId) {
     const seed = turn[0]?.content?.[0]?.text || String(Date.now());
-    runId = crypto.createHash("sha256").update(seed).digest("hex").slice(0, 32);
+    runId = createHash("sha256").update(seed).digest("hex").slice(0, 32);
   }
 
   const traceId = runId.replace(/-/g, "").slice(0, 32).padEnd(32, "0");
@@ -160,14 +161,14 @@ function extractRequestAttrs(userMsg) {
 }
 
 function makeSpanId() {
-  return crypto.randomBytes(8).toString("hex");
+  return randomBytes(8).toString("hex");
 }
 
 // ── Replay ────────────────────────────────────────────────────────────────────
 
 const allEvents = JSON.parse(
-  fs.readFileSync(
-    path.join(__dirname, "../.claude/json-test-files/spike-all-events.json"),
+  readFileSync(
+    join(__dirname, "../.claude/json-test-files/spike-all-events.json"),
     "utf8"
   )
 );
