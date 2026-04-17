@@ -169,6 +169,21 @@ RSpec.describe TracesHelper, type: :helper do
       expect(span_accent(span)).to eq("discord")
     end
 
+    it "returns nil for agent_request spans (root span needs no sublabel)" do
+      span = AccentStub.new("agent_request", nil, {})
+      expect(span_accent(span)).to be_nil
+    end
+
+    it "returns span_model for agent_turn spans when model is present" do
+      span = AccentStub.new("agent_turn", "claude-sonnet-4-6", {})
+      expect(span_accent(span)).to eq("claude-sonnet-4-6")
+    end
+
+    it "returns nil for agent_turn spans when span_model is nil" do
+      span = AccentStub.new("agent_turn", nil, {})
+      expect(span_accent(span)).to be_nil
+    end
+
     it "returns nil for unrecognised span types" do
       span = AccentStub.new("openclaw_event", nil, { "anything" => "value" })
       expect(span_accent(span)).to be_nil

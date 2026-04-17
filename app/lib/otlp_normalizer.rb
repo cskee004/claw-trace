@@ -55,6 +55,8 @@ class OtlpNormalizer
     ["openclaw.command.", "command_event"],
     ["openclaw.webhook.", "webhook_event"],
     ["openclaw.tool.",    "tool_call"],
+    ["openclaw.request",  "agent_request"],
+    ["openclaw.agent.",   "agent_turn"],
     ["openclaw.",         "openclaw_event"],
     ["tool.",             "tool_call"]
   ].freeze

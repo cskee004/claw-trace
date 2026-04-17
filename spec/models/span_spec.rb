@@ -46,6 +46,14 @@ RSpec.describe Span, type: :model do
       end
     end
 
+    it "accepts agent_request as a valid span type" do
+      expect(Span.new(valid_attrs(span_type: "agent_request"))).to be_valid
+    end
+
+    it "accepts agent_turn as a valid span type" do
+      expect(Span.new(valid_attrs(span_type: "agent_turn"))).to be_valid
+    end
+
     it "requires timestamp" do
       expect(Span.new(valid_attrs(timestamp: nil))).not_to be_valid
     end

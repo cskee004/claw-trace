@@ -68,6 +68,10 @@ module TracesHelper
         span.metadata&.dig("tool.name")
     when "session_event"
       span.metadata&.dig("openclaw.channel")
+    when "agent_request"
+      nil
+    when "agent_turn"
+      span.span_model.presence
     else
       nil
     end

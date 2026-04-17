@@ -2,11 +2,12 @@ class DashboardController < ApplicationController
   include TimeWindowFilter
 
   def index
-    @total_traces   = Trace.count
-    @active_agents  = Trace.distinct.count(:agent_id)
-    recent_traces   = Trace.includes(:spans).where(start_time: time_range)
-    @error_rate_30d = ErrorRateAnalyzer.call(recent_traces).error_rate.round(1)
-    @token_stats    = TokenAggregator.call(Span.where(timestamp: time_range))
+    @total_traces        = Trace.count
+    @active_agents       = Trace.distinct.count(:agent_id)
+    recent_traces        = Trace.includes(:spans).where(start_time: time_range)
+    @error_rate_30d      = ErrorRateAnalyzer.call(recent_traces).error_rate.round(1)
+    @token_stats         = TokenAggregator.call(Span.where(timestamp: time_range))
+    @show_plugin_banner  = show_plugin_banner?
   end
 
   def error_rate_chart
@@ -59,5 +60,16 @@ class DashboardController < ApplicationController
 
   def to_epoch_ms(key)
     key.to_time.to_i * 1000
+  end
+
+  def show_plugin_banner?
+    recent = Trace.where(start_time: 24.hours.ago..)
+    recent_count = recent.count
+    return false if recent_count.zero?
+    single_span_count = recent.joins(:spans)
+      .group("traces.id")
+      .having("count(spans.id) = 1")
+      .count.size
+    single_span_count.to_f / recent_count > 0.9
   end
 end

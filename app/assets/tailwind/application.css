@@ -41,6 +41,8 @@
   --color-span-webhook-event:  #ff9e64;                 /* orange  — webhook_event */
   --color-span-openclaw-event: var(--color-fg-subtle);  /* #565f89 — openclaw_event catch-all */
   --color-span-span:           var(--color-fg-muted);   /* #a9b1d6 — generic span fallback */
+  --color-span-agent-request:  #9ece6a;                 /* green   — agent_request (request root) */
+  --color-span-agent-turn:     #f7768e;                 /* rose    — agent_turn (model thinking) */
 
   /* Badge foreground text — matches bar color for readability on dark surfaces */
   --color-span-model-call-fg:     #bb9af7;
@@ -51,6 +53,8 @@
   --color-span-webhook-event-fg:  #ff9e64;
   --color-span-openclaw-event-fg: var(--color-fg-muted);
   --color-span-span-fg:           var(--color-fg-muted);
+  --color-span-agent-request-fg:  #9ece6a;
+  --color-span-agent-turn-fg:     #f7768e;
 }
 
 @theme {

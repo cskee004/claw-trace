@@ -321,6 +321,15 @@ RSpec.describe OtlpNormalizer do
       expect(span_type_for("openclaw.webhook.received")).to eq("webhook_event")
     end
 
+    it "openclaw.request → agent_request (plugin root span)" do
+      expect(span_type_for("openclaw.request")).to eq("agent_request")
+    end
+
+    it "openclaw.agent.* → agent_turn (plugin agent turn span)" do
+      expect(span_type_for("openclaw.agent.turn")).to eq("agent_turn")
+      expect(span_type_for("openclaw.agent.run")).to eq("agent_turn")
+    end
+
     it "openclaw.* catch-all → openclaw_event for unrecognised openclaw spans" do
       expect(span_type_for("openclaw.voice.transcribed")).to eq("openclaw_event")
       expect(span_type_for("openclaw.unknown.thing")).to eq("openclaw_event")

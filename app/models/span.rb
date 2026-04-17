@@ -22,6 +22,7 @@ class Span < ApplicationRecord
   SPAN_TYPES = %w[
     model_call message_event tool_call session_event
     command_event webhook_event openclaw_event span
+    agent_request agent_turn
   ].freeze
 
   belongs_to :trace, foreign_key: :trace_id, primary_key: :trace_id, inverse_of: :spans
