@@ -95,35 +95,36 @@ function buildAndSend(messages) {
 
   const userMessages   = turn.filter(m => m.role === "user");
   const assistMessages = turn.filter(m => m.role === "assistant");
-  const requestStart   = toMs(userMessages[0]?.timestamp);
-  const requestEnd     = toMs(assistMessages[assistMessages.length - 1]?.timestamp);
+  const requestStart = toMs(userMessages[0]?.timestamp);
 
-  const spans    = [];
-  const rootId   = makeSpanId();
+  const spans  = [];
+  const rootId = makeSpanId();
 
-  spans.push(makeSpan({
-    traceId, spanId: rootId, parentId: null,
-    name: "openclaw.request",
-    startMs: requestStart, endMs: requestEnd,
-    attrs: { ...extractRequestAttrs(userMessages[0]), "openclaw.run_id": runId },
-  }));
+  // prevTurnEnd tracks when the previous turn finished so each agent_turn span
+  // starts where the last one ended — giving real LLM inference durations.
+  let prevTurnEnd = requestStart;
 
   assistMessages.forEach((msg) => {
     if (!msg.timestamp) return;
     const turnSpanId = makeSpanId();
     const turnTools  = (msg.content || []).filter(c => c.type === "toolCall");
 
+    const turnStart = prevTurnEnd;
+    const msgEnd    = toMs(msg.timestamp);  // when LLM response arrived
+
     const lastTool = turnTools.length
       ? myToolCalls.find(t => t.toolCallId === turnTools[turnTools.length - 1]?.id)
       : null;
     const turnEnd = lastTool
       ? new Date(lastTool.timestamp).getTime() + (lastTool.durationMs || 0)
-      : toMs(msg.timestamp);
+      : msgEnd;
+
+    prevTurnEnd = turnEnd;
 
     spans.push(makeSpan({
       traceId, spanId: turnSpanId, parentId: rootId,
       name: "openclaw.agent.turn",
-      startMs: msg.timestamp, endMs: turnEnd,
+      startMs: turnStart, endMs: turnEnd,
       status: msg.isError ? "ERROR" : "OK",
       attrs: {
         "openclaw.run_id":                 runId,
@@ -202,6 +203,15 @@ function buildAndSend(messages) {
       }));
     }
   });
+
+  // Request span wraps everything — emitted last so endMs uses the true end of
+  // the final turn (including all tool execution), not just the last LLM response.
+  spans.unshift(makeSpan({
+    traceId, spanId: rootId, parentId: null,
+    name: "openclaw.request",
+    startMs: requestStart, endMs: prevTurnEnd,
+    attrs: { ...extractRequestAttrs(userMessages[0]), "openclaw.run_id": runId },
+  }));
 
   postOtlp(traceId, spans);
 }
