@@ -67,7 +67,7 @@ class LogsNormalizer
   end
 
   def hex_or_nil(value)
-    value.presence&.downcase
+    value.presence&.downcase&.slice(0, 16)
   end
 
   def nano_to_iso8601(nano)

@@ -121,6 +121,22 @@ RSpec.describe LogsNormalizer do
     end
   end
 
+  # ── traceId truncation ───────────────────────────────────────────────────────
+
+  describe "traceId truncation" do
+    it "truncates a 32-char OTLP traceId to 16 chars to match trace table IDs" do
+      payload = log_payload(log_records: [
+        log_record(trace_id: "a9f3e12b4c5d6e7f0000000000000001")
+      ])
+      expect(LogsNormalizer.call(payload)[0]["trace_id"]).to eq("a9f3e12b4c5d6e7f")
+    end
+
+    it "keeps a 16-char traceId unchanged" do
+      payload = log_payload(log_records: [log_record(trace_id: "a1b2c3d4e5f6a7b8")])
+      expect(LogsNormalizer.call(payload)[0]["trace_id"]).to eq("a1b2c3d4e5f6a7b8")
+    end
+  end
+
   # ── Unknown attribute value types ────────────────────────────────────────────
 
   describe "unknown attribute value types" do
