@@ -95,8 +95,8 @@ function buildAndSend(messages) {
 
   const userMessages   = turn.filter(m => m.role === "user");
   const assistMessages = turn.filter(m => m.role === "assistant");
-  const requestStart   = userMessages[0]?.timestamp ?? Date.now();
-  const requestEnd     = assistMessages[assistMessages.length - 1]?.timestamp ?? Date.now();
+  const requestStart   = toMs(userMessages[0]?.timestamp);
+  const requestEnd     = toMs(assistMessages[assistMessages.length - 1]?.timestamp);
 
   const spans    = [];
   const rootId   = makeSpanId();
@@ -118,7 +118,7 @@ function buildAndSend(messages) {
       : null;
     const turnEnd = lastTool
       ? new Date(lastTool.timestamp).getTime() + (lastTool.durationMs || 0)
-      : msg.timestamp;
+      : toMs(msg.timestamp);
 
     spans.push(makeSpan({
       traceId, spanId: turnSpanId, parentId: rootId,
@@ -145,7 +145,7 @@ function buildAndSend(messages) {
 
     turnTools.forEach(tc => {
       const buf       = myToolCalls.find(b => b.toolCallId === tc.id);
-      const toolStart = buf ? new Date(buf.timestamp).getTime() : msg.timestamp;
+      const toolStart = buf ? new Date(buf.timestamp).getTime() : toMs(msg.timestamp);
       const toolEnd   = buf ? toolStart + (buf.durationMs || 0) : toolStart;
       spans.push(makeSpan({
         traceId, spanId: makeSpanId(), parentId: turnSpanId,
@@ -206,11 +206,21 @@ function buildAndSend(messages) {
   postOtlp(traceId, spans);
 }
 
+// Normalize any timestamp format (ms number, ISO string, Date, undefined) to ms integer.
+function toMs(ts) {
+  if (ts == null) return Date.now();
+  if (typeof ts === "number") return ts;
+  const n = new Date(ts).getTime();
+  return Number.isFinite(n) ? n : Date.now();
+}
+
 function makeSpan({ traceId, spanId, parentId, name, startMs, endMs, attrs = {}, status = "OK" }) {
-  const span = {
+  const start = toMs(startMs);
+  const end   = toMs(endMs ?? startMs);
+  const span  = {
     traceId, spanId, name,
-    startTimeUnixNano: String(startMs * 1_000_000),
-    endTimeUnixNano:   String((endMs || startMs) * 1_000_000),
+    startTimeUnixNano: String(start * 1_000_000),
+    endTimeUnixNano:   String(end   * 1_000_000),
     attributes: toOtlpAttrs(attrs),
     status: { code: status === "ERROR" ? 2 : 1 },
   };
