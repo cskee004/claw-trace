@@ -28,6 +28,7 @@ export default definePluginEntry({
 
     api.on("after_tool_call", (event) => {
       const d = event.data || event;
+      console.error("[clawtrace] after_tool_call raw:", JSON.stringify({ ts: event.timestamp, toolCallId: d.toolCallId, durationMs: d.durationMs, runId: d.runId }));
       const ts = event.timestamp
         ? toMs(event.timestamp)
         : Date.now() - (d.durationMs || 0);
@@ -115,16 +116,18 @@ function buildAndSend(messages) {
     const lastTool = turnTools.length
       ? myToolCalls.find(t => t.toolCallId === turnTools[turnTools.length - 1]?.id)
       : null;
-    const turnEnd = lastTool
+    // nextStart: when the next turn can begin (after tools finish, or at msgEnd if no tools).
+    // turnEnd: this span ends when the LLM responded — tools are children, not part of this span.
+    const nextStart = lastTool
       ? toMs(lastTool.timestamp) + (lastTool.durationMs || 0)
       : msgEnd;
 
-    prevTurnEnd = turnEnd;
+    prevTurnEnd = nextStart;
 
     spans.push(makeSpan({
       traceId, spanId: turnSpanId, parentId: rootId,
       name: "openclaw.agent.turn",
-      startMs: turnStart, endMs: turnEnd,
+      startMs: turnStart, endMs: msgEnd,
       status: msg.isError ? "ERROR" : "OK",
       attrs: {
         "openclaw.run_id":                 runId,
