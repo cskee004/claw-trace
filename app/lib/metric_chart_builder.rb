@@ -1,16 +1,11 @@
 # Builds ApexCharts options and stat data from aggregated Metric records.
 #
 # With the rolling-aggregation model, each (metric_name, metric_attributes) pair
-# is stored as exactly one row. Charts are therefore attribute-comparison views,
-# not time-series:
+# is one row. Charts compare attribute combinations, not time-series:
 #
-#   sum       — horizontal bar chart: one bar per attribute combination
-#   histogram — no chart; stats hash carries P50/P95/P99 per series
-#   gauge     — same as sum (latest value per series)
+#   sum / gauge — horizontal bar chart: one bar per attribute combination
 #
-# Usage:
-#   MetricChartBuilder.call(records: records, metric_type: "sum")
-#   MetricChartBuilder.call(records: records, metric_type: "histogram")
+# Histograms are not stored (dropped on ingest) so are not handled here.
 #
 # Returns { options: <ApexCharts hash or {}>, stats: <stat hash or nil> }
 class MetricChartBuilder
@@ -28,7 +23,6 @@ class MetricChartBuilder
 
     case @metric_type
     when "sum", "gauge" then { options: bar_chart_options, stats: sum_stats }
-    when "histogram"    then { options: {},                stats: histogram_stats }
     else                     { options: {},                stats: nil }
     end
   end
@@ -63,30 +57,6 @@ class MetricChartBuilder
       series_count:     @records.size,
       latest_timestamp: latest&.updated_at
     }
-  end
-
-  # ── Histogram ─────────────────────────────────────────────────────────────────
-
-  def histogram_stats
-    series = @records.map do |r|
-      dp   = r.data_points
-      pcts = HistogramPercentileCalculator.call(
-        bucket_counts:   dp["bucket_counts"]   || [],
-        explicit_bounds: dp["explicit_bounds"] || []
-      )
-      {
-        label:      attrs_label(r.metric_attributes),
-        p50:        pcts&.dig(:p50),
-        p95:        pcts&.dig(:p95),
-        p99:        pcts&.dig(:p99),
-        count:      dp["count"].to_i,
-        sum:        dp["sum"].to_f,
-        min:        dp["min"],
-        max:        dp["max"],
-        updated_at: r.updated_at
-      }
-    end
-    { type: "histogram", series: series }
   end
 
   # ── Helpers ───────────────────────────────────────────────────────────────────

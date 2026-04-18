@@ -9,7 +9,7 @@
 #                                { count, sum, min, max, bucket_counts, explicit_bounds } for histogram
 #   timestamp         (datetime) when the data point was recorded
 class Metric < ApplicationRecord
-  METRIC_TYPES = %w[sum histogram].freeze
+  METRIC_TYPES = %w[sum gauge].freeze
 
   validates :metric_name, presence: true
   validates :metric_type, presence: true, inclusion: { in: METRIC_TYPES }

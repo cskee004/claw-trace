@@ -25,7 +25,7 @@ RSpec.describe Metric, type: :model do
     end
 
     it "rejects unknown metric types" do
-      expect(Metric.new(valid_attrs(metric_type: "gauge"))).not_to be_valid
+      expect(Metric.new(valid_attrs(metric_type: "histogram"))).not_to be_valid
     end
 
     it "accepts all valid metric types" do
@@ -77,16 +77,9 @@ RSpec.describe Metric, type: :model do
       expect(metric.reload.data_points).to eq(points)
     end
 
-    it "persists and retrieves histogram data_points" do
-      points = {
-        "count"            => 150,
-        "sum"              => 45230,
-        "min"              => 12,
-        "max"              => 890,
-        "bucket_counts"    => [10, 40, 60, 30, 10],
-        "explicit_bounds"  => [100, 300, 500, 700]
-      }
-      metric = Metric.create!(valid_attrs(metric_type: "histogram", data_points: points))
+    it "persists and retrieves gauge data_points" do
+      points = { "value" => 0.73 }
+      metric = Metric.create!(valid_attrs(metric_type: "gauge", data_points: points))
       expect(metric.reload.data_points).to eq(points)
     end
   end

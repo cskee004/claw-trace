@@ -5,45 +5,25 @@
 %>
 <% if chart_stats %>
   <div class="flex flex-wrap gap-6 <%= mb %>">
-    <% if %w[sum gauge].include?(chart_stats[:type]) %>
+    <div class="flex items-baseline gap-1.5">
+      <span class="text-xs text-[var(--color-fg-muted)]">Total</span>
+      <span class="font-mono text-sm font-bold text-[var(--color-fg)]">
+        <%= number_with_delimiter(chart_stats[:total]&.round(2)) %>
+      </span>
+    </div>
+    <% if chart_stats[:series_count].to_i > 1 %>
       <div class="flex items-baseline gap-1.5">
-        <span class="text-xs text-[var(--color-fg-muted)]">Total</span>
-        <span class="font-mono text-sm font-bold text-[var(--color-fg)]">
-          <%= number_with_delimiter(chart_stats[:total]&.round(2)) %>
+        <span class="text-xs text-[var(--color-fg-muted)]">Series</span>
+        <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= chart_stats[:series_count] %></span>
+      </div>
+    <% end %>
+    <% if chart_stats[:latest_timestamp] %>
+      <div class="flex items-baseline gap-1.5">
+        <span class="text-xs text-[var(--color-fg-muted)]">Updated</span>
+        <span class="font-mono text-xs text-[var(--color-fg-muted)]">
+          <%= time_ago_in_words(chart_stats[:latest_timestamp]) %> ago
         </span>
       </div>
-      <% if chart_stats[:series_count].to_i > 1 %>
-        <div class="flex items-baseline gap-1.5">
-          <span class="text-xs text-[var(--color-fg-muted)]">Series</span>
-          <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= chart_stats[:series_count] %></span>
-        </div>
-      <% end %>
-      <% if chart_stats[:latest_timestamp] %>
-        <div class="flex items-baseline gap-1.5">
-          <span class="text-xs text-[var(--color-fg-muted)]">Updated</span>
-          <span class="font-mono text-xs text-[var(--color-fg-muted)]">
-            <%= time_ago_in_words(chart_stats[:latest_timestamp]) %> ago
-          </span>
-        </div>
-      <% end %>
-    <% elsif chart_stats[:type] == "histogram" %>
-      <% first = chart_stats.dig(:series, 0) %>
-      <% if first %>
-        <% [[:p50, "P50"], [:p95, "P95"], [:p99, "P99"]].each do |key, label| %>
-          <div class="flex items-baseline gap-1.5">
-            <span class="text-xs text-[var(--color-fg-muted)]"><%= label %></span>
-            <span class="font-mono text-sm font-bold text-[var(--color-fg)]">
-              <%= first[key]&.round(1) || "—" %>
-            </span>
-          </div>
-        <% end %>
-        <div class="flex items-baseline gap-1.5">
-          <span class="text-xs text-[var(--color-fg-muted)]">Count</span>
-          <span class="font-mono text-sm font-bold text-[var(--color-fg)]">
-            <%= number_with_delimiter(first[:count]) %>
-          </span>
-        </div>
-      <% end %>
     <% end %>
   </div>
 <% end %>

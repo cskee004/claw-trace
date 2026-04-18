@@ -1,15 +1,17 @@
 # Upserts normalized metric rows into the metrics table using running aggregation.
 #
-# Instead of appending every data point, each unique (metric_name, metric_attributes)
-# pair is stored as a single row and updated in place on every ingest:
+# Only sum and gauge metrics are stored — histograms are silently dropped.
+# Histogram bucket data represents a time-windowed distribution and is not
+# meaningful as a running aggregate across arbitrary time windows.
 #
-#   sum     — value accumulates (running total)
-#   histogram — count/sum/bucket_counts accumulate; min/max track lifetime extremes
-#   gauge   — replaced with the latest value (point-in-time snapshot)
+#   sum   — value accumulates (running total)
+#   gauge — replaced with the latest value (point-in-time snapshot)
 #
 # Lookup is keyed on metric_key, a canonical string fingerprint of
 # (metric_name, sorted metric_attributes), indexed for O(1) find.
 class MetricAggregator
+  STORABLE_TYPES = %w[sum gauge].freeze
+
   def self.call(rows)
     new(rows).call
   end
@@ -19,7 +21,7 @@ class MetricAggregator
   end
 
   def call
-    @rows.each { |row| upsert(row) }
+    @rows.each { |row| upsert(row) if STORABLE_TYPES.include?(row["metric_type"]) }
   end
 
   private
@@ -43,25 +45,9 @@ class MetricAggregator
     case type
     when "sum"
       incoming.merge("value" => existing["value"].to_f + incoming["value"].to_f)
-    when "histogram"
-      {
-        "count"           => existing["count"].to_i + incoming["count"].to_i,
-        "sum"             => existing["sum"].to_f   + incoming["sum"].to_f,
-        "min"             => [existing["min"], incoming["min"]].compact.min,
-        "max"             => [existing["max"], incoming["max"]].compact.max,
-        "bucket_counts"   => merge_buckets(existing["bucket_counts"], incoming["bucket_counts"]),
-        "explicit_bounds" => incoming["explicit_bounds"] || existing["explicit_bounds"]
-      }.compact
     else
       incoming
     end
-  end
-
-  def merge_buckets(existing, incoming)
-    return incoming if existing.nil?
-    return existing if incoming.nil?
-
-    existing.zip(incoming).map { |a, b| a.to_i + b.to_i }
   end
 
   def metric_key(name, attrs)

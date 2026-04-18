@@ -82,49 +82,27 @@ RSpec.describe MetricAggregator do
     end
   end
 
-  # ── Histogram accumulation ────────────────────────────────────────────────────
+  # ── Histogram — silently dropped ─────────────────────────────────────────────
 
   describe "histogram metric" do
-    it "creates one record on first ingest" do
-      expect { MetricAggregator.call([histogram_row(count: 3, sum: 150.0, min: 10.0, max: 80.0, buckets: [1, 2, 0])]) }
-        .to change(Metric, :count).by(1)
+    def histogram_row
+      {
+        "metric_name"       => "gen_ai.client.operation.duration",
+        "metric_type"       => "histogram",
+        "trace_id"          => nil,
+        "metric_attributes" => {},
+        "data_points"       => { "count" => 3, "sum" => 150.0, "bucket_counts" => [1, 2, 0] },
+        "timestamp"         => "2026-04-18T12:00:00.000Z"
+      }
     end
 
-    it "does not create a second record for the same series" do
-      MetricAggregator.call([histogram_row(count: 3, sum: 150.0, min: 10.0, max: 80.0, buckets: [1, 2, 0])])
-      expect {
-        MetricAggregator.call([histogram_row(count: 2, sum: 90.0, min: 20.0, max: 50.0, buckets: [0, 1, 1])])
-      }.not_to change(Metric, :count)
+    it "does not persist histogram rows" do
+      expect { MetricAggregator.call([histogram_row]) }.not_to change(Metric, :count)
     end
 
-    it "accumulates count" do
-      MetricAggregator.call([histogram_row(count: 3, sum: 150.0, min: 10.0, max: 80.0, buckets: [1, 2, 0])])
-      MetricAggregator.call([histogram_row(count: 2, sum: 90.0,  min: 20.0, max: 50.0, buckets: [0, 1, 1])])
-      expect(Metric.last.data_points["count"]).to eq(5)
-    end
-
-    it "accumulates sum" do
-      MetricAggregator.call([histogram_row(count: 3, sum: 150.0, min: 10.0, max: 80.0, buckets: [1, 2, 0])])
-      MetricAggregator.call([histogram_row(count: 2, sum: 90.0,  min: 20.0, max: 50.0, buckets: [0, 1, 1])])
-      expect(Metric.last.data_points["sum"]).to eq(240.0)
-    end
-
-    it "tracks lifetime min" do
-      MetricAggregator.call([histogram_row(count: 1, sum: 80.0, min: 80.0, max: 80.0, buckets: [0, 1, 0])])
-      MetricAggregator.call([histogram_row(count: 1, sum: 5.0,  min: 5.0,  max: 5.0,  buckets: [1, 0, 0])])
-      expect(Metric.last.data_points["min"]).to eq(5.0)
-    end
-
-    it "tracks lifetime max" do
-      MetricAggregator.call([histogram_row(count: 1, sum: 5.0,   min: 5.0,   max: 5.0,   buckets: [1, 0, 0])])
-      MetricAggregator.call([histogram_row(count: 1, sum: 200.0, min: 200.0, max: 200.0, buckets: [0, 0, 1])])
-      expect(Metric.last.data_points["max"]).to eq(200.0)
-    end
-
-    it "element-wise adds bucket_counts" do
-      MetricAggregator.call([histogram_row(count: 3, sum: 150.0, min: 10.0, max: 80.0, buckets: [1, 2, 0])])
-      MetricAggregator.call([histogram_row(count: 2, sum: 90.0,  min: 20.0, max: 50.0, buckets: [0, 1, 1])])
-      expect(Metric.last.data_points["bucket_counts"]).to eq([1, 3, 1])
+    it "silently skips histograms even when mixed with sum rows" do
+      rows = [sum_row(value: 100), histogram_row]
+      expect { MetricAggregator.call(rows) }.to change(Metric, :count).by(1)
     end
   end
 

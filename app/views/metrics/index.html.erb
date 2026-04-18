@@ -41,12 +41,7 @@
                 </span>
               </td>
               <td class="px-4 py-3 align-middle text-right font-mono text-sm font-bold text-[var(--color-fg)]">
-                <% if s[:metric_type] == "histogram" %>
-                  <span class="text-xs">P50 </span><%= s[:value][:p50]&.round(1) || "—" %>
-                  <span class="text-[var(--color-fg-subtle)] text-[10px] ml-2">(<%= number_with_delimiter(s[:value][:count]) %> ops)</span>
-                <% else %>
-                  <%= number_with_delimiter(s[:value].round(2)) %>
-                <% end %>
+                <%= number_with_delimiter(s[:total].round(2)) %>
               </td>
               <td class="px-4 py-3 align-middle text-right text-xs text-[var(--color-fg-subtle)]">
                 <%= s[:series_count] %>

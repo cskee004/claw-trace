@@ -77,61 +77,6 @@ RSpec.describe MetricChartBuilder do
     end
   end
 
-  # ── Histogram ─────────────────────────────────────────────────────────────────
-
-  describe ".call with metric_type: 'histogram'" do
-    let(:dp) do
-      {
-        "bucket_counts"   => [10, 40, 60, 30, 10],
-        "explicit_bounds" => [100.0, 300.0, 500.0, 700.0],
-        "count"           => 150,
-        "sum"             => 55_000.0,
-        "min"             => 10.0,
-        "max"             => 900.0
-      }
-    end
-
-    let(:records) do
-      [
-        fake_metric(data_points: dp, attrs: { "model" => "claude-sonnet-4-6" }, metric_type: "histogram"),
-        fake_metric(data_points: dp, attrs: { "model" => "claude-opus-4-7"  }, metric_type: "histogram")
-      ]
-    end
-
-    subject(:result) { described_class.call(records: records, metric_type: "histogram") }
-
-    it "returns empty options (no chart)" do
-      expect(result[:options]).to eq({})
-    end
-
-    it "returns type 'histogram' in stats" do
-      expect(result[:stats][:type]).to eq("histogram")
-    end
-
-    it "returns one stats series entry per record" do
-      expect(result[:stats][:series].length).to eq(2)
-    end
-
-    it "each series entry includes a label from attrs" do
-      labels = result[:stats][:series].map { |s| s[:label] }
-      expect(labels).to include("model: claude-sonnet-4-6")
-    end
-
-    it "each series entry includes p50, p95, p99" do
-      s = result[:stats][:series].first
-      expect(s[:p50]).to be_a(Numeric)
-      expect(s[:p95]).to be_a(Numeric)
-      expect(s[:p99]).to be_a(Numeric)
-    end
-
-    it "each series entry includes count, min, max" do
-      s = result[:stats][:series].first
-      expect(s[:count]).to eq(150)
-      expect(s[:min]).to eq(10.0)
-      expect(s[:max]).to eq(900.0)
-    end
-  end
-
   # ── No attributes ─────────────────────────────────────────────────────────────
 
   describe "metric with no attributes" do

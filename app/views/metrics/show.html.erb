@@ -23,39 +23,9 @@
   <% if @has_data %>
     <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4 mt-4">
       <%= render "metrics/stat_strip", chart_stats: @chart_stats, mb: "mb-4" %>
-
-      <% if @chart_options.present? %>
-        <div data-controller="apex-chart"
-             data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
-        </div>
-      <% elsif @chart_stats&.dig(:series)&.any? %>
-        <table class="w-full border-collapse rounded overflow-hidden border border-[var(--color-surface-2)]">
-          <thead>
-            <tr class="bg-[var(--color-bg)]">
-              <th class="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Attributes</th>
-              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Count</th>
-              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Min</th>
-              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P50</th>
-              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P95</th>
-              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P99</th>
-              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Max</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% @chart_stats[:series].each do |s| %>
-              <tr class="border-t border-[var(--color-surface-2)]">
-                <td class="px-4 py-2.5 text-xs text-[var(--color-fg-muted)] font-mono"><%= s[:label] %></td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-fg-muted)]"><%= number_with_delimiter(s[:count]) %></td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-fg-subtle)]"><%= s[:min]&.round(1) || "—" %></td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs font-bold text-[var(--color-fg)]"><%= s[:p50]&.round(1) || "—" %></td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-warn-fg)]"><%= s[:p95]&.round(1) || "—" %></td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-span-error)]"><%= s[:p99]&.round(1) || "—" %></td>
-                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-fg-subtle)]"><%= s[:max]&.round(1) || "—" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      <% end %>
+      <div data-controller="apex-chart"
+           data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
+      </div>
     </div>
   <% else %>
     <p class="metrics-empty">No data recorded for this metric.</p>
