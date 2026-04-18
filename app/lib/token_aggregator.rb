@@ -1,6 +1,6 @@
 class TokenAggregator
   def self.call(spans)
-    rows = spans.where(span_type: "model_call")
+    rows = spans.where(span_type: %w[model_call agent_turn])
                 .pick(
                   Arel.sql("COALESCE(SUM(span_input_tokens), 0)"),
                   Arel.sql("COALESCE(SUM(span_output_tokens), 0)"),

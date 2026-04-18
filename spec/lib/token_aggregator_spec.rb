@@ -7,11 +7,11 @@ RSpec.describe TokenAggregator do
     tid
   end
 
-  def create_model_span(input:, output:, cache_read:, cache_write:, total:)
+  def create_span(span_type:, input:, output:, cache_read:, cache_write:, total:)
     Span.create!(
       trace_id:                create_trace,
       span_id:                 SecureRandom.hex(8),
-      span_type:               "model_call",
+      span_type:               span_type,
       agent_id:                "test-agent",
       timestamp:               Time.current,
       span_input_tokens:       input,
@@ -21,6 +21,11 @@ RSpec.describe TokenAggregator do
       span_total_tokens:       total,
       metadata:                {}
     )
+  end
+
+  def create_model_span(input:, output:, cache_read:, cache_write:, total:)
+    create_span(span_type: "model_call", input: input, output: output,
+                cache_read: cache_read, cache_write: cache_write, total: total)
   end
 
   subject(:result) { TokenAggregator.call(Span.all) }
@@ -86,7 +91,19 @@ RSpec.describe TokenAggregator do
     end
   end
 
-  describe "filters to model_call spans only" do
+  describe "includes agent_turn spans (plugin-emitted)" do
+    before do
+      create_model_span(input: 100, output: 50, cache_read: 0, cache_write: 0, total: 150)
+      create_span(span_type: "agent_turn", input: 200, output: 80, cache_read: 0, cache_write: 0, total: 280)
+    end
+
+    it "sums tokens from both model_call and agent_turn spans" do
+      expect(result[:input_tokens]).to eq(300)
+      expect(result[:total_tokens]).to eq(430)
+    end
+  end
+
+  describe "ignores non-LLM span types" do
     before do
       create_model_span(input: 100, output: 50, cache_read: 0, cache_write: 0, total: 150)
       Span.create!(
@@ -96,7 +113,7 @@ RSpec.describe TokenAggregator do
       )
     end
 
-    it "ignores non-model_call spans" do
+    it "ignores message_event and other non-LLM spans" do
       expect(result[:input_tokens]).to eq(100)
     end
   end

@@ -39,8 +39,8 @@
 
   <div class="px-4 py-4 space-y-4">
 
-    <%# ── LLM call section (model_call spans only) ── %>
-    <% if span.span_type == "model_call" && (span.span_model || span.span_input_tokens) %>
+    <%# ── LLM call section (model_call and agent_turn spans) ── %>
+    <% if %w[model_call agent_turn].include?(span.span_type) && (span.span_model || span.span_input_tokens) %>
       <div class="pb-4 border-b border-[var(--color-surface-2)]">
         <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-2">LLM call</p>
         <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1">
@@ -77,7 +77,7 @@
     <% end %>
 
     <%# ── Metadata ── %>
-    <% residual = (span.metadata || {}).reject { |k, _| k.to_s.start_with?("openclaw.model", "openclaw.provider", "openclaw.tokens", "openclaw.outcome") } %>
+    <% residual = (span.metadata || {}).reject { |k, _| k.to_s.start_with?("openclaw.model", "openclaw.provider", "openclaw.tokens", "openclaw.outcome", "gen_ai.usage.") } %>
     <% if residual.present? %>
       <div>
         <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-2">Attributes</p>

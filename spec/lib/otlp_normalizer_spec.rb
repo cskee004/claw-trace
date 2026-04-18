@@ -514,6 +514,56 @@ RSpec.describe OtlpNormalizer do
     end
   end
 
+  # ── gen_ai.usage.* fallback (plugin-emitted agent_turn spans) ─────────────
+
+  describe "gen_ai.usage.* token attribute fallback" do
+    def plugin_agent_turn_span(input:, output:, cache_read:, cache_write:, total:)
+      attrs = [
+        { "key" => "gen_ai.usage.input_tokens",       "value" => { "stringValue" => input.to_s } },
+        { "key" => "gen_ai.usage.output_tokens",      "value" => { "stringValue" => output.to_s } },
+        { "key" => "gen_ai.usage.cache_read_tokens",  "value" => { "stringValue" => cache_read.to_s } },
+        { "key" => "gen_ai.usage.cache_write_tokens", "value" => { "stringValue" => cache_write.to_s } },
+        { "key" => "gen_ai.usage.total_tokens",       "value" => { "stringValue" => total.to_s } },
+      ]
+      realistic_single_span(span_name: "openclaw.agent.turn", extra_span_attrs: attrs)
+    end
+
+    let(:span) do
+      OtlpNormalizer.call(plugin_agent_turn_span(input: 100, output: 200, cache_read: 50, cache_write: 25, total: 375))
+                    .first[:spans].first
+    end
+
+    it "populates span_input_tokens from gen_ai.usage.input_tokens as integer" do
+      expect(span["span_input_tokens"]).to eq(100)
+    end
+
+    it "populates span_output_tokens from gen_ai.usage.output_tokens as integer" do
+      expect(span["span_output_tokens"]).to eq(200)
+    end
+
+    it "populates span_cache_read_tokens from gen_ai.usage.cache_read_tokens as integer" do
+      expect(span["span_cache_read_tokens"]).to eq(50)
+    end
+
+    it "populates span_cache_write_tokens from gen_ai.usage.cache_write_tokens as integer" do
+      expect(span["span_cache_write_tokens"]).to eq(25)
+    end
+
+    it "populates span_total_tokens from gen_ai.usage.total_tokens as integer" do
+      expect(span["span_total_tokens"]).to eq(375)
+    end
+
+    it "openclaw.tokens.* takes precedence over gen_ai.usage.* when both present" do
+      attrs = [
+        { "key" => "openclaw.tokens.input",       "value" => { "intValue" => 999 } },
+        { "key" => "gen_ai.usage.input_tokens",   "value" => { "stringValue" => "111" } },
+      ]
+      p = realistic_single_span(span_name: "openclaw.model.usage", extra_span_attrs: attrs)
+      s = OtlpNormalizer.call(p).first[:spans].first
+      expect(s["span_input_tokens"]).to eq(999)
+    end
+  end
+
   # ── Trace record ──────────────────────────────────────────────────────────
 
   describe "trace record" do

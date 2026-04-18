@@ -166,11 +166,11 @@ class OtlpNormalizer
       "metadata"               => span_attrs,
       "span_model"             => span_attrs["openclaw.model"],
       "span_provider"          => span_attrs["openclaw.provider"],
-      "span_input_tokens"      => span_attrs["openclaw.tokens.input"],
-      "span_output_tokens"     => span_attrs["openclaw.tokens.output"],
-      "span_cache_read_tokens" => span_attrs["openclaw.tokens.cache_read"],
-      "span_cache_write_tokens"=> span_attrs["openclaw.tokens.cache_write"],
-      "span_total_tokens"      => span_attrs["openclaw.tokens.total"],
+      "span_input_tokens"      => span_attrs["openclaw.tokens.input"]       || span_attrs["gen_ai.usage.input_tokens"]&.to_i,
+      "span_output_tokens"     => span_attrs["openclaw.tokens.output"]      || span_attrs["gen_ai.usage.output_tokens"]&.to_i,
+      "span_cache_read_tokens" => span_attrs["openclaw.tokens.cache_read"]  || span_attrs["gen_ai.usage.cache_read_tokens"]&.to_i,
+      "span_cache_write_tokens"=> span_attrs["openclaw.tokens.cache_write"] || span_attrs["gen_ai.usage.cache_write_tokens"]&.to_i,
+      "span_total_tokens"      => span_attrs["openclaw.tokens.total"]       || span_attrs["gen_ai.usage.total_tokens"]&.to_i,
       "span_outcome"           => resolve_span_outcome(span, span_attrs)
     }
   end
