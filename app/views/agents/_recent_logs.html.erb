@@ -15,36 +15,9 @@
         <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Span</th>
       </tr>
     </thead>
-    <tbody>
       <% logs.each do |log| %>
-        <tr class="border-b border-[var(--color-surface-2)] last:border-0"
-            onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
-            onmouseout="this.style.backgroundColor=''">
-          <td class="px-4 py-2.5 align-middle font-mono text-[11px] text-[var(--color-fg-subtle)] whitespace-nowrap">
-            <%= log.timestamp&.strftime("%H:%M:%S.%3N") %>
-          </td>
-          <td class="px-4 py-2.5 align-middle">
-            <span class="severity-badge <%= severity_badge_class(log.severity_text) %>">
-              <%= log.severity_text || "?" %>
-            </span>
-          </td>
-          <td class="px-4 py-2.5 align-middle text-xs text-[var(--color-fg)]">
-            <%= truncate(log.body, length: 120) %>
-          </td>
-          <td class="px-4 py-2.5 align-middle">
-            <% if log.trace_id.present? %>
-              <%= link_to log.trace_id, trace_path(log.trace_id),
-                    class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
-            <% else %>
-              <span class="font-mono text-xs text-[var(--color-fg-subtle)]">—</span>
-            <% end %>
-          </td>
-          <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
-            <%= log.span_id || "—" %>
-          </td>
-        </tr>
+        <%= render "logs/log_row", log: log, timestamp_fmt: "%H:%M:%S.%3N" %>
       <% end %>
-    </tbody>
   </table>
   <p class="px-4 py-2 text-xs text-[var(--color-fg-subtle)] text-right border-t border-[var(--color-surface-2)]">
     Showing <%= logs.size %> record<%= logs.size == 1 ? "" : "s" %>

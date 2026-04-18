@@ -1,0 +1,76 @@
+<%# Locals: log, timestamp_fmt (strftime string), colspan (integer, default 5) %>
+<% colspan ||= 5 %>
+
+<tbody data-controller="log-detail">
+
+  <%# ── Data row ── %>
+  <tr class="border-b border-[var(--color-surface-2)] cursor-pointer"
+      data-action="click->log-detail#toggle"
+      onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
+      onmouseout="this.style.backgroundColor=''">
+
+    <td class="px-4 py-2.5 align-middle font-mono text-[11px] text-[var(--color-fg-subtle)] whitespace-nowrap">
+      <%= log.timestamp&.strftime(timestamp_fmt) %>
+    </td>
+    <td class="px-4 py-2.5 align-middle">
+      <span class="severity-badge <%= severity_badge_class(log.severity_text) %>">
+        <%= log.severity_text || "?" %>
+      </span>
+    </td>
+    <td class="px-4 py-2.5 align-middle text-xs text-[var(--color-fg)]">
+      <span class="flex items-center gap-2">
+        <button type="button"
+                class="font-mono text-[10px] text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]
+                       focus-visible:outline-none cursor-pointer shrink-0"
+                data-log-detail-target="chevron"
+                aria-expanded="false">▼</button>
+        <%= truncate(log.body, length: 120) %>
+      </span>
+    </td>
+    <td class="px-4 py-2.5 align-middle">
+      <% if log.trace_id.present? %>
+        <%= link_to log.trace_id, trace_path(log.trace_id),
+              class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
+      <% else %>
+        <span class="font-mono text-xs text-[var(--color-fg-subtle)]">—</span>
+      <% end %>
+    </td>
+    <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
+      <%= log.span_id || "—" %>
+    </td>
+
+  </tr>
+
+  <%# ── Drawer row (collapsed until expanded) ── %>
+  <tr class="trace-row-drawer border-b border-[var(--color-surface-2)] last:border-0"
+      data-log-detail-target="drawer">
+    <td colspan="<%= colspan %>" class="p-0">
+      <div class="trace-row-drawer__content">
+        <div class="px-4 py-3">
+
+          <%# Full body text — no truncation %>
+          <% if log.body.present? %>
+            <p class="text-xs text-[var(--color-fg)] font-mono break-all whitespace-pre-wrap mb-3 leading-relaxed">
+              <%= log.body %>
+            </p>
+          <% end %>
+
+          <%# log_attributes key-value list %>
+          <% attrs = log.log_attributes.presence %>
+          <% if attrs %>
+            <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1">
+              <% attrs.each do |key, value| %>
+                <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap"><%= key %></dt>
+                <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] break-all m-0"><%= value %></dd>
+              <% end %>
+            </dl>
+          <% elsif log.body.blank? %>
+            <p class="text-xs font-light italic text-[var(--color-fg-subtle)]">No details.</p>
+          <% end %>
+
+        </div>
+      </div>
+    </td>
+  </tr>
+
+</tbody>
