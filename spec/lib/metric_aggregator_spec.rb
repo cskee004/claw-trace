@@ -1,6 +1,7 @@
 require "rails_helper"
 
 RSpec.describe MetricAggregator do
+  include ActiveSupport::Testing::TimeHelpers
   def sum_row(name: "gen_ai.client.token.usage", value:, attrs: {})
     {
       "metric_name"       => name,
@@ -38,16 +39,24 @@ RSpec.describe MetricAggregator do
         .to change(Metric, :count).by(1)
     end
 
-    it "does not create a second record for the same metric series" do
+    it "does not create a second record for the same series within the same hour" do
       MetricAggregator.call([sum_row(value: 500)])
       expect { MetricAggregator.call([sum_row(value: 300)]) }
         .not_to change(Metric, :count)
     end
 
-    it "accumulates values across ingests" do
+    it "accumulates values within the same hour bucket" do
       MetricAggregator.call([sum_row(value: 500)])
       MetricAggregator.call([sum_row(value: 300)])
       expect(Metric.last.data_points["value"]).to eq(800.0)
+    end
+
+    it "creates a new row for a new hour bucket" do
+      MetricAggregator.call([sum_row(value: 500)])
+      travel_to(2.hours.from_now) do
+        expect { MetricAggregator.call([sum_row(value: 300)]) }
+          .to change(Metric, :count).by(1)
+      end
     end
 
     it "treats different attribute sets as distinct series" do

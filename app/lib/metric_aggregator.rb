@@ -1,14 +1,13 @@
-# Upserts normalized metric rows into the metrics table using running aggregation.
+# Upserts normalized metric rows into the metrics table using hourly bucket aggregation.
 #
 # Only sum and gauge metrics are stored — histograms are silently dropped.
-# Histogram bucket data represents a time-windowed distribution and is not
-# meaningful as a running aggregate across arbitrary time windows.
 #
-#   sum   — value accumulates (running total)
-#   gauge — replaced with the latest value (point-in-time snapshot)
+# One row is stored per (metric_name, metric_attributes, hour_bucket). On each
+# ingest the delta is added to the matching hour's running total. This keeps the
+# table at O(unique_series × hours_retained) instead of O(raw events).
 #
-# Lookup is keyed on metric_key, a canonical string fingerprint of
-# (metric_name, sorted metric_attributes), indexed for O(1) find.
+#   sum   — value accumulates within each hour bucket
+#   gauge — replaced with the latest value within each hour bucket
 class MetricAggregator
   STORABLE_TYPES = %w[sum gauge].freeze
 
@@ -17,7 +16,8 @@ class MetricAggregator
   end
 
   def initialize(rows)
-    @rows = rows
+    @rows   = rows
+    @bucket = Time.current.beginning_of_hour
   end
 
   def call
@@ -28,7 +28,7 @@ class MetricAggregator
 
   def upsert(row)
     key    = metric_key(row["metric_name"], row["metric_attributes"])
-    record = Metric.find_or_initialize_by(metric_key: key)
+    record = Metric.find_or_initialize_by(metric_key: key, hour_bucket: @bucket)
 
     record.metric_name       = row["metric_name"]
     record.metric_type       = row["metric_type"]

@@ -1,13 +1,17 @@
 class MetricsController < ApplicationController
+  include TimeWindowFilter
+
   def index
-    all = filtered_scope.order(:metric_name, :metric_key).to_a
-    @summaries = all.group_by(&:metric_name).map do |name, series|
+    all = filtered_scope.where(hour_bucket: time_range)
+                        .order(:metric_name, :metric_key, :hour_bucket)
+                        .to_a
+    @summaries = all.group_by(&:metric_name).map do |name, rows|
       {
         metric_name:  name,
-        metric_type:  series.first.metric_type,
-        total:        series.sum { |m| m.data_points["value"].to_f },
-        series_count: series.size,
-        updated_at:   series.map(&:updated_at).max
+        metric_type:  rows.first.metric_type,
+        total:        rows.sum { |m| m.data_points["value"].to_f },
+        series_count: rows.map(&:metric_key).uniq.size,
+        updated_at:   rows.map(&:updated_at).max
       }
     end
   end
@@ -34,13 +38,27 @@ class MetricsController < ApplicationController
   private
 
   def load_chart_data
-    records      = Metric.where(metric_name: @metric_name)
-                         .order(:metric_key)
-                         .to_a
-    @metric_type = records.first&.metric_type
-    @has_data    = records.any?
+    rows = Metric.where(metric_name: @metric_name)
+                 .where(hour_bucket: time_range)
+                 .order(:metric_key, :hour_bucket)
+                 .to_a
+
+    @metric_type = rows.first&.metric_type
+    @has_data    = rows.any?
+
     if @has_data
-      result         = MetricChartBuilder.call(records: records, metric_type: @metric_type)
+      # Collapse hour buckets into one aggregated record per attribute series.
+      aggregated = rows.group_by(&:metric_key).map do |_key, buckets|
+        first = buckets.first
+        OpenStruct.new(
+          metric_attributes: first.metric_attributes,
+          metric_type:       first.metric_type,
+          data_points:       { "value" => buckets.sum { |r| r.data_points["value"].to_f } },
+          updated_at:        buckets.map(&:updated_at).max
+        )
+      end
+
+      result         = MetricChartBuilder.call(records: aggregated, metric_type: @metric_type)
       @chart_options = result[:options]
       @chart_stats   = result[:stats]
     else

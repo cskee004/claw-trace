@@ -20,6 +20,14 @@
     </div>
   </div>
 
+  <%# ── Period filter ── %>
+  <div class="flex items-center gap-2 flex-wrap mt-4 mb-2">
+    <% [["12h", "12h"], ["24h", "24h"], ["7d", "7d"], ["30d", "30d"]].each do |period, label| %>
+      <%= link_to label, metric_path(@metric_name, period: period),
+            class: "filter-btn #{'filter-btn--active' if @current_period == period}" %>
+    <% end %>
+  </div>
+
   <% if @has_data %>
     <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg p-4 mt-4">
       <%= render "metrics/stat_strip", chart_stats: @chart_stats, mb: "mb-4" %>

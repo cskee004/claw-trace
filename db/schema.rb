@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_18_000002) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_18_000003) do
   create_table "logs", force: :cascade do |t|
     t.string "trace_id"
     t.string "span_id"
@@ -36,7 +36,9 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_18_000002) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "metric_key"
-    t.index ["metric_key"], name: "index_metrics_on_metric_key", unique: true, where: "metric_key IS NOT NULL"
+    t.datetime "hour_bucket"
+    t.index ["hour_bucket"], name: "index_metrics_on_hour_bucket"
+    t.index ["metric_key", "hour_bucket"], name: "index_metrics_on_metric_key_and_hour_bucket", unique: true, where: "metric_key IS NOT NULL AND hour_bucket IS NOT NULL"
     t.index ["metric_name"], name: "index_metrics_on_metric_name"
     t.index ["timestamp"], name: "index_metrics_on_timestamp"
     t.index ["trace_id"], name: "index_metrics_on_trace_id"

@@ -13,8 +13,19 @@
     <% end %>
   <% end %>
 
+  <%# ── Period filter ── %>
+  <div class="flex items-center gap-2 flex-wrap my-4">
+    <% [["12h", "12h"], ["24h", "24h"], ["7d", "7d"], ["30d", "30d"]].each do |period, label| %>
+      <%= link_to label, metrics_path(request.query_parameters.merge(period: period)),
+            class: "filter-btn #{'filter-btn--active' if @current_period == period}" %>
+    <% end %>
+  </div>
+
   <% if @summaries.empty? %>
-    <%= render "shared/connect_openclaw" %>
+    <div class="rounded-lg border border-[var(--color-surface-2)] p-8 text-center
+                text-xs italic text-[var(--color-fg-subtle)]">
+      No metrics recorded in the <%= @period_label %>.
+    </div>
   <% else %>
     <div class="rounded-lg overflow-hidden border border-[var(--color-surface-2)] mt-4">
       <table class="w-full border-collapse bg-[var(--color-surface)]">
@@ -22,7 +33,7 @@
           <tr>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Metric</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Type</th>
-            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Value</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Total (<%= @period_label %>)</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Series</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Updated</th>
           </tr>
@@ -32,7 +43,7 @@
             <tr class="border-b border-[var(--color-surface-2)] last:border-0
                        hover:bg-[var(--color-row-hover)]">
               <td class="px-4 py-3 align-middle">
-                <%= link_to s[:metric_name], metric_path(s[:metric_name]),
+                <%= link_to s[:metric_name], metric_path(s[:metric_name], period: @current_period),
                       class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
               </td>
               <td class="px-4 py-3 align-middle">
