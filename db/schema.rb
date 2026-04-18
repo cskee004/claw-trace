@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_18_000001) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_18_000002) do
   create_table "logs", force: :cascade do |t|
     t.string "trace_id"
     t.string "span_id"
