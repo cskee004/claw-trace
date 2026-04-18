@@ -125,23 +125,9 @@ class TracesController < ApplicationController
   end
 
   def compute_latencies_ms(spans)
-    latencies = {}
-
-    # For spans with end_time, use actual measured duration.
-    # For spans without end_time, fall back to time-until-next-span-starts.
-    spans.each_cons(2) do |current, nxt|
-      latencies[current.span_id] = if current.end_time
-        (current.end_time - current.timestamp) * 1000.0
-      else
-        (nxt.timestamp - current.timestamp) * 1000.0
-      end
+    spans.each_with_object({}) do |span, h|
+      next unless span.end_time
+      h[span.span_id] = (span.end_time - span.timestamp) * 1000.0
     end
-
-    # The last span is excluded from each_cons(2); include it if it has end_time.
-    if (last = spans.last) && last.end_time
-      latencies[last.span_id] = (last.end_time - last.timestamp) * 1000.0
-    end
-
-    latencies
   end
 end

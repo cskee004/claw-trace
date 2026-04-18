@@ -90,11 +90,17 @@ RSpec.describe TracesController, type: :controller do
         expect(assigns(:spans).to_a).to eq([s1, s2, s3])
       end
 
-      it 'assigns @span_latencies keyed by span_id in milliseconds' do
+      it 'assigns @span_latencies from end_time for spans that have it, nil for those that do not' do
         t0 = Time.utc(2026, 4, 2, 12, 0, 0)
-        s1 = create_span(trace, span_id: "sp1", span_type: "session_event", timestamp: t0)
-        s2 = create_span(trace, span_id: "sp2", span_type: "model_call",        timestamp: t0 + 3)
-        s3 = create_span(trace, span_id: "sp3", span_type: "span",     timestamp: t0 + 7)
+        s1 = Span.create!(trace_id: trace.trace_id, span_id: "sp1", span_type: "session_event",
+                          agent_id: trace.agent_id, timestamp: t0, end_time: t0 + 3,
+                          metadata: { "info" => "test" })
+        s2 = Span.create!(trace_id: trace.trace_id, span_id: "sp2", span_type: "model_call",
+                          agent_id: trace.agent_id, timestamp: t0 + 3, end_time: t0 + 7,
+                          metadata: { "info" => "test" })
+        s3 = Span.create!(trace_id: trace.trace_id, span_id: "sp3", span_type: "span",
+                          agent_id: trace.agent_id, timestamp: t0 + 7,
+                          metadata: { "info" => "test" })
 
         get :show, params: { id: trace.trace_id }
 

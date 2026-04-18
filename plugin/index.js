@@ -28,9 +28,9 @@ export default definePluginEntry({
 
     api.on("after_tool_call", (event) => {
       const d = event.data || event;
-      console.error("[clawtrace] after_tool_call raw:", JSON.stringify({ ts: event.timestamp, toolCallId: d.toolCallId, durationMs: d.durationMs, runId: d.runId }));
+      // event.timestamp fires when the tool finishes; subtract durationMs to get start time.
       const ts = event.timestamp
-        ? toMs(event.timestamp)
+        ? toMs(event.timestamp) - (d.durationMs || 0)
         : Date.now() - (d.durationMs || 0);
       toolBuffer.set(d.toolCallId, {
         toolCallId: d.toolCallId,

@@ -25,6 +25,10 @@ module OtlpFixtures
     File.read(FIXTURE_DIR.join("span-openclaw-session-stuck-001.json"))
   end
 
+  def agent_trace_fixture_json
+    File.read(FIXTURE_DIR.join("otlp-agent-trace-fixture.json"))
+  end
+
   # Builds a minimal single-span payload using real OpenClaw resource shape.
   # Used for testing pattern-based rules and structural behavior without
   # depending on the specific fixture span names.
