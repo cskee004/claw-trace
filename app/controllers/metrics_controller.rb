@@ -1,6 +1,35 @@
 class MetricsController < ApplicationController
   def index
-    @metrics = filtered_scope.order(:metric_name, :metric_key).to_a
+    all = filtered_scope.order(:metric_name, :metric_key).to_a
+    @summaries = all.group_by(&:metric_name).map do |name, series|
+      type = series.first.metric_type
+      value = if type == "histogram"
+        merged_dp = series.each_with_object("bucket_counts" => [], "explicit_bounds" => [], "count" => 0) do |m, acc|
+          dp = m.data_points
+          acc["count"]  += dp["count"].to_i
+          acc["explicit_bounds"] = dp["explicit_bounds"] || acc["explicit_bounds"]
+          if acc["bucket_counts"].empty?
+            acc["bucket_counts"] = dp["bucket_counts"] || []
+          else
+            acc["bucket_counts"] = acc["bucket_counts"].zip(dp["bucket_counts"] || []).map { |a, b| a.to_i + b.to_i }
+          end
+        end
+        pcts = HistogramPercentileCalculator.call(
+          bucket_counts:   merged_dp["bucket_counts"],
+          explicit_bounds: merged_dp["explicit_bounds"]
+        )
+        { p50: pcts&.dig(:p50), p95: pcts&.dig(:p95), count: merged_dp["count"] }
+      else
+        series.sum { |m| m.data_points["value"].to_f }
+      end
+      {
+        metric_name:  name,
+        metric_type:  type,
+        value:        value,
+        series_count: series.size,
+        updated_at:   series.map(&:updated_at).max
+      }
+    end
   end
 
   def show

@@ -13,103 +13,54 @@
     <% end %>
   <% end %>
 
-  <% if @metrics.empty? %>
+  <% if @summaries.empty? %>
     <%= render "shared/connect_openclaw" %>
   <% else %>
-    <% @metrics.group_by(&:metric_name).each do |metric_name, series| %>
-      <% type = series.first.metric_type %>
-      <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg mb-4 overflow-hidden">
-
-        <%# ── Group header ── %>
-        <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-surface-2)] bg-[var(--color-bg)]">
-          <%= link_to metric_name, metric_path(metric_name),
-                class: "font-mono text-sm font-bold text-[var(--color-accent)] hover:underline truncate" %>
-          <span class="metric-type-badge metric-type-badge--<%= type %> shrink-0"><%= type %></span>
-          <span class="ml-auto text-[10px] text-[var(--color-fg-subtle)] shrink-0">
-            <%= pluralize(series.size, "series") %>
-          </span>
-        </div>
-
-        <%# ── Sum / gauge: value table ── %>
-        <% if %w[sum gauge].include?(type) %>
-          <table class="w-full border-collapse">
-            <% series.each do |m| %>
-              <tr class="border-b border-[var(--color-surface-2)] last:border-0">
-                <td class="px-4 py-2.5 text-xs text-[var(--color-fg-muted)]">
-                  <% if m.metric_attributes.present? %>
-                    <% m.metric_attributes.each do |k, v| %>
-                      <span class="inline-block bg-[var(--color-surface-2)] rounded px-1.5 py-0.5 mr-1 font-mono text-[10px]">
-                        <%= k %>: <%= v %>
-                      </span>
-                    <% end %>
-                  <% else %>
-                    <span class="italic text-[var(--color-fg-subtle)]">(no attributes)</span>
-                  <% end %>
-                </td>
-                <td class="px-4 py-2.5 text-right font-mono text-sm font-bold text-[var(--color-fg)] whitespace-nowrap">
-                  <%= number_with_delimiter(m.data_points["value"]&.to_f&.round(2)) %>
-                </td>
-                <td class="px-4 py-2.5 text-right text-[10px] text-[var(--color-fg-subtle)] whitespace-nowrap">
-                  <%= time_ago_in_words(m.updated_at) %> ago
-                </td>
-              </tr>
-            <% end %>
-          </table>
-
-        <%# ── Histogram: P50/P95/P99 per series ── %>
-        <% elsif type == "histogram" %>
-          <table class="w-full border-collapse">
-            <thead>
-              <tr class="bg-[var(--color-bg)]">
-                <th class="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Attributes</th>
-                <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Count</th>
-                <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P50</th>
-                <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P95</th>
-                <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P99</th>
-                <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Updated</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% series.each do |m| %>
-                <% dp   = m.data_points %>
-                <% pcts = HistogramPercentileCalculator.call(
-                     bucket_counts:   dp["bucket_counts"]   || [],
-                     explicit_bounds: dp["explicit_bounds"] || []
-                   ) %>
-                <tr class="border-t border-[var(--color-surface-2)]">
-                  <td class="px-4 py-2.5 text-xs text-[var(--color-fg-muted)]">
-                    <% if m.metric_attributes.present? %>
-                      <% m.metric_attributes.each do |k, v| %>
-                        <span class="inline-block bg-[var(--color-surface-2)] rounded px-1.5 py-0.5 mr-1 font-mono text-[10px]">
-                          <%= k %>: <%= v %>
-                        </span>
-                      <% end %>
-                    <% else %>
-                      <span class="italic text-[var(--color-fg-subtle)]">(no attributes)</span>
-                    <% end %>
-                  </td>
-                  <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-fg-muted)]">
-                    <%= number_with_delimiter(dp["count"]) %>
-                  </td>
-                  <td class="px-4 py-2.5 text-right font-mono text-xs font-bold text-[var(--color-fg)]">
-                    <%= pcts&.dig(:p50)&.round(1) || "—" %>
-                  </td>
-                  <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-warn-fg)]">
-                    <%= pcts&.dig(:p95)&.round(1) || "—" %>
-                  </td>
-                  <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-span-error)]">
-                    <%= pcts&.dig(:p99)&.round(1) || "—" %>
-                  </td>
-                  <td class="px-4 py-2.5 text-right text-[10px] text-[var(--color-fg-subtle)] whitespace-nowrap">
-                    <%= time_ago_in_words(m.updated_at) %> ago
-                  </td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% end %>
-
-      </div>
-    <% end %>
+    <div class="rounded-lg overflow-hidden border border-[var(--color-surface-2)] mt-4">
+      <table class="w-full border-collapse bg-[var(--color-surface)]">
+        <thead>
+          <tr>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Metric</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Type</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Value</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Series</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-right bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @summaries.each do |s| %>
+            <tr class="border-b border-[var(--color-surface-2)] last:border-0
+                       hover:bg-[var(--color-row-hover)]">
+              <td class="px-4 py-3 align-middle">
+                <%= link_to s[:metric_name], metric_path(s[:metric_name]),
+                      class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
+              </td>
+              <td class="px-4 py-3 align-middle">
+                <span class="metric-type-badge metric-type-badge--<%= s[:metric_type] %>">
+                  <%= s[:metric_type] %>
+                </span>
+              </td>
+              <td class="px-4 py-3 align-middle text-right font-mono text-sm font-bold text-[var(--color-fg)]">
+                <% if s[:metric_type] == "histogram" %>
+                  <span class="text-xs">P50 </span><%= s[:value][:p50]&.round(1) || "—" %>
+                  <span class="text-[var(--color-fg-subtle)] text-[10px] ml-2">(<%= number_with_delimiter(s[:value][:count]) %> ops)</span>
+                <% else %>
+                  <%= number_with_delimiter(s[:value].round(2)) %>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 align-middle text-right text-xs text-[var(--color-fg-subtle)]">
+                <%= s[:series_count] %>
+              </td>
+              <td class="px-4 py-3 align-middle text-right text-[11px] text-[var(--color-fg-subtle)] whitespace-nowrap">
+                <%= time_ago_in_words(s[:updated_at]) %> ago
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-2 text-xs text-[var(--color-fg-subtle)] text-right">
+      <%= pluralize(@summaries.size, "metric") %> · click a name for the per-attribute breakdown
+    </p>
   <% end %>
 </div>
