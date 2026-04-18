@@ -4,25 +4,44 @@
       mb:          String       — Tailwind margin-bottom class, e.g. "mb-3" or "mb-4"
 %>
 <% if chart_stats %>
-  <div class="flex gap-6 <%= mb %>">
-    <% if chart_stats[:type] == "sum" || chart_stats[:type] == "gauge" %>
+  <div class="flex flex-wrap gap-6 <%= mb %>">
+    <% if %w[sum gauge].include?(chart_stats[:type]) %>
       <div class="flex items-baseline gap-1.5">
-        <span class="text-xs text-[var(--color-fg-muted)]">Latest</span>
-        <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= chart_stats[:latest_value]&.round(4) %></span>
+        <span class="text-xs text-[var(--color-fg-muted)]">Total</span>
+        <span class="font-mono text-sm font-bold text-[var(--color-fg)]">
+          <%= number_with_delimiter(chart_stats[:total]&.round(2)) %>
+        </span>
       </div>
-      <div class="flex items-baseline gap-1.5">
-        <span class="text-xs text-[var(--color-fg-muted)]">At</span>
-        <span class="font-mono text-xs text-[var(--color-fg-muted)]"><%= chart_stats[:latest_timestamp]&.strftime("%H:%M %Z") %></span>
-      </div>
+      <% if chart_stats[:series_count].to_i > 1 %>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-xs text-[var(--color-fg-muted)]">Series</span>
+          <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= chart_stats[:series_count] %></span>
+        </div>
+      <% end %>
+      <% if chart_stats[:latest_timestamp] %>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-xs text-[var(--color-fg-muted)]">Updated</span>
+          <span class="font-mono text-xs text-[var(--color-fg-muted)]">
+            <%= time_ago_in_words(chart_stats[:latest_timestamp]) %> ago
+          </span>
+        </div>
+      <% end %>
     <% elsif chart_stats[:type] == "histogram" %>
-      <% [
-           [:p50, "P50", "50th percentile — half of measurements were faster than this"],
-           [:p95, "P95", "95th percentile — 95% of measurements were faster than this"],
-           [:p99, "P99", "99th percentile — 99% of measurements were faster than this"]
-         ].each do |key, label, tip| %>
-        <div class="flex items-baseline gap-1.5" title="<%= tip %>">
-          <span class="text-xs text-[var(--color-fg-muted)]"><%= label %></span>
-          <span class="font-mono text-sm font-bold text-[var(--color-fg)]"><%= chart_stats[key]&.round(1) %></span>
+      <% first = chart_stats.dig(:series, 0) %>
+      <% if first %>
+        <% [[:p50, "P50"], [:p95, "P95"], [:p99, "P99"]].each do |key, label| %>
+          <div class="flex items-baseline gap-1.5">
+            <span class="text-xs text-[var(--color-fg-muted)]"><%= label %></span>
+            <span class="font-mono text-sm font-bold text-[var(--color-fg)]">
+              <%= first[key]&.round(1) || "—" %>
+            </span>
+          </div>
+        <% end %>
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-xs text-[var(--color-fg-muted)]">Count</span>
+          <span class="font-mono text-sm font-bold text-[var(--color-fg)]">
+            <%= number_with_delimiter(first[:count]) %>
+          </span>
         </div>
       <% end %>
     <% end %>

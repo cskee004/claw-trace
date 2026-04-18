@@ -1,19 +1,19 @@
-# app/lib/metric_chart_builder.rb
+# Builds ApexCharts options and stat data from aggregated Metric records.
 #
-# Builds ApexCharts options and stat-strip data from a collection of Metric records.
+# With the rolling-aggregation model, each (metric_name, metric_attributes) pair
+# is stored as exactly one row. Charts are therefore attribute-comparison views,
+# not time-series:
+#
+#   sum       — horizontal bar chart: one bar per attribute combination
+#   histogram — no chart; stats hash carries P50/P95/P99 per series
+#   gauge     — same as sum (latest value per series)
 #
 # Usage:
 #   MetricChartBuilder.call(records: records, metric_type: "sum")
 #   MetricChartBuilder.call(records: records, metric_type: "histogram")
 #
-# Returns { options: <ApexCharts hash>, stats: <stat hash or nil> }
+# Returns { options: <ApexCharts hash or {}>, stats: <stat hash or nil> }
 class MetricChartBuilder
-  FALLBACK_OPTIONS = {
-    chart:  { type: "line", height: 300 },
-    series: [],
-    xaxis:  { type: "datetime" }
-  }.freeze
-
   def self.call(records:, metric_type:)
     new(records: records, metric_type: metric_type).call
   end
@@ -24,104 +24,76 @@ class MetricChartBuilder
   end
 
   def call
-    return { options: FALLBACK_OPTIONS.dup, stats: nil } if @records.empty?
+    return { options: {}, stats: nil } if @records.empty?
 
     case @metric_type
-    when "sum"
-      { options: sum_chart_options, stats: sum_stats }
-    when "gauge"
-      { options: gauge_chart_options, stats: gauge_stats }
-    when "histogram"
-      { options: histogram_chart_options, stats: histogram_stats }
-    else
-      { options: FALLBACK_OPTIONS.dup, stats: nil }
+    when "sum", "gauge" then { options: bar_chart_options, stats: sum_stats }
+    when "histogram"    then { options: {},                stats: histogram_stats }
+    else                     { options: {},                stats: nil }
     end
   end
 
   private
 
-  def sum_chart_options
-    series_data = @records.map { |r| { x: r.timestamp.to_i * 1000, y: r.data_points["value"] } }
-    {
-      chart:  { type: "line", height: 300, zoom: { enabled: false } },
-      series: [{ name: "Value", data: series_data }],
-      xaxis:  { type: "datetime" },
-      stroke: { curve: "smooth" },
-      colors: ["var(--color-accent)"]
-    }
-  end
+  # ── Sum / gauge ───────────────────────────────────────────────────────────────
 
-  def gauge_chart_options
-    series_data = @records.map { |r| { x: r.timestamp.to_i * 1000, y: r.data_points["value"] } }
-    {
-      chart:  { type: "line", height: 300, zoom: { enabled: false } },
-      series: [{ name: "Value", data: series_data }],
-      xaxis:  { type: "datetime" },
-      stroke: { curve: "smooth" },
-      colors: ["var(--color-success-fg)"]
-    }
-  end
+  def bar_chart_options
+    labels = @records.map { |r| attrs_label(r.metric_attributes) }
+    values = @records.map { |r| r.data_points["value"].to_f.round(4) }
 
-  def gauge_stats
-    latest = @records.last
     {
-      type:             "gauge",
-      latest_value:     latest.data_points["value"],
-      latest_timestamp: latest.timestamp
+      chart:       { type: "bar", height: [180, @records.size * 48].max,
+                     toolbar: { show: false } },
+      series:      [{ name: "Total", data: values }],
+      xaxis:       { categories: labels },
+      plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: "60%" } },
+      dataLabels:  { enabled: false },
+      grid:        { borderColor: "var(--color-surface-2)" },
+      colors:      ["var(--color-accent)"],
+      tooltip:     { theme: "dark" }
     }
   end
 
   def sum_stats
-    latest = @records.last
+    total   = @records.sum { |r| r.data_points["value"].to_f }
+    latest  = @records.max_by(&:updated_at)
     {
-      type:             "sum",
-      latest_value:     latest.data_points["value"],
-      latest_timestamp: latest.timestamp
+      type:             @metric_type,
+      total:            total,
+      series_count:     @records.size,
+      latest_timestamp: latest&.updated_at
     }
   end
 
-  def histogram_chart_options
-    p50_data = []
-    p95_data = []
-    p99_data = []
+  # ── Histogram ─────────────────────────────────────────────────────────────────
 
-    @records.each do |r|
+  def histogram_stats
+    series = @records.map do |r|
       dp   = r.data_points
       pcts = HistogramPercentileCalculator.call(
         bucket_counts:   dp["bucket_counts"]   || [],
         explicit_bounds: dp["explicit_bounds"] || []
       )
-      ts = r.timestamp.to_i * 1000
-      p50_data << { x: ts, y: pcts&.dig(:p50) }
-      p95_data << { x: ts, y: pcts&.dig(:p95) }
-      p99_data << { x: ts, y: pcts&.dig(:p99) }
+      {
+        label:      attrs_label(r.metric_attributes),
+        p50:        pcts&.dig(:p50),
+        p95:        pcts&.dig(:p95),
+        p99:        pcts&.dig(:p99),
+        count:      dp["count"].to_i,
+        sum:        dp["sum"].to_f,
+        min:        dp["min"],
+        max:        dp["max"],
+        updated_at: r.updated_at
+      }
     end
-
-    {
-      chart:  { type: "line", height: 300, zoom: { enabled: false } },
-      series: [
-        { name: "P50", data: p50_data },
-        { name: "P95", data: p95_data },
-        { name: "P99", data: p99_data }
-      ],
-      xaxis:  { type: "datetime" },
-      stroke: { curve: "smooth" },
-      colors: ["var(--color-accent)", "var(--color-warn-fg)", "var(--color-span-error)"]
-    }
+    { type: "histogram", series: series }
   end
 
-  def histogram_stats
-    latest = @records.last
-    dp     = latest.data_points
-    pcts   = HistogramPercentileCalculator.call(
-      bucket_counts:   dp["bucket_counts"]   || [],
-      explicit_bounds: dp["explicit_bounds"] || []
-    )
-    {
-      type: "histogram",
-      p50:  pcts&.dig(:p50),
-      p95:  pcts&.dig(:p95),
-      p99:  pcts&.dig(:p99)
-    }
+  # ── Helpers ───────────────────────────────────────────────────────────────────
+
+  def attrs_label(attrs)
+    return "(no attributes)" if attrs.blank?
+
+    attrs.map { |k, v| "#{k}: #{v}" }.join(" · ")
   end
 end

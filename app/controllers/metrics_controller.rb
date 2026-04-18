@@ -1,8 +1,6 @@
 class MetricsController < ApplicationController
   def index
-    @metric_names = build_metrics_summary.map do |m|
-      { metric_name: m.metric_name, metric_type: m.metric_type }
-    end
+    @metrics = filtered_scope.order(:metric_name, :metric_key).to_a
   end
 
   def show
@@ -17,7 +15,7 @@ class MetricsController < ApplicationController
   end
 
   def tool_calls_chart
-    spans            = Span.where(span_type: "tool_result")
+    spans            = Span.where(span_type: "tool_call")
                            .where("timestamp >= ?", 24.hours.ago)
     @tool_calls_data = ToolCallAnalyzer.call(spans)
     @chart_options   = @tool_calls_data.any? ? tool_calls_chart_options : {}
@@ -27,7 +25,9 @@ class MetricsController < ApplicationController
   private
 
   def load_chart_data
-    records      = Metric.where(metric_name: @metric_name).order(:timestamp).to_a
+    records      = Metric.where(metric_name: @metric_name)
+                         .order(:metric_key)
+                         .to_a
     @metric_type = records.first&.metric_type
     @has_data    = records.any?
     if @has_data
@@ -38,6 +38,15 @@ class MetricsController < ApplicationController
       @chart_options = {}
       @chart_stats   = nil
     end
+  end
+
+  def filtered_scope
+    scope = Metric.all
+    scope = scope.where("metric_name LIKE ?", "%#{params[:q]}%")                               if params[:q].present?
+    scope = scope.where("json_extract(metric_attributes, '$.model') = ?",    params[:model])    if params[:model].present?
+    scope = scope.where("json_extract(metric_attributes, '$.provider') = ?", params[:provider]) if params[:provider].present?
+    scope = scope.where("json_extract(metric_attributes, '$.channel') = ?",  params[:channel])  if params[:channel].present?
+    scope
   end
 
   def tool_calls_chart_options
@@ -60,18 +69,5 @@ class MetricsController < ApplicationController
       colors:      ["var(--color-accent)", "var(--color-success-fg)"],
       plotOptions: { bar: { borderRadius: 4, columnWidth: "50%" } }
     }
-  end
-
-  def build_metrics_summary
-    scope = Metric.all
-    scope = scope.where("metric_name LIKE ?", "%#{params[:q]}%")                               if params[:q].present?
-    scope = scope.where("json_extract(metric_attributes, '$.model') = ?",    params[:model])    if params[:model].present?
-    scope = scope.where("json_extract(metric_attributes, '$.provider') = ?", params[:provider]) if params[:provider].present?
-    scope = scope.where("json_extract(metric_attributes, '$.channel') = ?",  params[:channel])  if params[:channel].present?
-
-    scope
-      .select("metric_name, metric_type, MAX(timestamp) as latest_timestamp, COUNT(*) as data_point_count")
-      .group(:metric_name, :metric_type)
-      .order("latest_timestamp DESC")
   end
 end

@@ -1,13 +1,47 @@
 <%# app/views/metrics/_chart.html.erb %>
 <turbo-frame id="metric_chart_<%= @metric_name.parameterize %>">
   <% if @has_data %>
-    <%= render "metrics/stat_strip", chart_stats: @chart_stats, mb: "mb-3" %>
-    <div class="min-h-[320px]"
-         data-controller="apex-chart"
-         data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
-    </div>
+    <%= render "metrics/stat_strip", chart_stats: @chart_stats, mb: "mb-4" %>
+
+    <% if @chart_options.present? %>
+      <%# Sum / gauge — horizontal bar chart %>
+      <div class="min-h-[160px]"
+           data-controller="apex-chart"
+           data-apex-chart-options-value="<%= json_escape(@chart_options.to_json) %>">
+      </div>
+    <% else %>
+      <%# Histogram — stats table (no chart axis needed) %>
+      <% if @chart_stats&.dig(:series)&.any? %>
+        <table class="w-full border-collapse rounded overflow-hidden border border-[var(--color-surface-2)]">
+          <thead>
+            <tr class="bg-[var(--color-bg)]">
+              <th class="px-4 py-2 text-left text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Attributes</th>
+              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Count</th>
+              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Min</th>
+              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P50</th>
+              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P95</th>
+              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">P99</th>
+              <th class="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Max</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @chart_stats[:series].each do |s| %>
+              <tr class="border-t border-[var(--color-surface-2)]">
+                <td class="px-4 py-2.5 text-xs text-[var(--color-fg-muted)] font-mono"><%= s[:label] %></td>
+                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-fg-muted)]"><%= number_with_delimiter(s[:count]) %></td>
+                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-fg-subtle)]"><%= s[:min]&.round(1) || "—" %></td>
+                <td class="px-4 py-2.5 text-right font-mono text-xs font-bold text-[var(--color-fg)]"><%= s[:p50]&.round(1) || "—" %></td>
+                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-warn-fg)]"><%= s[:p95]&.round(1) || "—" %></td>
+                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-span-error)]"><%= s[:p99]&.round(1) || "—" %></td>
+                <td class="px-4 py-2.5 text-right font-mono text-xs text-[var(--color-fg-subtle)]"><%= s[:max]&.round(1) || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    <% end %>
   <% else %>
-    <div class="min-h-[320px] flex items-center justify-center
+    <div class="min-h-[160px] flex items-center justify-center
                 text-xs italic text-[var(--color-fg-subtle)]">
       No data recorded for this metric.
     </div>
