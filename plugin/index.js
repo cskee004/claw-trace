@@ -29,7 +29,7 @@ export default definePluginEntry({
     api.on("after_tool_call", (event) => {
       const d = event.data || event;
       const ts = event.timestamp
-        ? new Date(event.timestamp).getTime()
+        ? toMs(event.timestamp)
         : Date.now() - (d.durationMs || 0);
       toolBuffer.set(d.toolCallId, {
         toolCallId: d.toolCallId,
@@ -116,7 +116,7 @@ function buildAndSend(messages) {
       ? myToolCalls.find(t => t.toolCallId === turnTools[turnTools.length - 1]?.id)
       : null;
     const turnEnd = lastTool
-      ? new Date(lastTool.timestamp).getTime() + (lastTool.durationMs || 0)
+      ? toMs(lastTool.timestamp) + (lastTool.durationMs || 0)
       : msgEnd;
 
     prevTurnEnd = turnEnd;
@@ -146,7 +146,7 @@ function buildAndSend(messages) {
 
     turnTools.forEach(tc => {
       const buf       = myToolCalls.find(b => b.toolCallId === tc.id);
-      const toolStart = buf ? new Date(buf.timestamp).getTime() : toMs(msg.timestamp);
+      const toolStart = buf ? toMs(buf.timestamp) : toMs(msg.timestamp);
       const toolEnd   = buf ? toolStart + (buf.durationMs || 0) : toolStart;
       spans.push(makeSpan({
         traceId, spanId: makeSpanId(), parentId: turnSpanId,
@@ -216,10 +216,10 @@ function buildAndSend(messages) {
   postOtlp(traceId, spans);
 }
 
-// Normalize any timestamp format (ms number, ISO string, Date, undefined) to ms integer.
+// Normalize any timestamp format (ms number, ISO string, Date, undefined/NaN) to ms integer.
 function toMs(ts) {
   if (ts == null) return Date.now();
-  if (typeof ts === "number") return ts;
+  if (typeof ts === "number") return Number.isFinite(ts) ? ts : Date.now();
   const n = new Date(ts).getTime();
   return Number.isFinite(n) ? n : Date.now();
 }

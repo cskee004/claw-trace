@@ -599,6 +599,26 @@ RSpec.describe OtlpNormalizer do
       trace = OtlpNormalizer.call(model_usage_fixture_json).first[:trace]
       expect(trace.keys).to include("trace_id", "agent_id", "task_name", "start_time", "status")
     end
+
+    it "ignores zero startTimeUnixNano (NaN→0 from bad plugin timestamps) when computing start_time" do
+      # Two spans: one with a zero nano (NaN coerced by Ruby), one real.
+      # start_time must come from the real span, not 1970.
+      real_nano  = "1776353057612000000"
+      payload = JSON.generate({
+        "resourceSpans" => [{
+          "resource"   => { "attributes" => [{ "key" => "service.name", "value" => { "stringValue" => "svc" } }] },
+          "scopeSpans" => [{ "spans" => [
+            { "traceId" => "a1b2c3d4e5f6a7b8", "spanId" => "aabb0011aabb0011",
+              "name" => "openclaw.request",   "startTimeUnixNano" => "0", "attributes" => [] },
+            { "traceId" => "a1b2c3d4e5f6a7b8", "spanId" => "ccdd0022ccdd0022",
+              "name" => "openclaw.agent.turn", "startTimeUnixNano" => real_nano, "attributes" => [] }
+          ]}]
+        }]
+      })
+      trace = OtlpNormalizer.call(payload).first[:trace]
+      expected = Time.at(real_nano.to_i / 1_000_000_000.0).utc.iso8601(3)
+      expect(trace["start_time"]).to eq(expected)
+    end
   end
 
   # ── Error handling ─────────────────────────────────────────────────────────

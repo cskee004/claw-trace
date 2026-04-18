@@ -26,10 +26,14 @@ class Trace < ApplicationRecord
 
   # Returns elapsed seconds as a Float, or nil if the trace has no spans.
   # Assumes spans are already eager-loaded; does not issue additional queries.
+  # Rejects epoch (zero-unix) timestamps — a NaN from the plugin stores as 1970 and
+  # would inflate total duration to ~56 years, breaking all waterfall bar widths.
   def duration
     return nil if spans.empty?
 
-    timestamps = spans.map(&:timestamp)
+    timestamps = spans.map(&:timestamp).reject { |t| t.to_i.zero? }
+    return nil if timestamps.empty?
+
     timestamps.max - timestamps.min
   end
 end

@@ -138,7 +138,11 @@ class OtlpNormalizer
   end
 
   def build_trace_record(spans, trace_id, agent_id)
-    earliest_nano = spans.map { |s| s["startTimeUnixNano"].to_i }.min
+    all_nanos     = spans.map { |s| s["startTimeUnixNano"].to_i }
+    # Reject zero (NaN→0 from bad plugin timestamps) so one broken span can't
+    # drag the trace start_time to 1970, which inflates total_duration to ~56 years.
+    valid_nanos   = all_nanos.reject(&:zero?)
+    earliest_nano = (valid_nanos.min || all_nanos.min)
     root_span     = spans.find { |s| s["parentSpanId"].blank? } || spans.first
 
     {

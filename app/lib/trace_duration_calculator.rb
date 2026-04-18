@@ -15,8 +15,11 @@ class TraceDurationCalculator
     trace_ids = Array(traces).map(&:trace_id)
     return {} if trace_ids.empty?
 
+    epoch = Time.at(0).utc
+
     rows = Span
       .where(trace_id: trace_ids)
+      .where.not(timestamp: epoch)
       .group(:trace_id)
       .pluck(:trace_id, "MIN(timestamp)", "MAX(timestamp)")
 
