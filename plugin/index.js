@@ -113,21 +113,26 @@ function buildAndSend(messages) {
     const turnStart = prevTurnEnd;
     const msgEnd    = toMs(msg.timestamp);  // when LLM response arrived
 
+    const firstTool = turnTools.length
+      ? myToolCalls.find(t => t.toolCallId === turnTools[0]?.id)
+      : null;
     const lastTool = turnTools.length
       ? myToolCalls.find(t => t.toolCallId === turnTools[turnTools.length - 1]?.id)
       : null;
-    // nextStart: when the next turn can begin (after tools finish, or at msgEnd if no tools).
-    // turnEnd: this span ends when the LLM responded — tools are children, not part of this span.
+    // inferenceEnd: best proxy for when the LLM finished — first tool firing beats msg.timestamp
+    // because msg.timestamp is set when the message is prepared (before the API call).
+    const inferenceEnd = firstTool ? toMs(firstTool.timestamp) : msgEnd;
+    // nextStart: cursor for the next turn — must advance past all tool execution.
     const nextStart = lastTool
       ? toMs(lastTool.timestamp) + (lastTool.durationMs || 0)
-      : msgEnd;
+      : inferenceEnd;
 
     prevTurnEnd = nextStart;
 
     spans.push(makeSpan({
       traceId, spanId: turnSpanId, parentId: rootId,
       name: "openclaw.agent.turn",
-      startMs: turnStart, endMs: msgEnd,
+      startMs: turnStart, endMs: inferenceEnd,
       status: msg.isError ? "ERROR" : "OK",
       attrs: {
         "openclaw.run_id":                 runId,

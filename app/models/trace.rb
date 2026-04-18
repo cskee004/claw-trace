@@ -31,9 +31,10 @@ class Trace < ApplicationRecord
   def duration
     return nil if spans.empty?
 
-    timestamps = spans.map(&:timestamp).reject { |t| t.to_i.zero? }
-    return nil if timestamps.empty?
+    starts = spans.map(&:timestamp).reject { |t| t.to_i.zero? }
+    return nil if starts.empty?
 
-    timestamps.max - timestamps.min
+    ends = spans.filter_map(&:end_time).reject { |t| t.to_i.zero? }
+    (ends + starts).max - starts.min
   end
 end

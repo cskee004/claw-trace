@@ -21,7 +21,7 @@ class TraceDurationCalculator
       .where(trace_id: trace_ids)
       .where.not(timestamp: epoch)
       .group(:trace_id)
-      .pluck(:trace_id, "MIN(timestamp)", "MAX(timestamp)")
+      .pluck(:trace_id, Arel.sql("MIN(timestamp)"), Arel.sql("MAX(COALESCE(end_time, timestamp))"))
 
     rows.each_with_object({}) do |(trace_id, min_ts, max_ts), hash|
       hash[trace_id] = (Time.parse(max_ts.to_s) - Time.parse(min_ts.to_s)) * 1000.0
