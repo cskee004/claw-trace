@@ -21,7 +21,7 @@ module Api
         OtlpPayloadDumper.dump(:metrics, body)
         rows = MetricsNormalizer.call(body)
         Rails.logger.debug("[MetricsController] normalized #{rows.size} rows: #{rows.map { |r| r['metric_name'] }.inspect}")
-        Metric.insert_all!(rows) if rows.any?
+        MetricAggregator.call(rows) if rows.any?
         render json: {}, status: :ok
       rescue OtlpProtobufDecoder::Error => e
         render json: { error: safe_message(e) }, status: :bad_request
