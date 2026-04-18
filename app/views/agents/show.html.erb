@@ -129,17 +129,5 @@
     </table>
   </div>
 
-  <%# ── Recent Logs ── %>
-  <div class="mt-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg overflow-hidden">
-    <div class="px-4 py-3 border-b border-[var(--color-surface-2)]">
-      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Recent Logs</h2>
-    </div>
-    <turbo-frame id="agent_recent_logs_<%= @agent_id %>"
-                 src="<%= logs_agent_path(@agent_id) %>"
-                 loading="lazy">
-      <div class="min-h-[80px] flex items-center justify-center
-                  text-xs italic text-[var(--color-fg-subtle)]">Loading…</div>
-    </turbo-frame>
-  </div>
 
 </div>

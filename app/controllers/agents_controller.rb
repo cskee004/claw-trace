@@ -18,10 +18,4 @@ class AgentsController < ApplicationController
     @durations = TraceDurationCalculator.call_many(@traces)
   end
 
-  def logs
-    agent_id  = params[:agent_id]
-    trace_ids = Trace.where(agent_id: agent_id).pluck(:trace_id)
-    logs      = Log.where(trace_id: trace_ids).order(timestamp: :desc).limit(100)
-    render partial: "recent_logs", locals: { logs: logs, agent_id: agent_id }
-  end
 end

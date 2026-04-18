@@ -57,18 +57,6 @@ class TracesController < ApplicationController
     render partial: "tool_calls_chart"
   end
 
-  def logs
-    @trace     = Trace.find_by!(trace_id: params[:id])
-    subsystem  = params[:subsystem].presence
-    logs       = Log.where(trace_id: @trace.trace_id).order(:timestamp).limit(500).to_a
-    subsystems = logs.filter_map { |l| l.log_attributes&.dig("openclaw.subsystem") }.uniq.sort
-    logs       = logs.select { |l| l.log_attributes&.dig("openclaw.subsystem") == subsystem } if subsystem
-    render partial: "all_logs", locals: {
-      logs: logs, trace_id: @trace.trace_id,
-      subsystems: subsystems, subsystem: subsystem
-    }
-  end
-
   def waterfall
     @trace = Trace.find_by!(trace_id: params[:id])
     spans = @trace.spans.order(:timestamp)

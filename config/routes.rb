@@ -8,11 +8,7 @@ Rails.application.routes.draw do
   get "/dashboard/traces_volume_chart", to: "dashboard#traces_volume_chart", as: :traces_volume_chart_dashboard_index
 
   resources :agents, only: [:index, :show], param: :agent_id,
-            constraints: { agent_id: /[^\/]+/ }, format: false do
-    member do
-      get :logs
-    end
-  end
+            constraints: { agent_id: /[^\/]+/ }, format: false
 
   resources :logs, only: [:index]
 
@@ -32,7 +28,6 @@ Rails.application.routes.draw do
       get :waterfall
       get :span_chart
       get :tool_calls_chart
-      get :logs
     end
   end
   post "/reset", to: "traces#reset"
