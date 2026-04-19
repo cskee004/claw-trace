@@ -1,19 +1,7 @@
 import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
 import { createHash, randomBytes } from "crypto";
-import { readFileSync } from "fs";
-import { homedir } from "os";
-import { join } from "path";
 import http from "http";
 import https from "https";
-
-function loadConfig() {
-  const configPath = join(homedir(), ".openclaw", "clawtrace.json");
-  try { return JSON.parse(readFileSync(configPath, "utf8")); } catch { return {}; }
-}
-
-const config   = loadConfig();
-const ENDPOINT = (config.endpoint || "http://localhost:3000").replace(/\/$/, "");
-const ENABLED  = config.enabled !== false;
 
 // Buffer keyed by toolCallId — holds tool call data until agent_end
 const toolBuffer = new Map();
@@ -24,27 +12,31 @@ export default definePluginEntry({
   description: "Sends OpenClaw agent traces to ClawTrace via OTLP",
 
   register(api) {
+    const cfg      = api.pluginConfig ?? {};
+    const ENABLED  = cfg.enabled !== false;
     if (!ENABLED) return;
 
+    const endpoint   = (cfg.endpoint || "http://localhost:3000").replace(/\/$/, "");
+    const logsConfig = cfg.logs ?? {};
+
     api.on("after_tool_call", (event) => {
-      const d = event.data || event;
-      // event.timestamp fires when the tool finishes; subtract durationMs to get start time.
+      const d  = event.data || event;
       const ts = event.timestamp
         ? toMs(event.timestamp) - (d.durationMs || 0)
         : Date.now() - (d.durationMs || 0);
       toolBuffer.set(d.toolCallId, {
-        toolCallId: d.toolCallId,
-        runId:      d.runId,
-        toolName:   d.toolName,
-        status:     d.result?.details?.status ?? "completed",
-        durationMs: d.durationMs,
-        timestamp:  ts,
-        exitCode:   d.result?.details?.exitCode,
-        sessionId:  d.result?.details?.sessionId,
-        error:      d.error || d.result?.details?.error,
-        cwd:        d.result?.details?.cwd,
-        pid:        d.result?.details?.pid,
-        subModel:   d.result?.details?.model,
+        toolCallId:  d.toolCallId,
+        runId:       d.runId,
+        toolName:    d.toolName,
+        status:      d.result?.details?.status ?? "completed",
+        durationMs:  d.durationMs,
+        timestamp:   ts,
+        exitCode:    d.result?.details?.exitCode,
+        sessionId:   d.result?.details?.sessionId,
+        error:       d.error || d.result?.details?.error,
+        cwd:         d.result?.details?.cwd,
+        pid:         d.result?.details?.pid,
+        subModel:    d.result?.details?.model,
         subProvider: d.result?.details?.provider,
       });
     });
@@ -52,7 +44,7 @@ export default definePluginEntry({
     api.on("agent_end", (event) => {
       try {
         const messages = (event.data || event).messages || [];
-        buildAndSend(messages);
+        buildAndSend(messages, endpoint, logsConfig);
       } catch {
         // never crash the agent
       }
@@ -60,7 +52,7 @@ export default definePluginEntry({
   },
 });
 
-function buildAndSend(messages) {
+function buildAndSend(messages, endpoint, logsConfig) {
   // Slice to current turn: from the last user message to end.
   // agent_end.messages is the full rolling context window.
   let lastUserIdx = -1;
@@ -221,7 +213,7 @@ function buildAndSend(messages) {
     attrs: { ...extractRequestAttrs(userMessages[0]), "openclaw.run_id": runId },
   }));
 
-  postOtlp(traceId, spans);
+  postOtlp(endpoint, traceId, spans);
 }
 
 // Normalize any timestamp format (ms number, ISO string, Date, undefined/NaN) to ms integer.
@@ -272,7 +264,7 @@ function makeSpanId() {
   return randomBytes(8).toString("hex");
 }
 
-function postOtlp(traceId, spans) {
+function postOtlp(endpoint, traceId, spans) {
   const body = JSON.stringify({
     resourceSpans: [{
       resource: { attributes: [{ key: "service.name", value: { stringValue: "openclaw" } }] },
@@ -280,7 +272,7 @@ function postOtlp(traceId, spans) {
     }],
   });
 
-  const url = new URL(`${ENDPOINT}/v1/traces`);
+  const url = new URL(`${endpoint}/v1/traces`);
   const lib = url.protocol === "https:" ? https : http;
   const req = lib.request({
     hostname: url.hostname,

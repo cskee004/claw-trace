@@ -13,7 +13,20 @@
       "enabled": {
         "type": "boolean",
         "default": true,
-        "description": "Set to false to disable tracing without uninstalling"
+        "description": "Set to false to disable all emission without uninstalling"
+      },
+      "logs": {
+        "type": "object",
+        "default": {},
+        "description": "Per-category log emission toggles",
+        "properties": {
+          "enabled":           { "type": "boolean", "default": true, "description": "Master switch for log emission" },
+          "tool_calls":        { "type": "boolean", "default": true, "description": "Emit a log per tool call (input + output)" },
+          "assistant_turns":   { "type": "boolean", "default": true, "description": "Emit a log per assistant turn (model response + usage)" },
+          "user_messages":     { "type": "boolean", "default": true, "description": "Emit a log per user message" },
+          "compaction_events": { "type": "boolean", "default": true, "description": "Emit a log per context compaction event" }
+        },
+        "additionalProperties": false
       }
     },
     "additionalProperties": false
