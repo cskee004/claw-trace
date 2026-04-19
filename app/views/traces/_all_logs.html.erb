@@ -1,21 +1,32 @@
 <%= turbo_frame_tag "trace_all_logs_#{trace_id}" do %>
-<% if subsystems.any? %>
+<% if subsystems.any? || (defined?(span_id) && span_id.present?) %>
   <form class="flex items-center gap-2 flex-wrap px-4 py-2 border-b border-[var(--color-surface-2)]"
         action="<%= logs_trace_path(trace_id) %>" method="get">
-    <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]"
-           for="all_logs_subsystem_<%= trace_id %>">Subsystem</label>
-    <select name="subsystem" id="all_logs_subsystem_<%= trace_id %>"
-            class="text-sm bg-[var(--color-surface)] border border-[var(--color-surface-2)]
-                   text-[var(--color-fg)] rounded px-2 py-1
-                   focus:outline-none focus:border-[var(--color-accent)]"
-            onchange="this.form.requestSubmit()">
-      <option value="">All</option>
-      <% subsystems.each do |sub| %>
-        <option value="<%= sub %>" <%= "selected" if subsystem == sub %>><%= sub %></option>
+    <%# Preserve span_id across subsystem filter changes %>
+    <% if defined?(span_id) && span_id.present? %>
+      <input type="hidden" name="span_id" value="<%= span_id %>">
+    <% end %>
+    <% if subsystems.any? %>
+      <label class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]"
+             for="all_logs_subsystem_<%= trace_id %>">Subsystem</label>
+      <select name="subsystem" id="all_logs_subsystem_<%= trace_id %>"
+              class="text-sm bg-[var(--color-surface)] border border-[var(--color-surface-2)]
+                     text-[var(--color-fg)] rounded px-2 py-1
+                     focus:outline-none focus:border-[var(--color-accent)]"
+              onchange="this.form.requestSubmit()">
+        <option value="">All</option>
+        <% subsystems.each do |sub| %>
+          <option value="<%= sub %>" <%= "selected" if subsystem == sub %>><%= sub %></option>
+        <% end %>
+      </select>
+      <% if subsystem.present? %>
+        <%= link_to "Clear", logs_trace_path(trace_id, span_id: span_id.presence),
+              class: "text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]" %>
       <% end %>
-    </select>
-    <% if subsystem.present? %>
-      <%= link_to "Clear", logs_trace_path(trace_id),
+    <% end %>
+    <% if defined?(span_id) && span_id.present? %>
+      <span class="text-[10px] text-[var(--color-fg-subtle)]">· filtered to span</span>
+      <%= link_to "Clear", logs_trace_path(trace_id, subsystem: subsystem.presence),
             class: "text-xs text-[var(--color-fg-subtle)] hover:text-[var(--color-fg)]" %>
     <% end %>
   </form>

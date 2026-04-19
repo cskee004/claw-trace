@@ -58,5 +58,16 @@
     </div>
   </div>
 
+  <div class="mt-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg overflow-hidden" id="logs">
+    <div class="px-4 py-3 border-b border-[var(--color-surface-2)]">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">All Logs</h2>
+    </div>
+    <turbo-frame id="trace_all_logs_<%= @trace.trace_id %>"
+                 src="<%= logs_trace_path(@trace, span_id: params[:span_id]) %>"
+                 loading="lazy">
+      <div class="min-h-[80px] flex items-center justify-center
+                  text-xs italic text-[var(--color-fg-subtle)]">Loading…</div>
+    </turbo-frame>
+  </div>
 
 </div>
