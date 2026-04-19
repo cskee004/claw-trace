@@ -10,18 +10,26 @@ openclaw plugins install @clawtrace-io/clawtails
 
 ## Config
 
-Configured via the standard OpenClaw plugin config path. Example:
+Add a `config` block under the `clawtails` entry in `~/.openclaw/openclaw.json`:
 
 ```json
 {
-  "endpoint": "http://your-clawtrace-host:3000",
-  "enabled": true,
-  "logs": {
-    "enabled": true,
-    "tool_calls": true,
-    "assistant_turns": true,
-    "user_messages": true,
-    "compaction_events": true
+  "plugins": {
+    "entries": {
+      "clawtails": {
+        "enabled": true,
+        "config": {
+          "endpoint": "http://your-clawtrace-host:3000",
+          "logs": {
+            "enabled": true,
+            "tool_calls": true,
+            "assistant_turns": true,
+            "user_messages": true,
+            "compaction_events": true
+          }
+        }
+      }
+    }
   }
 }
 ```
