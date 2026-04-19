@@ -131,10 +131,18 @@
         <p class="text-xs font-light italic text-[var(--color-fg-subtle)]">No metadata.</p>
       <% end %>
 
-      <turbo-frame id="logs-<%= span.span_id %>"
-                   data-span-detail-target="logsFrame"
-                   data-logs-url="<%= span_logs_path(span.span_id) %>">
-      </turbo-frame>
+      <% log_count = Log.where(span_id: span.span_id).count %>
+      <% if log_count > 0 %>
+        <div class="mt-2 pt-2 border-t border-[var(--color-surface-2)]">
+          <%= link_to trace_path(span.trace_id, span_id: span.span_id, anchor: "logs"),
+                class: "inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-mono
+                        bg-[color-mix(in_srgb,var(--color-accent)_15%,transparent)]
+                        text-[var(--color-accent)] hover:bg-[color-mix(in_srgb,var(--color-accent)_25%,transparent)]
+                        transition-colors" do %>
+            <%= pluralize(log_count, "log") %> ↗
+          <% end %>
+        </div>
+      <% end %>
     </div>
   </div>
 
