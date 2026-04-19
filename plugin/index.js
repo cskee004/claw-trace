@@ -94,8 +94,10 @@ function buildAndSend(messages, endpoint, logsConfig) {
   const assistMessages = turn.filter(m => m.role === "assistant");
   const requestStart = toMs(userMessages[0]?.timestamp);
 
-  const spans  = [];
-  const rootId = makeSpanId();
+  const spans      = [];
+  const logEntries = [];
+  const logsOn     = logsConfig.enabled !== false;
+  const rootId     = makeSpanId();
 
   // prevTurnEnd tracks when the previous turn finished so each agent_turn span
   // starts where the last one ended — giving real LLM inference durations.
@@ -148,6 +150,16 @@ function buildAndSend(messages, endpoint, logsConfig) {
       },
     }));
 
+    if (logsOn && logsConfig.assistant_turns !== false) {
+      logEntries.push(makeLogEntry({
+        timestampMs: toMs(msg.timestamp),
+        traceId,
+        spanId: turnSpanId,
+        body:    msg,
+        isError: !!msg.isError,
+      }));
+    }
+
     turnTools.forEach(tc => {
       const buf       = myToolCalls.find(b => b.toolCallId === tc.id);
       const toolStart = buf ? toMs(buf.timestamp) : toMs(msg.timestamp);
@@ -171,6 +183,25 @@ function buildAndSend(messages, endpoint, logsConfig) {
           "tool.provider":    buf?.subProvider,
         },
       }));
+
+      if (logsOn && buf && logsConfig.tool_calls !== false) {
+        logEntries.push(makeLogEntry({
+          timestampMs: buf ? toMs(buf.timestamp) : toMs(msg.timestamp),
+          traceId,
+          spanId: toolSpanId,
+          body: {
+            input:      buf.params ?? null,
+            output:     buf.resultText ?? null,
+            toolName:   tc.name || buf.toolName,
+            status:     buf.status,
+            durationMs: buf.durationMs,
+            exitCode:   buf.exitCode,
+            cwd:        buf.cwd,
+            error:      buf.error,
+          },
+          isError: buf.status === "error",
+        }));
+      }
     });
   });
 
@@ -178,8 +209,9 @@ function buildAndSend(messages, endpoint, logsConfig) {
   turn.forEach((msg) => {
     if (!msg.timestamp) return;
     if (msg.role === "compactionSummary") {
+      const compSpanId = makeSpanId();
       spans.push(makeSpan({
-        traceId, spanId: makeSpanId(), parentId: rootId,
+        traceId, spanId: compSpanId, parentId: rootId,
         name: "openclaw.context.compaction",
         startMs: msg.timestamp, endMs: msg.timestamp,
         attrs: {
@@ -187,6 +219,15 @@ function buildAndSend(messages, endpoint, logsConfig) {
           "openclaw.summary":       msg.summary,
         },
       }));
+      if (logsOn && logsConfig.compaction_events !== false) {
+        logEntries.push(makeLogEntry({
+          timestampMs: toMs(msg.timestamp),
+          traceId,
+          spanId: compSpanId,
+          body:    msg,
+          isError: false,
+        }));
+      }
     } else if (msg.role === "branchSummary") {
       spans.push(makeSpan({
         traceId, spanId: makeSpanId(), parentId: rootId,
@@ -218,7 +259,24 @@ function buildAndSend(messages, endpoint, logsConfig) {
     attrs: { ...extractRequestAttrs(userMessages[0]), "openclaw.run_id": runId },
   }));
 
+  if (logsOn && logsConfig.user_messages !== false) {
+    userMessages.forEach(msg => {
+      if (!msg.timestamp) return;
+      logEntries.push(makeLogEntry({
+        timestampMs: toMs(msg.timestamp),
+        traceId,
+        spanId: rootId,
+        body:    msg,
+        isError: false,
+      }));
+    });
+  }
+
   postOtlp(endpoint, traceId, spans);
+
+  if (logsOn && logEntries.length > 0) {
+    postOtlpLogs(endpoint, traceId, logEntries);
+  }
 }
 
 // Normalize any timestamp format (ms number, ISO string, Date, undefined/NaN) to ms integer.
@@ -227,6 +285,18 @@ function toMs(ts) {
   if (typeof ts === "number") return Number.isFinite(ts) ? ts : Date.now();
   const n = new Date(ts).getTime();
   return Number.isFinite(n) ? n : Date.now();
+}
+
+function makeLogEntry({ timestampMs, traceId, spanId, body, isError }) {
+  return {
+    timeUnixNano:   String(toMs(timestampMs) * 1_000_000),
+    severityText:   isError ? "ERROR" : "INFO",
+    severityNumber: isError ? 17 : 9,
+    body:           { stringValue: JSON.stringify(body) },
+    traceId,
+    spanId,
+    attributes:     [],
+  };
 }
 
 function makeSpan({ traceId, spanId, parentId, name, startMs, endMs, attrs = {}, status = "OK" }) {
@@ -267,6 +337,28 @@ function extractRequestAttrs(userMsg) {
 
 function makeSpanId() {
   return randomBytes(8).toString("hex");
+}
+
+function postOtlpLogs(endpoint, traceId, logEntries) {
+  const body = JSON.stringify({
+    resourceLogs: [{
+      resource: { attributes: [{ key: "service.name", value: { stringValue: "openclaw" } }] },
+      scopeLogs: [{ logRecords: logEntries }],
+    }],
+  });
+
+  const url = new URL(`${endpoint}/v1/logs`);
+  const lib = url.protocol === "https:" ? https : http;
+  const req = lib.request({
+    hostname: url.hostname,
+    port:     url.port || (url.protocol === "https:" ? 443 : 80),
+    path:     url.pathname,
+    method:   "POST",
+    headers:  { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+  });
+  req.on("error", () => {});
+  req.write(body);
+  req.end();
 }
 
 function postOtlp(endpoint, traceId, spans) {
