@@ -11,22 +11,26 @@ RSpec.describe ToolCallAnalyzer do
     }.merge(overrides))
   end
 
-  def create_span(trace, span_type:, metadata:, overrides: {})
+  def create_span(trace, span_type:, metadata:, span_outcome: nil, overrides: {})
     Span.create!({
       trace_id:       trace.trace_id,
       span_id:        SecureRandom.hex(4),
       parent_span_id: nil,
       span_type:      span_type,
+      span_outcome:   span_outcome,
       timestamp:      Time.zone.parse("2026-04-03T10:00:01Z"),
       agent_id:       trace.agent_id,
       metadata:       metadata
     }.merge(overrides))
   end
 
-  def tool_result(trace, tool_name:, success:)
+  # Builds a span matching what the openclaw-clawtrace plugin actually emits:
+  # metadata key is "tool.name" (dot-separated), success determined by span_outcome.
+  def tool_span(trace, tool_name:, outcome: "completed")
     create_span(trace,
-      span_type: "tool_call",
-      metadata:  { "tool_name" => tool_name, "success" => success, "result" => success ? "ok" : "error" }
+      span_type:    "tool_call",
+      span_outcome: outcome,
+      metadata:     { "tool.name" => tool_name }
     )
   end
 
@@ -47,7 +51,7 @@ RSpec.describe ToolCallAnalyzer do
 
     it "counts calls for a single tool" do
       trace = create_trace
-      3.times { tool_result(trace, tool_name: "search", success: true) }
+      3.times { tool_span(trace, tool_name: "search") }
 
       result = described_class.call(Span.all)
 
@@ -56,9 +60,9 @@ RSpec.describe ToolCallAnalyzer do
 
     it "counts successes separately from total calls" do
       trace = create_trace
-      tool_result(trace, tool_name: "fetch", success: true)
-      tool_result(trace, tool_name: "fetch", success: true)
-      tool_result(trace, tool_name: "fetch", success: false)
+      tool_span(trace, tool_name: "fetch", outcome: "completed")
+      tool_span(trace, tool_name: "fetch", outcome: "completed")
+      tool_span(trace, tool_name: "fetch", outcome: "error")
 
       result = described_class.call(Span.all)
 
@@ -67,8 +71,8 @@ RSpec.describe ToolCallAnalyzer do
 
     it "calculates success_rate as a Float between 0.0 and 1.0" do
       trace = create_trace
-      2.times { tool_result(trace, tool_name: "lookup", success: true) }
-      2.times { tool_result(trace, tool_name: "lookup", success: false) }
+      2.times { tool_span(trace, tool_name: "lookup", outcome: "completed") }
+      2.times { tool_span(trace, tool_name: "lookup", outcome: "error") }
 
       result = described_class.call(Span.all)
 
@@ -77,7 +81,7 @@ RSpec.describe ToolCallAnalyzer do
 
     it "returns 0.0 success_rate when all calls fail" do
       trace = create_trace
-      2.times { tool_result(trace, tool_name: "write", success: false) }
+      2.times { tool_span(trace, tool_name: "write", outcome: "error") }
 
       result = described_class.call(Span.all)
 
@@ -86,7 +90,7 @@ RSpec.describe ToolCallAnalyzer do
 
     it "returns 1.0 success_rate when all calls succeed" do
       trace = create_trace
-      3.times { tool_result(trace, tool_name: "classify", success: true) }
+      3.times { tool_span(trace, tool_name: "classify", outcome: "completed") }
 
       result = described_class.call(Span.all)
 
@@ -95,8 +99,8 @@ RSpec.describe ToolCallAnalyzer do
 
     it "groups multiple tools into separate hash keys" do
       trace = create_trace
-      2.times { tool_result(trace, tool_name: "search",   success: true) }
-      1.times { tool_result(trace, tool_name: "summarize", success: false) }
+      2.times { tool_span(trace, tool_name: "search",    outcome: "completed") }
+      1.times { tool_span(trace, tool_name: "summarize", outcome: "error") }
 
       result = described_class.call(Span.all)
 
@@ -107,7 +111,7 @@ RSpec.describe ToolCallAnalyzer do
 
     it "ignores spans of non-tool-call types" do
       trace = create_trace
-      tool_result(trace, tool_name: "search", success: true)
+      tool_span(trace, tool_name: "search")
       create_span(trace, span_type: "model_call",     metadata: { "model" => "claude-sonnet-4-6" })
       create_span(trace, span_type: "openclaw_event", metadata: { "reasoning" => "proceed" })
 
@@ -118,11 +122,35 @@ RSpec.describe ToolCallAnalyzer do
 
     it "accepts an ActiveRecord::Relation as input" do
       trace = create_trace
-      tool_result(trace, tool_name: "fetch", success: true)
+      tool_span(trace, tool_name: "fetch")
 
       result = described_class.call(Span.where(trace_id: trace.trace_id))
 
       expect(result["fetch"][:calls]).to eq(1)
+    end
+
+    it "treats any non-error span_outcome as a success" do
+      trace = create_trace
+      tool_span(trace, tool_name: "run", outcome: "completed")
+      tool_span(trace, tool_name: "run", outcome: "cancelled")
+      tool_span(trace, tool_name: "run", outcome: "error")
+
+      result = described_class.call(Span.all)
+
+      expect(result["run"][:successes]).to eq(2)
+    end
+
+    it "reads tool name from the tool.name metadata key" do
+      trace = create_trace
+      create_span(trace,
+        span_type:    "tool_call",
+        span_outcome: "completed",
+        metadata:     { "tool.name" => "bash_20250124" }
+      )
+
+      result = described_class.call(Span.all)
+
+      expect(result.keys).to eq(["bash_20250124"])
     end
   end
 end

@@ -1,10 +1,9 @@
 # Analyzes tool call frequency and success rates across a set of Span records.
-# Only spans with span_type "tool_call" are considered — these carry tool_name
-# and success in their metadata hash.
+# Only spans with span_type "tool_call" are considered.
+# Tool name comes from metadata["tool.name"]; success is span_outcome != "error".
 class ToolCallAnalyzer
   # spans — Array or ActiveRecord::Relation of Span records
-  # Returns { "tool_name" => { calls: Integer, successes: Integer, success_rate: Float } }
-  # Only tool_call spans are considered — they carry both tool_name and success in metadata.
+  # Returns { "tool.name value" => { calls: Integer, successes: Integer, success_rate: Float } }
   def self.call(spans)
     new(spans).call
   end
@@ -18,7 +17,7 @@ class ToolCallAnalyzer
     return {} if results.empty?
 
     results
-      .group_by { |s| s.metadata["tool_name"] }
+      .group_by { |s| s.metadata["tool.name"] }
       .transform_values { |group| stats_for(group) }
   end
 
@@ -30,7 +29,7 @@ class ToolCallAnalyzer
 
   def stats_for(group)
     total     = group.size
-    successes = group.count { |s| s.metadata["success"] == true }
+    successes = group.count { |s| s.span_outcome != "error" }
     {
       calls:        total,
       successes:    successes,

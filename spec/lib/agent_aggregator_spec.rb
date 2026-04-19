@@ -58,16 +58,16 @@ RSpec.describe AgentAggregator do
 
       before do
         # t1: two tool_call spans 10 seconds apart → duration 10s
-        create_span(t1, span_type: "tool_call",
+        create_span(t1, span_type: "tool_call", span_outcome: "completed",
                     timestamp: 2.days.ago,
-                    metadata: { "tool_name" => "search", "success" => true })
-        create_span(t1, span_type: "tool_call",
+                    metadata: { "tool.name" => "search" })
+        create_span(t1, span_type: "tool_call", span_outcome: "completed",
                     timestamp: 2.days.ago + 10.seconds,
-                    metadata: { "tool_name" => "search", "success" => true })
+                    metadata: { "tool.name" => "search" })
         # t2: one tool_call span → duration 0
-        create_span(t2, span_type: "tool_call",
+        create_span(t2, span_type: "tool_call", span_outcome: "completed",
                     timestamp: 1.day.ago,
-                    metadata: { "tool_name" => "read_file", "success" => false })
+                    metadata: { "tool.name" => "read_file" })
         # t3: error-outcome span + terminal span 5 seconds later → duration 5s
         create_span(t3, span_outcome: "error", timestamp: 1.hour.ago)
         create_span(t3, timestamp: 1.hour.ago + 5.seconds)
@@ -102,9 +102,9 @@ RSpec.describe AgentAggregator do
       it "limits top_tools to at most 5 entries even when more than 5 tools exist" do
         # Create spans for 6 distinct tools to exercise the .first(5) slice
         %w[tool_a tool_b tool_c tool_d tool_e tool_f].each do |name|
-          create_span(t1, span_type: "tool_call",
+          create_span(t1, span_type: "tool_call", span_outcome: "completed",
                       timestamp: 2.days.ago + 1.second,
-                      metadata: { "tool_name" => name, "success" => true })
+                      metadata: { "tool.name" => name })
         end
         fresh = Trace.includes(:spans).where(agent_id: agent_id)
         r = AgentAggregator.call(agent_id: agent_id, traces: fresh)
