@@ -357,6 +357,7 @@ function postOtlpLogs(endpoint, traceId, logEntries) {
     headers:  { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
   });
   req.on("error", () => {});
+  req.on("response", res => res.resume());
   req.write(body);
   req.end();
 }
@@ -379,6 +380,7 @@ function postOtlp(endpoint, traceId, spans) {
     headers:  { "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
   });
   req.on("error", () => {});
+  req.on("response", res => res.resume());
   req.write(body);
   req.end();
 }
