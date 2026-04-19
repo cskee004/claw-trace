@@ -47,21 +47,35 @@
     </thead>
     <tbody>
       <% logs.each do |log| %>
-        <tr class="border-b border-[var(--color-surface-2)] last:border-0"
+        <% pretty_body = begin; JSON.pretty_generate(JSON.parse(log.body)); rescue; log.body; end %>
+        <% is_json = pretty_body != log.body %>
+        <tr class="border-b border-[var(--color-surface-2)] last:border-0 align-top"
             onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
             onmouseout="this.style.backgroundColor=''">
-          <td class="px-4 py-2.5 align-middle font-mono text-[11px] text-[var(--color-fg-subtle)] whitespace-nowrap">
+          <td class="px-4 py-2.5 font-mono text-[11px] text-[var(--color-fg-subtle)] whitespace-nowrap">
             <%= log.timestamp&.strftime("%H:%M:%S.%3N") %>
           </td>
-          <td class="px-4 py-2.5 align-middle">
+          <td class="px-4 py-2.5">
             <span class="severity-badge <%= severity_badge_class(log.severity_text) %>">
               <%= log.severity_text || "?" %>
             </span>
           </td>
-          <td class="px-4 py-2.5 align-middle text-xs text-[var(--color-fg)]">
-            <%= truncate(log.body, length: 120) %>
+          <td class="px-4 py-2.5 text-xs text-[var(--color-fg)] max-w-xl">
+            <% if is_json %>
+              <details class="group">
+                <summary class="cursor-pointer list-none flex items-center gap-1.5 select-none">
+                  <span class="text-[var(--color-fg-subtle)] text-[10px] group-open:rotate-90 transition-transform inline-block">▶</span>
+                  <span class="font-mono text-[var(--color-fg-muted)] truncate"><%= truncate(log.body, length: 100) %></span>
+                </summary>
+                <pre class="mt-2 p-3 rounded bg-[var(--color-bg)] border border-[var(--color-surface-2)]
+                            font-mono text-[11px] text-[var(--color-fg)] overflow-x-auto whitespace-pre-wrap break-words
+                            leading-relaxed"><%= pretty_body %></pre>
+              </details>
+            <% else %>
+              <span class="font-mono text-[var(--color-fg-muted)]"><%= log.body %></span>
+            <% end %>
           </td>
-          <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
+          <td class="px-4 py-2.5 font-mono text-xs text-[var(--color-fg-muted)]">
             <%= log.span_id || "—" %>
           </td>
         </tr>

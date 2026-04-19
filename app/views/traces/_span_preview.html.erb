@@ -11,32 +11,47 @@
         <% latency    = @span_latencies[span.span_id] %>
         <% offset_ms  = ((span.timestamp - @trace.start_time) * 1000).round %>
         <% accent     = span_accent(span) %>
-        <li class="flex items-center gap-2 min-h-[1.75rem]"
+        <% log_count = (@log_counts || {}).fetch(span.span_id, 0) %>
+        <li class="<%= log_count > 0 ? '' : 'min-h-[1.75rem]' %> flex flex-col gap-0.5"
             style="padding-left: <%= depth * 12 %>px">
-          <span class="w-4 shrink-0 text-center text-xs leading-none">
-            <% if span.span_outcome == "error" %>
-              <span class="text-[var(--color-error-fg)]">✗</span>
-            <% end %>
-          </span>
-          <span class="span-type-badge span-type-badge--<%= span.span_type %> shrink-0">
-            <%= span.span_type.tr("_", " ") %>
-          </span>
-          <% if span.span_name.present? %>
-            <span class="font-mono font-light text-xs text-[var(--color-fg-muted)] truncate min-w-0"
-                  title="<%= span.span_name %>">
-              <%= span.span_name %><% if accent %><span class="font-sans font-light text-[var(--color-fg-subtle)]"> · <%= accent %></span><% end %>
+          <div class="flex items-center gap-2 min-h-[1.75rem]">
+            <span class="w-4 shrink-0 text-center text-xs leading-none">
+              <% if span.span_outcome == "error" %>
+                <span class="text-[var(--color-error-fg)]">✗</span>
+              <% end %>
             </span>
-          <% end %>
-          <div class="flex items-center gap-2 ml-auto shrink-0">
-            <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)]">
-              +<%= offset_ms %> ms
+            <span class="span-type-badge span-type-badge--<%= span.span_type %> shrink-0">
+              <%= span.span_type.tr("_", " ") %>
             </span>
-            <% if latency %>
-              <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)]">
-                <%= format_duration(latency) %>
+            <% if span.span_name.present? %>
+              <span class="font-mono font-light text-xs text-[var(--color-fg-muted)] truncate min-w-0"
+                    title="<%= span.span_name %>">
+                <%= span.span_name %><% if accent %><span class="font-sans font-light text-[var(--color-fg-subtle)]"> · <%= accent %></span><% end %>
               </span>
             <% end %>
+            <div class="flex items-center gap-2 ml-auto shrink-0">
+              <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)]">
+                +<%= offset_ms %> ms
+              </span>
+              <% if latency %>
+                <span class="font-mono font-light text-[10px] text-[var(--color-fg-subtle)]">
+                  <%= format_duration(latency) %>
+                </span>
+              <% end %>
+            </div>
           </div>
+          <% if log_count > 0 %>
+            <div class="pl-6">
+              <%= link_to trace_path(@trace, span_id: span.span_id, anchor: "logs"),
+                    class: "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono
+                            bg-[color-mix(in_srgb,var(--color-accent)_12%,transparent)]
+                            text-[var(--color-accent)] hover:bg-[color-mix(in_srgb,var(--color-accent)_20%,transparent)]
+                            transition-colors",
+                    data: { turbo_frame: "_top" } do %>
+                <%= pluralize(log_count, "log") %> ↗
+              <% end %>
+            </div>
+          <% end %>
         </li>
       <% end %>
     </ul>

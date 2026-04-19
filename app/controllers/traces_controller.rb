@@ -27,6 +27,7 @@ class TracesController < ApplicationController
     @span_latencies = compute_latencies_ms(spans)
     @total_duration_ms = TraceDurationCalculator.call(@trace)
     @spans = TracesHelper.dfs_ordered_spans(spans.to_a)
+    @log_counts = Log.where(span_id: @spans.map(&:span_id)).group(:span_id).count
     render partial: "span_preview"
   end
 
