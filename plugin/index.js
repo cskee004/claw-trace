@@ -38,6 +38,8 @@ export default definePluginEntry({
         pid:         d.result?.details?.pid,
         subModel:    d.result?.details?.model,
         subProvider: d.result?.details?.provider,
+        params:      d.params,
+        resultText:  d.result?.content?.[0]?.text,
       });
     });
 
@@ -78,6 +80,8 @@ function buildAndSend(messages, endpoint, logsConfig) {
       toolBuffer.delete(tcId);
     }
   }
+
+  const toolSpanIds = new Map(myToolCalls.map(t => [t.toolCallId, makeSpanId()]));
 
   if (!runId) {
     const seed = turn[0]?.content?.[0]?.text || String(Date.now());
@@ -148,8 +152,9 @@ function buildAndSend(messages, endpoint, logsConfig) {
       const buf       = myToolCalls.find(b => b.toolCallId === tc.id);
       const toolStart = buf ? toMs(buf.timestamp) : toMs(msg.timestamp);
       const toolEnd   = buf ? toolStart + (buf.durationMs || 0) : toolStart;
+      const toolSpanId = toolSpanIds.get(tc.id) || makeSpanId();
       spans.push(makeSpan({
-        traceId, spanId: makeSpanId(), parentId: turnSpanId,
+        traceId, spanId: toolSpanId, parentId: turnSpanId,
         name: `openclaw.tool.${tc.name || buf?.toolName || "unknown"}`,
         startMs: toolStart, endMs: toolEnd,
         status: buf?.status === "error" ? "ERROR" : "OK",
