@@ -30,13 +30,14 @@
     <td class="px-4 py-2.5 align-middle">
       <% if log.trace_id.present? %>
         <%= link_to log.trace_id, trace_path(log.trace_id),
-              class: "font-mono text-xs text-[var(--color-accent)] hover:underline" %>
+              class: "font-mono text-xs text-[var(--color-accent)] hover:underline",
+              onclick: "event.stopPropagation()" %>
       <% else %>
         <span class="font-mono text-xs text-[var(--color-fg-subtle)]">—</span>
       <% end %>
     </td>
-    <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
-      <%= log.span_id || "—" %>
+    <td class="px-4 py-2.5 align-middle">
+      <span class="font-mono text-xs text-[var(--color-fg-muted)]"><%= log.span_id || "—" %></span>
     </td>
 
   </tr>
@@ -48,11 +49,18 @@
       <div class="trace-row-drawer__content">
         <div class="px-4 py-3">
 
-          <%# Full body text — no truncation %>
+          <%# Full body — pretty-printed JSON if parseable, raw text otherwise %>
           <% if log.body.present? %>
-            <p class="text-xs text-[var(--color-fg)] font-mono break-all whitespace-pre-wrap mb-3 leading-relaxed">
-              <%= log.body %>
-            </p>
+            <% pretty_body = begin; JSON.pretty_generate(JSON.parse(log.body)).gsub('\\n', "\n"); rescue; nil; end %>
+            <% if pretty_body %>
+              <pre class="mb-3 p-3 rounded bg-[var(--color-bg)] border border-[var(--color-surface-2)]
+                          font-mono text-[11px] text-[var(--color-fg)] overflow-x-auto whitespace-pre-wrap
+                          break-words leading-relaxed"><%= pretty_body %></pre>
+            <% else %>
+              <p class="text-xs text-[var(--color-fg)] font-mono break-all whitespace-pre-wrap mb-3 leading-relaxed">
+                <%= log.body %>
+              </p>
+            <% end %>
           <% end %>
 
           <%# log_attributes key-value list %>
