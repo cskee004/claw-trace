@@ -1,16 +1,16 @@
-# openclaw-clawtrace plugin
+# @clawtrace-io/clawtails plugin
 
 Instruments your OpenClaw agent and sends OTLP traces and correlated logs to ClawTrace. Gives you the full waterfall view — LLM turns, tool calls, token usage, costs, and per-span log bodies — without any code changes to your agent.
 
 ## Install
 
 ```bash
-openclaw plugins install openclaw-clawtrace
+openclaw plugins install @clawtrace-io/clawtails
 ```
 
 ## Configure
 
-Configure via the OpenClaw plugin config for `openclaw-clawtrace`:
+Configure via the OpenClaw plugin config for `@clawtrace-io/clawtails`:
 
 ```json
 {
@@ -85,7 +85,7 @@ This is the out-of-the-box behaviour if you have not touched the `logs` config i
 
 ### Option B — Plugin rich logs (recommended)
 
-The `openclaw-clawtrace` plugin can emit its own log records stamped with the same `traceId` and `spanId` as every span it produces. These appear **inline in the waterfall drawer** for each span — expand a row and see the tool input/output or model response right there.
+The `@clawtrace-io/clawtails` plugin can emit its own log records stamped with the same `traceId` and `spanId` as every span it produces. These appear **inline in the waterfall drawer** for each span — expand a row and see the tool input/output or model response right there.
 
 To enable this, set `logs.enabled: true` in the plugin config **and** disable OpenClaw's built-in diagnostic log emission so you don't get duplicates:
 
@@ -142,7 +142,7 @@ Should return `{}`. If not, verify the `endpoint` in `~/.openclaw/clawtrace.json
 
 **Waterfall shows single-span traces only**
 
-The plugin may not be installed or enabled. Run `openclaw status` and look for `openclaw-clawtrace` in the plugin list.
+The plugin may not be installed or enabled. Run `openclaw status` and look for `@clawtrace-io/clawtails` in the plugin list.
 
 **Tool spans have zero duration**
 

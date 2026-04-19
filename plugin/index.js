@@ -7,7 +7,7 @@ import https from "https";
 const toolBuffer = new Map();
 
 export default definePluginEntry({
-  id: "openclaw-clawtrace",
+  id: "clawtails",
   name: "ClawTrace",
   description: "Sends OpenClaw agent traces to ClawTrace via OTLP",
 

@@ -1,11 +1,11 @@
-# openclaw-clawtrace
+# @clawtrace-io/clawtails
 
 OpenClaw plugin that sends traces to [ClawTrace](https://github.com/your-org/claw-trace) via OTLP.
 
 ## Install
 
 ```bash
-openclaw plugins install openclaw-clawtrace
+openclaw plugins install @clawtrace-io/clawtails
 ```
 
 ## Config
