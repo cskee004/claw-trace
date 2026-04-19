@@ -71,6 +71,31 @@ class TracesController < ApplicationController
     }
   end
 
+  def logs
+    @trace     = Trace.find_by!(trace_id: params[:id])
+    trace_logs = Log.where(trace_id: @trace.trace_id).order(timestamp: :asc)
+    trace_logs = trace_logs.where(span_id: params[:span_id]) if params[:span_id].present?
+
+    subsystems = Log.where(trace_id: @trace.trace_id)
+                    .pluck(:log_attributes)
+                    .filter_map { |attrs| attrs.is_a?(Hash) ? attrs["subsystem"] : nil }
+                    .uniq
+                    .sort
+
+    subsystem  = params[:subsystem].presence
+    if subsystem
+      trace_logs = trace_logs.select { |l| (l.log_attributes || {})["subsystem"] == subsystem }
+    end
+
+    render partial: "all_logs", locals: {
+      trace_id:   @trace.trace_id,
+      logs:       trace_logs,
+      subsystems: subsystems,
+      subsystem:  subsystem,
+      span_id:    params[:span_id].presence,
+    }
+  end
+
   private
 
   def session_id
