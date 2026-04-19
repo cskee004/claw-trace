@@ -103,7 +103,7 @@
         </p>
         <div class="space-y-1.5">
           <% span_logs.each do |log| %>
-            <% pretty_body = begin; JSON.pretty_generate(JSON.parse(log.body)); rescue; log.body; end %>
+            <% pretty_body = begin; JSON.pretty_generate(JSON.parse(log.body)).gsub('\\n', "\n"); rescue; log.body; end %>
             <% is_json = pretty_body != log.body %>
             <div class="rounded bg-[var(--color-bg)] border border-[var(--color-surface-2)] px-2.5 py-1.5">
               <div class="flex items-center gap-2 mb-1">

@@ -325,9 +325,9 @@ turbo-frame#frame_panel {
 }
 
 .waterfall-drawer.open {
-    /* 600px exceeds any realistic metadata drawer height; the CSS max-height
-       animation stays snappy because actual content is well below this value */
-    max-height: 600px;
+    /* 4000px: high enough to never clip JSON log bodies; animation still snappy
+       because the actual rendered height drives the collapse transition */
+    max-height: 4000px;
     border-top: 1px solid var(--color-surface-2);
 }
 
