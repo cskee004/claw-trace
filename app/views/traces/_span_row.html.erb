@@ -131,7 +131,7 @@
         <p class="text-xs font-light italic text-[var(--color-fg-subtle)]">No metadata.</p>
       <% end %>
 
-      <% log_count = Log.where(span_id: span.span_id).count %>
+      <% log_count = local_assigns.fetch(:log_count, 0) %>
       <% if log_count > 0 %>
         <div class="mt-2 pt-2 border-t border-[var(--color-surface-2)]">
           <%= link_to trace_path(span.trace_id, span_id: span.span_id, anchor: "logs"),

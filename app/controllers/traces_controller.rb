@@ -18,6 +18,7 @@ class TracesController < ApplicationController
     @span_latencies = compute_latencies_ms(spans)
     @total_duration_ms = TraceDurationCalculator.call(@trace)
     @spans = TracesHelper.dfs_ordered_spans(spans.to_a)
+    @log_counts = Log.where(span_id: @spans.map(&:span_id)).group(:span_id).count
   end
 
   def preview
@@ -63,11 +64,13 @@ class TracesController < ApplicationController
     span_latencies = compute_latencies_ms(spans)
     total_duration_ms = TraceDurationCalculator.call(@trace)
     ordered_spans = TracesHelper.dfs_ordered_spans(spans.to_a)
+    log_counts = Log.where(span_id: ordered_spans.map(&:span_id)).group(:span_id).count
     render partial: "waterfall", locals: {
       trace: @trace,
       spans: ordered_spans,
       span_latencies: span_latencies,
-      total_duration_ms: total_duration_ms
+      total_duration_ms: total_duration_ms,
+      log_counts: log_counts
     }
   end
 
@@ -78,13 +81,13 @@ class TracesController < ApplicationController
 
     subsystems = Log.where(trace_id: @trace.trace_id)
                     .pluck(:log_attributes)
-                    .filter_map { |attrs| attrs.is_a?(Hash) ? attrs["subsystem"] : nil }
+                    .filter_map { |attrs| attrs.is_a?(Hash) ? attrs["openclaw.subsystem"] : nil }
                     .uniq
                     .sort
 
     subsystem  = params[:subsystem].presence
     if subsystem
-      trace_logs = trace_logs.select { |l| (l.log_attributes || {})["subsystem"] == subsystem }
+      trace_logs = trace_logs.select { |l| (l.log_attributes || {})["openclaw.subsystem"] == subsystem }
     end
 
     render partial: "all_logs", locals: {

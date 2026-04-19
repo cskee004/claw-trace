@@ -26,7 +26,8 @@
               depth: depths[span.span_id],
               latency: span_latencies[span.span_id],
               total_ms: total_ms,
-              trace_start_time: trace.start_time %>
+              trace_start_time: trace.start_time,
+              log_count: (local_assigns[:log_counts] || {}).fetch(span.span_id, 0) %>
       <% end %>
     </div>
 
