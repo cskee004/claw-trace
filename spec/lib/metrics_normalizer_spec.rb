@@ -117,7 +117,7 @@ RSpec.describe MetricsNormalizer do
     end
   end
 
-  # ── Histogram metrics ──────────────────────────────────────────────────────
+  # ── Histogram metrics (dropped at ingestion) ────────────────────────────────
 
   describe "histogram metric" do
     let(:payload) do
@@ -127,8 +127,6 @@ RSpec.describe MetricsNormalizer do
             timestamp_ns:    BASE_TS,
             count:           150,
             sum:             45_230.0,
-            min:             12.0,
-            max:             890.0,
             bucket_counts:   [10, 40, 60, 30, 10],
             explicit_bounds: [100.0, 300.0, 500.0, 700.0]
           )
@@ -136,45 +134,8 @@ RSpec.describe MetricsNormalizer do
       ])
     end
 
-    subject(:result) { MetricsNormalizer.call(payload) }
-
-    it "sets metric_type to histogram" do
-      expect(result[0]["metric_type"]).to eq("histogram")
-    end
-
-    it "sets count" do
-      expect(result[0]["data_points"]["count"]).to eq(150)
-    end
-
-    it "sets sum" do
-      expect(result[0]["data_points"]["sum"]).to eq(45_230.0)
-    end
-
-    it "sets min" do
-      expect(result[0]["data_points"]["min"]).to eq(12.0)
-    end
-
-    it "sets max" do
-      expect(result[0]["data_points"]["max"]).to eq(890.0)
-    end
-
-    it "sets bucket_counts (camelCase → snake_case)" do
-      expect(result[0]["data_points"]["bucket_counts"]).to eq([10, 40, 60, 30, 10])
-    end
-
-    it "sets explicit_bounds (camelCase → snake_case)" do
-      expect(result[0]["data_points"]["explicit_bounds"]).to eq([100.0, 300.0, 500.0, 700.0])
-    end
-
-    it "omits missing optional fields (min/max absent)" do
-      payload = otlp_metrics_payload(metrics: [
-        histogram_metric(name: "m", data_points: [
-          histogram_point(timestamp_ns: BASE_TS, count: 5, sum: 100.0)
-        ])
-      ])
-      result = MetricsNormalizer.call(payload)
-      expect(result[0]["data_points"]).not_to have_key("min")
-      expect(result[0]["data_points"]).not_to have_key("max")
+    it "returns empty — histograms are dropped at ingestion" do
+      expect(MetricsNormalizer.call(payload)).to eq([])
     end
   end
 
@@ -233,17 +194,29 @@ RSpec.describe MetricsNormalizer do
   # ── Multiple metrics ───────────────────────────────────────────────────────
 
   describe "multiple metrics and data points" do
-    it "returns one hash per data point across all metrics" do
+    it "returns one hash per data point across sum and gauge metrics" do
       payload = otlp_metrics_payload(metrics: [
         sum_metric(name: "tokens", data_points: [
           sum_point(value: 100, timestamp_ns: BASE_TS),
           sum_point(value: 200, timestamp_ns: BASE_TS + 1_000_000_000)
         ]),
+        gauge_metric(name: "active_sessions", data_points: [
+          sum_point(value: 7, timestamp_ns: BASE_TS)
+        ])
+      ])
+      expect(MetricsNormalizer.call(payload).length).to eq(3)
+    end
+
+    it "drops histogram metrics from the result" do
+      payload = otlp_metrics_payload(metrics: [
+        sum_metric(name: "tokens", data_points: [sum_point(value: 100, timestamp_ns: BASE_TS)]),
         histogram_metric(name: "duration", data_points: [
           histogram_point(timestamp_ns: BASE_TS, count: 10, sum: 500.0)
         ])
       ])
-      expect(MetricsNormalizer.call(payload).length).to eq(3)
+      result = MetricsNormalizer.call(payload)
+      expect(result.length).to eq(1)
+      expect(result[0]["metric_name"]).to eq("tokens")
     end
   end
 

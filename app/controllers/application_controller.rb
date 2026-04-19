@@ -10,10 +10,10 @@ class ApplicationController < ActionController::Base
   private
 
   def set_status_bar
-    last_log_at = Log.maximum(:timestamp)
+    last_metric_at = Metric.maximum(:updated_at)
     @status_bar = {
-      last_log_at: last_log_at,
-      live: last_log_at && last_log_at >= 2.minutes.ago
+      last_activity_at: last_metric_at,
+      live: last_metric_at && last_metric_at >= 5.minutes.ago
     }
   end
 end

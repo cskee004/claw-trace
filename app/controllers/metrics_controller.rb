@@ -46,25 +46,60 @@ class MetricsController < ApplicationController
     @metric_type = rows.first&.metric_type
     @has_data    = rows.any?
 
-    if @has_data
-      # Collapse hour buckets into one aggregated record per attribute series.
-      aggregated = rows.group_by(&:metric_key).map do |_key, buckets|
-        first = buckets.first
-        OpenStruct.new(
-          metric_attributes: first.metric_attributes,
-          metric_type:       first.metric_type,
-          data_points:       { "value" => buckets.sum { |r| r.data_points["value"].to_f } },
-          updated_at:        buckets.map(&:updated_at).max
-        )
-      end
-
-      result         = MetricChartBuilder.call(records: aggregated, metric_type: @metric_type)
-      @chart_options = result[:options]
-      @chart_stats   = result[:stats]
-    else
+    unless @has_data
       @chart_options = {}
       @chart_stats   = nil
+      return
     end
+
+    @metric_type == "sum" ? build_time_series_chart(rows) : build_aggregated_chart(rows)
+  end
+
+  def build_time_series_chart(rows)
+    series = rows.group_by(&:metric_key).map do |_key, buckets|
+      label = attrs_label(buckets.first.metric_attributes)
+      data  = buckets.map { |r| { x: r.hour_bucket.to_i * 1000, y: r.data_points["value"].to_f.round(4) } }
+      { name: label, data: data }
+    end
+
+    @chart_options = {
+      chart:   { type: "line", height: 280, toolbar: { show: false }, zoom: { enabled: false } },
+      series:  series,
+      xaxis:   { type: "datetime" },
+      yaxis:   { min: 0, labels: { formatter: "function(v){return Math.round(v).toLocaleString()}" } },
+      stroke:  { curve: "smooth", width: 2 },
+      colors:  %w[var(--color-accent) var(--color-success-fg) var(--color-warn-fg) var(--color-span-tool-call)],
+      tooltip: { theme: "dark", x: { format: "MMM dd HH:mm" } },
+      legend:  { show: series.size > 1, labels: { colors: "var(--color-fg-muted)" } },
+      grid:    { borderColor: "var(--color-surface-2)" }
+    }
+
+    aggregated = aggregate_buckets(rows)
+    @chart_stats = MetricChartBuilder.call(records: aggregated, metric_type: "sum")[:stats]
+  end
+
+  def build_aggregated_chart(rows)
+    result         = MetricChartBuilder.call(records: aggregate_buckets(rows), metric_type: @metric_type)
+    @chart_options = result[:options]
+    @chart_stats   = result[:stats]
+  end
+
+  def aggregate_buckets(rows)
+    rows.group_by(&:metric_key).map do |_key, buckets|
+      first = buckets.first
+      OpenStruct.new(
+        metric_attributes: first.metric_attributes,
+        metric_type:       first.metric_type,
+        data_points:       { "value" => buckets.sum { |r| r.data_points["value"].to_f } },
+        updated_at:        buckets.map(&:updated_at).max
+      )
+    end
+  end
+
+  def attrs_label(attrs)
+    return "(no attributes)" if attrs.blank?
+
+    attrs.map { |k, v| "#{k}: #{v}" }.join(" · ")
   end
 
   def filtered_scope

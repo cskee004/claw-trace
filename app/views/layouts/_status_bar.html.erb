@@ -1,10 +1,10 @@
-<%# Nav sidebar status indicator — log-based activity heartbeat %>
+<%# Nav sidebar status indicator — metric-based activity heartbeat %>
 <div class="status-bar">
   <span class="status-bar__dot status-bar__dot--<%= status_bar[:live] ? 'live' : 'idle' %>"></span>
-  <% if status_bar[:last_log_at] %>
+  <% if status_bar[:last_activity_at] %>
     <span class="status-bar__label"><%= status_bar[:live] ? 'Live' : 'Idle' %></span>
-    <span class="status-bar__text"><%= format_time_relative(status_bar[:last_log_at]) %></span>
+    <span class="status-bar__text"><%= format_time_relative(status_bar[:last_activity_at]) %></span>
   <% else %>
-    <span class="status-bar__label">No logs</span>
+    <span class="status-bar__label">No data</span>
   <% end %>
 </div>

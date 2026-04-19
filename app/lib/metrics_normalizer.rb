@@ -1,22 +1,9 @@
 # Translates an OTLP ExportMetricsServiceRequest JSON payload into an array of
-# attribute hashes ready for Metric.create!
+# attribute hashes ready for Metric.insert_all!
 #
-# OTLP input:
-#   {
-#     "resourceMetrics": [{
-#       "resource": { "attributes": [{key, value}] },
-#       "scopeMetrics": [{ "metrics": [{ "name": "...", "sum"|"histogram"|"gauge": { "dataPoints": [...] } }] }]
-#     }]
-#   }
-#
-# Output: array of hashes (one per data point), e.g.:
-#   [
-#     { "metric_name" => "gen_ai.client.token.usage", "metric_type" => "sum",
-#       "trace_id" => nil, "metric_attributes" => {...},
-#       "data_points" => { "value" => 1200, "start_time" => "..." },
-#       "timestamp" => "2024-04-05T22:54:38.500Z" },
-#     ...
-#   ]
+# Only sum and gauge data points are stored. Histogram data points are dropped at
+# ingestion — bucket arrays are too large to accumulate meaningfully, and span
+# durations in the traces table already cover latency analysis.
 #
 # Returns [] for empty or missing resourceMetrics — never raises on absent data.
 # Raises MetricsNormalizer::Error on malformed JSON.
@@ -54,12 +41,10 @@ class MetricsNormalizer
 
     if metric["sum"]
       normalize_data_points(metric["sum"]["dataPoints"] || [], name, "sum", trace_id)
-    elsif metric["histogram"]
-      normalize_data_points(metric["histogram"]["dataPoints"] || [], name, "histogram", trace_id)
     elsif metric["gauge"]
       normalize_data_points(metric["gauge"]["dataPoints"] || [], name, "gauge", trace_id)
     else
-      []
+      [] # histograms and unknown types are dropped at ingestion
     end
   end
 
@@ -70,28 +55,10 @@ class MetricsNormalizer
         "metric_type"       => type,
         "trace_id"          => trace_id,
         "metric_attributes" => attrs_to_hash(dp["attributes"] || []),
-        "data_points"       => extract_data_points(dp, type),
+        "data_points"       => { "value" => dp["asInt"] || dp["asDouble"],
+                                 "start_time" => nano_to_iso8601(dp["startTimeUnixNano"]) }.compact,
         "timestamp"         => nano_to_iso8601(dp["timeUnixNano"])
       }
-    end
-  end
-
-  def extract_data_points(dp, type)
-    case type
-    when "sum", "gauge"
-      {
-        "value"      => dp["asInt"] || dp["asDouble"],
-        "start_time" => nano_to_iso8601(dp["startTimeUnixNano"])
-      }.compact
-    when "histogram"
-      {
-        "count"           => dp["count"],
-        "sum"             => dp["sum"],
-        "min"             => dp["min"],
-        "max"             => dp["max"],
-        "bucket_counts"   => dp["bucketCounts"],
-        "explicit_bounds" => dp["explicitBounds"]
-      }.compact
     end
   end
 

@@ -7,6 +7,7 @@ class DashboardController < ApplicationController
     recent_traces        = Trace.includes(:spans).where(start_time: time_range)
     @error_rate_30d      = ErrorRateAnalyzer.call(recent_traces).error_rate.round(1)
     @token_stats         = TokenAggregator.call(Span.where(timestamp: time_range))
+    @metric_stats        = MetricStatsService.call(time_range, prior_range)
     @show_plugin_banner  = show_plugin_banner?
   end
 
@@ -60,6 +61,15 @@ class DashboardController < ApplicationController
 
   def to_epoch_ms(key)
     key.to_time.to_i * 1000
+  end
+
+  def prior_range
+    case @current_period
+    when "12h"   then 24.hours.ago..12.hours.ago
+    when "24h"   then 48.hours.ago..24.hours.ago
+    when "7d"    then 14.days.ago..7.days.ago
+    when "30d"   then 60.days.ago..30.days.ago
+    end
   end
 
   def show_plugin_banner?
