@@ -27,7 +27,7 @@
               latency: span_latencies[span.span_id],
               total_ms: total_ms,
               trace_start_time: trace.start_time,
-              log_count: (local_assigns[:log_counts] || {}).fetch(span.span_id, 0) %>
+              span_logs: (local_assigns[:logs_by_span_id] || {}).fetch(span.span_id, []) %>
       <% end %>
     </div>
 

@@ -28,14 +28,15 @@
     <%= render "compact_span",
           span: @spans.first,
           latency: @span_latencies[@spans.first.span_id],
-          total_duration_ms: @total_duration_ms %>
+          total_duration_ms: @total_duration_ms,
+          span_logs: (@logs_by_span_id || {}).fetch(@spans.first.span_id, []) %>
   <% else %>
     <%= render "waterfall",
           trace: @trace,
           spans: @spans,
           span_latencies: @span_latencies,
           total_duration_ms: @total_duration_ms,
-          log_counts: @log_counts %>
+          logs_by_span_id: @logs_by_span_id %>
   <% end %>
 
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">

@@ -18,7 +18,7 @@ class TracesController < ApplicationController
     @span_latencies = compute_latencies_ms(spans)
     @total_duration_ms = TraceDurationCalculator.call(@trace)
     @spans = TracesHelper.dfs_ordered_spans(spans.to_a)
-    @log_counts = Log.where(span_id: @spans.map(&:span_id)).group(:span_id).count
+    @logs_by_span_id = Log.where(span_id: @spans.map(&:span_id)).order(:timestamp).group_by(&:span_id)
   end
 
   def preview
@@ -65,13 +65,13 @@ class TracesController < ApplicationController
     span_latencies = compute_latencies_ms(spans)
     total_duration_ms = TraceDurationCalculator.call(@trace)
     ordered_spans = TracesHelper.dfs_ordered_spans(spans.to_a)
-    log_counts = Log.where(span_id: ordered_spans.map(&:span_id)).group(:span_id).count
+    logs_by_span_id = Log.where(span_id: ordered_spans.map(&:span_id)).order(:timestamp).group_by(&:span_id)
     render partial: "waterfall", locals: {
       trace: @trace,
       spans: ordered_spans,
       span_latencies: span_latencies,
       total_duration_ms: total_duration_ms,
-      log_counts: log_counts
+      logs_by_span_id: logs_by_span_id
     }
   end
 
