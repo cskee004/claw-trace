@@ -10,12 +10,19 @@ openclaw plugins install openclaw-clawtrace
 
 ## Config
 
-Create `~/.openclaw/clawtrace.json`:
+Configured via the standard OpenClaw plugin config path. Example:
 
 ```json
 {
   "endpoint": "http://your-clawtrace-host:3000",
-  "enabled": true
+  "enabled": true,
+  "logs": {
+    "enabled": true,
+    "tool_calls": true,
+    "assistant_turns": true,
+    "user_messages": true,
+    "compaction_events": true
+  }
 }
 ```
 
@@ -23,10 +30,15 @@ Create `~/.openclaw/clawtrace.json`:
 |---|---|---|
 | `endpoint` | `http://localhost:3000` | ClawTrace base URL |
 | `enabled` | `true` | Set to `false` to disable without uninstalling |
+| `logs.enabled` | `true` | Master switch for log emission |
+| `logs.tool_calls` | `true` | Emit a log record per tool call (input + output) |
+| `logs.assistant_turns` | `true` | Emit a log record per assistant turn |
+| `logs.user_messages` | `true` | Emit a log record per user message |
+| `logs.compaction_events` | `true` | Emit a log record per context compaction |
 
 ## What it sends
 
-One OTLP trace per agent turn, emitted when the turn completes (`agent_end` event):
+One OTLP trace + correlated OTLP logs per agent turn, emitted when the turn completes (`agent_end` event):
 
 ```
 openclaw.request                  ← root span; bounds the full turn
@@ -60,4 +72,15 @@ openclaw.request                  ← root span; bounds the full turn
 **`openclaw.session.yield`**
 - `openclaw.yield_message`
 
-Traces appear in ClawTrace at the configured endpoint.
+### Correlated logs
+
+Each log record is stamped with the same `traceId` and `spanId` as its corresponding span, so ClawTrace can display them inline in the waterfall. Log bodies are the raw SDK event objects serialized as JSON.
+
+| Toggle | Linked span | Body |
+|--------|-------------|------|
+| `tool_calls` | tool span | `{ input, output, toolName, status, durationMs, exitCode, cwd, error }` |
+| `assistant_turns` | agent.turn span | raw assistant message (model, usage, stopReason, …) |
+| `user_messages` | request root span | raw user message |
+| `compaction_events` | compaction span | raw compactionSummary (summary, tokensBefore) |
+
+Traces and logs appear in ClawTrace at the configured endpoint.

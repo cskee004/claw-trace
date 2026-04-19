@@ -1,6 +1,6 @@
 # openclaw-clawtrace plugin
 
-Instruments your OpenClaw agent and sends OTLP traces to ClawTrace. Gives you the full waterfall view — LLM turns, tool calls, token usage, costs — without any code changes to your agent.
+Instruments your OpenClaw agent and sends OTLP traces and correlated logs to ClawTrace. Gives you the full waterfall view — LLM turns, tool calls, token usage, costs, and per-span log bodies — without any code changes to your agent.
 
 ## Install
 
@@ -10,12 +10,19 @@ openclaw plugins install openclaw-clawtrace
 
 ## Configure
 
-Create `~/.openclaw/clawtrace.json`:
+Configure via the OpenClaw plugin config for `openclaw-clawtrace`:
 
 ```json
 {
   "endpoint": "http://localhost:3000",
-  "enabled": true
+  "enabled": true,
+  "logs": {
+    "enabled": true,
+    "tool_calls": true,
+    "assistant_turns": true,
+    "user_messages": true,
+    "compaction_events": true
+  }
 }
 ```
 
@@ -23,10 +30,15 @@ Create `~/.openclaw/clawtrace.json`:
 |---|---|---|
 | `endpoint` | `http://localhost:3000` | ClawTrace base URL. Change this if ClawTrace is on another machine. |
 | `enabled` | `true` | Set to `false` to pause tracing without uninstalling the plugin. |
+| `logs.enabled` | `true` | Master switch for log emission alongside traces. |
+| `logs.tool_calls` | `true` | Log each tool call with its input params and output text. |
+| `logs.assistant_turns` | `true` | Log each assistant message with model, usage, and stop reason. |
+| `logs.user_messages` | `true` | Log each user message. |
+| `logs.compaction_events` | `true` | Log each context compaction event. |
 
 ## What gets traced
 
-One OTLP trace per agent turn, emitted when the turn completes:
+One OTLP trace + correlated OTLP logs per agent turn, emitted when the turn completes:
 
 ```
 openclaw.request                    root span — bounds the full turn
@@ -60,6 +72,19 @@ openclaw.request                    root span — bounds the full turn
 
 **`openclaw.session.yield`**
 - `openclaw.yield_message`
+
+## Correlated logs
+
+Each log record is stamped with the same `traceId` and `spanId` as its corresponding span. In ClawTrace, logs appear inline inside the span drawer when you expand a waterfall row — no separate logs panel needed.
+
+| Category | Linked to | Body contents |
+|----------|-----------|---------------|
+| `tool_calls` | tool span | `{ input, output, toolName, status, durationMs, exitCode, cwd, error }` |
+| `assistant_turns` | agent.turn span | raw assistant message (model, usage, stop reason, response ID) |
+| `user_messages` | request root span | raw user message |
+| `compaction_events` | compaction span | `{ summary, tokensBefore }` |
+
+Log bodies are JSON — ClawTrace renders them as expandable pretty-printed JSON in the waterfall drawer.
 
 ## Waterfall timing
 
