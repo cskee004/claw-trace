@@ -73,9 +73,39 @@ openclaw.request                    root span — bounds the full turn
 **`openclaw.session.yield`**
 - `openclaw.yield_message`
 
-## Correlated logs
+## Logs: two options
 
-Each log record is stamped with the same `traceId` and `spanId` as its corresponding span. In ClawTrace, logs appear inline inside the span drawer when you expand a waterfall row — no separate logs panel needed.
+OpenClaw has two ways to send logs to ClawTrace. Pick one — running both produces duplicates.
+
+### Option A — OpenClaw built-in logs (default, no config needed)
+
+OpenClaw emits its own diagnostic logs to any configured OTLP endpoint. These arrive at ClawTrace's `/v1/logs` and appear on the Logs index page, but they carry **no `traceId`**, so they cannot be correlated with traces or shown in the waterfall.
+
+This is the out-of-the-box behaviour if you have not touched the `logs` config in this plugin.
+
+### Option B — Plugin rich logs (recommended)
+
+The `openclaw-clawtrace` plugin can emit its own log records stamped with the same `traceId` and `spanId` as every span it produces. These appear **inline in the waterfall drawer** for each span — expand a row and see the tool input/output or model response right there.
+
+To enable this, set `logs.enabled: true` in the plugin config **and** disable OpenClaw's built-in diagnostic log emission so you don't get duplicates:
+
+```json
+{
+  "endpoint": "http://localhost:3000",
+  "enabled": true,
+  "logs": {
+    "enabled": true,
+    "tool_calls": true,
+    "assistant_turns": true,
+    "user_messages": true,
+    "compaction_events": true
+  }
+}
+```
+
+Then turn off OpenClaw's native log forwarding in your OpenClaw config (the `otlp.logs` endpoint setting). Exact path depends on your OpenClaw version — check `openclaw config` or the OpenClaw docs.
+
+### What rich logs contain
 
 | Category | Linked to | Body contents |
 |----------|-----------|---------------|

@@ -72,9 +72,15 @@ openclaw.request                  ← root span; bounds the full turn
 **`openclaw.session.yield`**
 - `openclaw.yield_message`
 
-### Correlated logs
+### Logs: two options — pick one
 
-Each log record is stamped with the same `traceId` and `spanId` as its corresponding span, so ClawTrace can display them inline in the waterfall. Log bodies are the raw SDK event objects serialized as JSON.
+OpenClaw can send logs two ways. Running both produces duplicates.
+
+**Option A — OpenClaw built-in logs (default)**
+OpenClaw's native diagnostic log forwarding sends logs to `/v1/logs` without a `traceId`. They appear on the ClawTrace Logs index but cannot be correlated with traces or shown in the waterfall. No config change needed — this is the default if you leave `logs.enabled` unset.
+
+**Option B — Plugin rich logs (recommended)**
+Set `logs.enabled: true` in this plugin's config, then disable OpenClaw's native log forwarding in your OpenClaw config to avoid duplicates. Rich logs are stamped with `traceId`/`spanId` and appear inline in the ClawTrace waterfall drawer.
 
 | Toggle | Linked span | Body |
 |--------|-------------|------|
