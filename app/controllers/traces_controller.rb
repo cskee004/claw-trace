@@ -51,7 +51,7 @@ class TracesController < ApplicationController
 
   def tool_calls_chart
     @trace         = Trace.find_by!(trace_id: params[:id])
-    spans          = @trace.spans.where(span_type: "tool_result")
+    spans          = @trace.spans.where(span_type: "tool_call")
     data           = ToolCallAnalyzer.call(spans)
     @chart_options = data.any? ? trace_tool_calls_chart_options(data) : {}
     render partial: "tool_calls_chart"
