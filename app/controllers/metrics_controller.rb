@@ -84,14 +84,16 @@ class MetricsController < ApplicationController
     @chart_stats   = result[:stats]
   end
 
+  AggregatedBucket = Struct.new(:metric_attributes, :metric_type, :data_points, :updated_at)
+
   def aggregate_buckets(rows)
     rows.group_by(&:metric_key).map do |_key, buckets|
       first = buckets.first
-      OpenStruct.new(
-        metric_attributes: first.metric_attributes,
-        metric_type:       first.metric_type,
-        data_points:       { "value" => buckets.sum { |r| r.data_points["value"].to_f } },
-        updated_at:        buckets.map(&:updated_at).max
+      AggregatedBucket.new(
+        first.metric_attributes,
+        first.metric_type,
+        { "value" => buckets.sum { |r| r.data_points["value"].to_f } },
+        buckets.map(&:updated_at).max
       )
     end
   end
