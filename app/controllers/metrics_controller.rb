@@ -68,7 +68,7 @@ class MetricsController < ApplicationController
       chart:   { type: "line", height: 280, toolbar: { show: false }, zoom: { enabled: false } },
       series:  series,
       xaxis:   { type: "datetime" },
-      yaxis:   { min: 0, labels: { formatter: "function(v){return Math.round(v).toLocaleString()}" } },
+      yaxis:   { min: 0 },
       stroke:  { curve: "smooth", width: 2 },
       colors:  %w[var(--color-accent) var(--color-success-fg) var(--color-warn-fg) var(--color-span-tool-call)],
       tooltip: { theme: "dark", x: { format: "MMM dd HH:mm" } },
