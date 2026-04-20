@@ -5,17 +5,12 @@ default: &default
 
 development:
   <<: *default
-  database: storage/development.sqlite3
-  timeout: 5000
+  database: storage/clawtrace.sqlite3
 
 test:
   <<: *default
-  database: storage/test.sqlite3
-  timeout: 5000
+  database: storage/clawtrace_test.sqlite3
 
 production:
-  adapter: postgresql
-  encoding: unicode
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-  url: <%= ENV['DATABASE_URL'] %>
-  timeout: 5000
+  <<: *default
+  database: storage/clawtrace.sqlite3
