@@ -37,6 +37,8 @@ class MetricsController < ApplicationController
 
   private
 
+  def default_period = action_name == "show" ? "24h" : "30d"
+
   def load_chart_data
     rows = Metric.where(metric_name: @metric_name)
                  .where(hour_bucket: time_range)
