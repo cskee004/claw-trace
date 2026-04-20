@@ -18,12 +18,7 @@ class AddHourBucketToMetrics < ActiveRecord::Migration[8.0]
   end
 
   def down
-    remove_index :metrics, name: "index_metrics_on_metric_key_and_hour_bucket"
-    remove_index :metrics, name: "index_metrics_on_hour_bucket"
-    remove_column :metrics, :hour_bucket
-
-    add_index :metrics, :metric_key, unique: true,
-              where: "metric_key IS NOT NULL",
-              name: "index_metrics_on_metric_key"
+    raise ActiveRecord::IrreversibleMigration,
+          "Cannot restore rows deleted by the hour_bucket NULL purge in `up`."
   end
 end

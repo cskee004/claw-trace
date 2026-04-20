@@ -77,19 +77,20 @@ class TracesController < ApplicationController
 
   def logs
     @trace     = Trace.find_by!(trace_id: params[:id])
-    trace_logs = Log.where(trace_id: @trace.trace_id).order(timestamp: :asc)
-    trace_logs = trace_logs.where(span_id: params[:span_id]) if params[:span_id].present?
+    all_logs   = Log.where(trace_id: @trace.trace_id).order(timestamp: :asc).to_a
+    all_logs   = all_logs.select { |l| l.span_id == params[:span_id] } if params[:span_id].present?
 
-    subsystems = Log.where(trace_id: @trace.trace_id)
-                    .pluck(:log_attributes)
-                    .filter_map { |attrs| attrs.is_a?(Hash) ? attrs["openclaw.subsystem"] : nil }
-                    .uniq
-                    .sort
+    subsystems = all_logs
+                   .filter_map { |l| l.log_attributes.is_a?(Hash) ? l.log_attributes["openclaw.subsystem"] : nil }
+                   .uniq
+                   .sort
 
     subsystem  = params[:subsystem].presence
-    if subsystem
-      trace_logs = trace_logs.select { |l| (l.log_attributes || {})["openclaw.subsystem"] == subsystem }
-    end
+    trace_logs = if subsystem
+                   all_logs.select { |l| (l.log_attributes || {})["openclaw.subsystem"] == subsystem }
+                 else
+                   all_logs
+                 end
 
     render partial: "all_logs", locals: {
       trace_id:   @trace.trace_id,

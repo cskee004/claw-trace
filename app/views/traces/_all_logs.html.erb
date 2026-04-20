@@ -47,8 +47,8 @@
     </thead>
     <tbody>
       <% logs.each do |log| %>
-        <% pretty_body = begin; JSON.pretty_generate(JSON.parse(log.body)).gsub('\\n', "\n"); rescue; log.body; end %>
-        <% is_json = pretty_body != log.body %>
+        <% pretty_body = log.body.present? ? (begin; JSON.pretty_generate(JSON.parse(log.body)).gsub('\\n', "\n"); rescue; log.body; end) : nil %>
+        <% is_json = pretty_body.present? && pretty_body != log.body %>
         <tr class="border-b border-[var(--color-surface-2)] last:border-0 align-top"
             onmouseover="this.style.backgroundColor='var(--color-row-hover)'"
             onmouseout="this.style.backgroundColor=''">

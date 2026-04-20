@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["drawer", "chevron", "logsFrame"]
+  static targets = ["drawer", "chevron"]
 
   connect() {
     this.drawerTarget.classList.add("open")
@@ -12,8 +12,5 @@ export default class extends Controller {
     const isOpen = this.drawerTarget.classList.toggle("open")
     event.currentTarget.setAttribute("aria-expanded", isOpen)
     if (this.hasChevronTarget) this.chevronTarget.textContent = isOpen ? "▾" : "▸"
-    if (isOpen && this.hasLogsFrameTarget && !this.logsFrameTarget.getAttribute("src")) {
-      this.logsFrameTarget.src = this.logsFrameTarget.dataset.logsUrl
-    }
   }
 }

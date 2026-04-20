@@ -42,8 +42,6 @@ Rails.application.routes.draw do
     end
   end
 
-  get "/spans/:span_id/logs", to: "spans#logs", as: :span_logs
-
   scope "/v1" do
     post "/traces",  to: "api/v1/otlp#create"
     post "/metrics", to: "api/v1/metrics#create"

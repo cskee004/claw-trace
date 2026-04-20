@@ -1,7 +1,10 @@
 // Shared span-building utilities used by seed.js and test-replay.js.
-// Not published to npm — listed in .npmignore.
-// index.js is self-contained (no imports) — keep buildAndSend there in sync
-// with buildOtlpPayload here when changing span construction logic.
+// Not published to npm — excluded by .npmignore.
+//
+// index.js CANNOT import this file because trace-helpers.js is not bundled
+// into the npm package. index.js is intentionally self-contained.
+// When changing span/log construction logic in index.js#buildAndSend,
+// mirror those changes here manually — there is no automated parity check.
 
 import { createHash, randomBytes } from "crypto";
 
