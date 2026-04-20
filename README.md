@@ -2,12 +2,6 @@
 
 ### Agent Observability for OpenClaw
 
-<!-- CLAUDE_STATS_START -->
-#### Claude Code Stats
-
-![sessions: 43](https://img.shields.io/badge/sessions-43-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 8,928](https://img.shields.io/badge/API%20calls-8%2C928-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 829.0M](https://img.shields.io/badge/tokens-829.0M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 2.9h](https://img.shields.io/badge/thinking%20time-2.9h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 67.4h](https://img.shields.io/badge/wall%20clock-67.4h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $401.88](https://img.shields.io/badge/est.%20cost-%24401.88-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
-<!-- CLAUDE_STATS_END -->
-
 ---
 
 ![Trace list with status badges and session filter](docs/assets/traces.png)
@@ -280,6 +274,12 @@ The development workflow uses three files to prevent context drift across sessio
 
 See [docs/ai-development.md](docs/ai-development.md) for how the system works
 and how to adapt it for your own project.
+
+<!-- CLAUDE_STATS_START -->
+#### Claude Code Stats
+
+![sessions: 43](https://img.shields.io/badge/sessions-43-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 8,928](https://img.shields.io/badge/API%20calls-8%2C928-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 829.0M](https://img.shields.io/badge/tokens-829.0M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 2.9h](https://img.shields.io/badge/thinking%20time-2.9h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 67.4h](https://img.shields.io/badge/wall%20clock-67.4h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $401.88](https://img.shields.io/badge/est.%20cost-%24401.88-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+<!-- CLAUDE_STATS_END -->
 
 ---
 
