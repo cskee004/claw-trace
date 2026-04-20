@@ -4,6 +4,7 @@
   "description": "OpenClaw plugin that sends traces to ClawTrace via OTLP",
   "type": "module",
   "main": "index.js",
+  "files": ["index.js"],
   "keywords": ["openclaw", "clawtrace", "otlp", "observability"],
   "license": "MIT",
   "engines": {

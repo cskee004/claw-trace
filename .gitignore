@@ -12,8 +12,14 @@ examples/
 
 .playwright-cli
 
-.claude
-CLAUDE.md
+.claude/*
+!.claude/resources/
+.claude/resources/*
+!.claude/resources/AI_ARCHITECTURE.md
+!.claude/resources/AI_TASKS.md
+!.claude/docs/
+.claude/docs/*
+!.claude/docs/AI_MIGRATION.md
 
 settings.local.json
 

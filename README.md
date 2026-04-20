@@ -5,16 +5,42 @@
 <!-- CLAUDE_STATS_START -->
 #### Claude Code Stats
 
-![sessions: 41](https://img.shields.io/badge/sessions-41-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 7,935](https://img.shields.io/badge/API%20calls-7%2C935-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 724.0M](https://img.shields.io/badge/tokens-724.0M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 2.8h](https://img.shields.io/badge/thinking%20time-2.8h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 60.5h](https://img.shields.io/badge/wall%20clock-60.5h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $353.58](https://img.shields.io/badge/est.%20cost-%24353.58-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+![sessions: 43](https://img.shields.io/badge/sessions-43-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 8,928](https://img.shields.io/badge/API%20calls-8%2C928-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 829.0M](https://img.shields.io/badge/tokens-829.0M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 2.9h](https://img.shields.io/badge/thinking%20time-2.9h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 67.4h](https://img.shields.io/badge/wall%20clock-67.4h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $401.88](https://img.shields.io/badge/est.%20cost-%24401.88-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
 <!-- CLAUDE_STATS_END -->
 
 ---
 
-![Trace list with status badges and session filter](docs/assets/screenshot-traces.png)
+![Trace list with status badges and session filter](docs/assets/traces.png)
 
-![Waterfall span timeline with drawer metadata](docs/assets/screenshot-waterfall.png)
+![Waterfall span timeline with drawer metadata](docs/assets/waterfall.png)
 
-![Dashboard with error rate and trace volume charts](docs/assets/screenshot-dashboard.png)
+![Dashboard with error rate and trace volume charts](docs/assets/dashboard.png)
+
+---
+
+### Quick Start
+
+Install the companion plugin into your OpenClaw project to get the full waterfall view — agent turns, tool calls, token usage, and correlated logs:
+
+```bash
+openclaw plugins install @clawtrace-io/clawtails
+```
+
+Then start ClawTrace:
+
+```bash
+git clone https://github.com/cskee004/claw-trace.git
+cd claw-trace
+bundle install
+rails db:create db:migrate
+rails server
+```
+
+Visit `http://localhost:3000`. Send a message in OpenClaw — the trace appears immediately.
+
+For full plugin configuration options, see [docs/openclaw-plugin.md](docs/openclaw-plugin.md).
+
+> **Without the plugin:** OpenClaw's built-in OTLP diagnostics (`diagnostics.otel`) send flat spans that show as a compact single-span card. The waterfall view requires the `clawtails` plugin.
 
 ---
 
@@ -28,9 +54,11 @@
 
 ### Description
 
-ClawTrace is a Rails 8 agent observability platform built specifically for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs and surfacing them through a dashboard.
+ClawTrace is a Rails 8 agent observability platform built for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs.
 
-The platform accepts telemetry via a native OTLP/HTTP endpoint that OpenClaw targets out of the box. Traces, spans, metrics, and logs all write to the same storage layer and appear in the same UI.
+The primary integration is the [`@clawtrace-io/clawtails`](docs/openclaw-plugin.md) companion plugin, which instruments OpenClaw's lifecycle hooks and emits OTLP spans with full parent-child hierarchy. Each agent turn becomes a waterfall: root span → agent turn → tool calls, with token usage and correlated logs on every span.
+
+Traces, spans, metrics, and logs all write to a local SQLite database and appear in the same UI. No external services required.
 
 This project is part of a personal portfolio and demonstrates experience with Ruby, Rails, OpenTelemetry-inspired design, API development, and AI-assisted development using [Claude Code](https://claude.ai/code).
 
@@ -38,48 +66,50 @@ This project is part of a personal portfolio and demonstrates experience with Ru
 
 ### Features
 
+#### Companion Plugin (`@clawtrace-io/clawtails`)
+- Instruments OpenClaw lifecycle hooks — no agent code changes required
+- Emits `openclaw.request → openclaw.agent.turn → openclaw.tool.*` span hierarchy
+- Attaches token usage, model name, stop reason, and cost to each agent turn span
+- Emits correlated OTLP logs (tool inputs/outputs, assistant messages, compaction events)
+- One config line; configurable endpoint for remote ClawTrace instances
+
 #### Trace & Span Ingestion
 - Trace → Span data model inspired by OpenTelemetry distributed tracing
 - OTLP/HTTP ingestion via `POST /v1/traces` — accepts `application/json` and `application/x-protobuf`
 - `parent_span_id` linking for full span hierarchy reconstruction
-- ERROR status span detection and storage
+- Span type taxonomy: `agent_request`, `agent_turn`, `tool_call`, `model_call`, `message_event`, `session_event`, `command_event`, `webhook_event`
+- Error detection via OTLP status code or `openclaw.outcome` attribute
+
+#### Log Correlation
+- OTLP logs via `POST /v1/logs` — accepts `application/json` and `application/x-protobuf`
+- Logs linked to traces and spans via `trace_id` + `span_id`
+- Log entries render inline in the waterfall span drawer with JSON expand
+- `openclaw.subsystem` facet filter on logs index and trace detail
+- All severity levels stored: DEBUG, INFO, WARN, ERROR, FATAL
 
 #### Metrics Ingestion
 - OTLP metrics via `POST /v1/metrics` — accepts `application/json` and `application/x-protobuf`
-- Handles `sum`, `histogram`, and `gauge` metric types
-- Filterable metrics index with per-metric time series view
-- P50/P95/P99 estimation from histogram bucket data
-
-#### Log Ingestion
-- OTLP logs via `POST /v1/logs` — accepts `application/json` and `application/x-protobuf`
-- Log records linked to traces and spans via `trace_id` + `span_id`
-- All severity levels stored: DEBUG, INFO, WARN, ERROR, FATAL
+- Rolling aggregation: one row per metric key, updated on each ingestion
+- Metrics index with hourly bucket time series; dashboard tiles for agent turns, token usage, and tool errors
 
 #### Analysis Engine
 - `TraceDurationCalculator` — execution duration per trace
 - `ToolCallAnalyzer` — tool call frequency and success rates
 - `ErrorRateAnalyzer` — error rate across traces
-- `HistogramPercentileCalculator` — P50/P95/P99 from OTLP histogram buckets
+- `TokenAggregator` — input/output/cache token totals and cache-hit ratio per period
 
 #### Dashboard
-- Trace list with status filtering
-- Trace timeline with per-span metadata
-- Metrics index and time series view
+- Trace list with status and agent filtering
+- Waterfall span timeline with per-span drawer (token usage, logs, metadata)
+- Metrics dashboard with stat tiles and time series charts
+- Agents inventory and per-agent show page
 - Built with Hotwire (Turbo + Stimulus)
 
 ---
 
 ### Setup
 
-```bash
-git clone https://github.com/cskee004/claw-trace.git
-cd claw-trace
-bundle install
-rails db:create db:migrate
-rails server
-```
-
-Visit `http://localhost:3000`.
+See [Quick Start](#quick-start) above for the install steps.
 
 For active development with live Tailwind rebuilds, use `bin/dev`. On Windows, `bin/dev` (foreman) is not supported — run `rails server` and `rails tailwindcss:watch` in separate terminals instead.
 
@@ -140,39 +170,72 @@ Only do this on networks you trust. ClawTrace's OTLP endpoints are unauthenticat
 
 ### API
 
-#### OTLP Endpoints (OpenClaw native)
+#### OTLP Endpoints
 
-No authentication required — unauthenticated by OTLP convention. All endpoints return `{}` with HTTP 200 on success.
+No authentication required. All endpoints return `{}` with HTTP 200 on success. Both `application/json` and `application/x-protobuf` are accepted.
 
 ```
-POST /v1/traces    — ingest OTLP trace payload (ResourceSpans)
-POST /v1/metrics   — ingest OTLP metrics payload (ResourceMetrics)
-POST /v1/logs      — ingest OTLP log payload (ResourceLogs)
+POST /v1/traces    — OTLP trace payload (ResourceSpans)
+POST /v1/metrics   — OTLP metrics payload (ResourceMetrics)
+POST /v1/logs      — OTLP log payload (ResourceLogs)
 ```
 
-Both `application/json` and `application/x-protobuf` content types are accepted.
+**Recommended:** Use `@clawtrace-io/clawtails` — it handles all three endpoints automatically. See [docs/openclaw-plugin.md](docs/openclaw-plugin.md).
 
-OpenClaw configuration:
+**Alternative (flat spans only):** Point OpenClaw's built-in diagnostics at ClawTrace directly:
+
 ```json
 {
   "diagnostics": {
-    "enabled": true,
     "otel": {
       "enabled": true,
-      "endpoint": "http://localhost:3000",
-      "protocol": "http/protobuf",
-      "serviceName": "openclaw-gateway",
-      "traces": true,
-      "metrics": true,
-      "logs": true,
-      "sampleRate": 1,
-      "flushIntervalMs": 30000
+      "endpoint": "http://localhost:3000"
     }
   }
 }
 ```
 
-For a full walkthrough of every OTLP attribute ClawTrace reads and example payloads for traces, metrics, and logs, see the [OpenClaw Integration Guide](docs/openclaw-integration.md).
+This produces flat spans (no parent-child hierarchy) — each event shows as a compact card, not a waterfall.
+
+**Send a test span manually:**
+
+```bash
+curl http://localhost:3000/v1/traces \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{
+  "resourceSpans": [{
+    "resource": {
+      "attributes": [
+        {"key": "service.name", "value": {"stringValue": "openclaw"}}
+      ]
+    },
+    "scopeSpans": [{
+      "spans": [{
+        "traceId": "aabbccddeeff00112233445566778899",
+        "spanId": "aabbccddeeff0011",
+        "name": "openclaw.agent.turn",
+        "startTimeUnixNano": "1776353057612000000",
+        "endTimeUnixNano": "1776353064358000000",
+        "attributes": [
+          {"key": "openclaw.model",                 "value": {"stringValue": "claude-sonnet-4-5"}},
+          {"key": "openclaw.provider",              "value": {"stringValue": "anthropic"}},
+          {"key": "openclaw.stop_reason",           "value": {"stringValue": "end_turn"}},
+          {"key": "openclaw.sessionKey",            "value": {"stringValue": "agent:main"}},
+          {"key": "gen_ai.usage.input_tokens",      "value": {"stringValue": "1024"}},
+          {"key": "gen_ai.usage.output_tokens",     "value": {"stringValue": "256"}},
+          {"key": "gen_ai.usage.cache_read_tokens", "value": {"stringValue": "8192"}}
+        ],
+        "status": {"code": 1}
+      }]
+    }]
+  }]
+}'
+```
+
+Returns `{}` with HTTP 200 on success. The span appears on the Traces page immediately.
+
+For the full OTLP attribute reference, span type mapping, and example payloads, see [docs/api/otlp.md](docs/api/otlp.md) and the [OpenClaw Integration Guide](docs/openclaw-integration.md).
 
 ---
 
@@ -190,7 +253,9 @@ All business logic lives in `app/lib/` — never in controllers.
 | `TraceDurationCalculator` | Calculates trace execution duration in milliseconds |
 | `ToolCallAnalyzer` | Analyzes tool call frequency and success rates |
 | `ErrorRateAnalyzer` | Detects error spans and computes error rate |
-| `HistogramPercentileCalculator` | Estimates P50/P95/P99 from histogram bucket data |
+| `TokenAggregator` | Aggregates input/output/cache token totals and cache-hit ratio |
+| `MetricAggregator` | Upserts rolling metric totals by metric key |
+| `MetricChartBuilder` | Builds ApexCharts option hashes and stat-strip data from `Metric` records |
 
 ---
 
@@ -206,6 +271,18 @@ Test coverage includes service class unit specs (`spec/lib/`), model specs, and 
 
 ---
 
+### AI Development
+
+ClawTrace was built almost entirely with [Claude Code](https://claude.ai/code).
+The development workflow uses three files to prevent context drift across sessions:
+`CLAUDE.md` (AI instructions and conventions), `.claude/resources/AI_ARCHITECTURE.md`
+(architecture reference), and `.claude/resources/AI_TASKS.md` (numbered task log).
+
+See [docs/ai-development.md](docs/ai-development.md) for how the system works
+and how to adapt it for your own project.
+
+---
+
 ### Roadmap
 
 - [x] Trace → Span data model and storage
@@ -213,11 +290,14 @@ Test coverage includes service class unit specs (`spec/lib/`), model specs, and 
 - [x] OTLP metrics ingestion (`/v1/metrics`)
 - [x] OTLP log ingestion (`/v1/logs`)
 - [x] Protobuf support across all three OTLP endpoints
-- [x] Analysis engine (duration, tool calls, error rate, histogram percentiles)
+- [x] Analysis engine (duration, tool calls, error rate, token aggregation)
 - [x] Trace list with waterfall span timeline
 - [x] Real-time trace updates via Turbo Streams
-- [x] Metrics dashboard with ApexCharts
+- [x] Metrics dashboard with stat tiles and hourly time series charts
 - [x] Agents inventory and per-agent show page
-- [x] Logs index with severity and trace filtering
+- [x] Logs index with severity, trace, and subsystem filtering
 - [x] Dashboard with error rate and trace volume charts
 - [x] Data retention settings (prune/delete per data type)
+- [x] Companion plugin (`@clawtrace-io/clawtails`) — full waterfall hierarchy from OpenClaw lifecycle hooks
+- [x] Log correlation — logs render inline in waterfall drawer with JSON expand
+- [x] Token usage and model metadata on agent turn spans

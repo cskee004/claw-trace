@@ -6,7 +6,57 @@ ClawTrace accepts telemetry from OpenClaw via OTLP/HTTP. This guide covers every
 
 ## Quick Start
 
-Add the following to your OpenClaw configuration file:
+### Recommended: clawtails plugin + diagnostics
+
+Install the companion plugin:
+
+```bash
+openclaw plugins install @clawtrace-io/clawtails
+```
+
+Then add both blocks to `~/.openclaw/openclaw.json`. The plugin handles traces and logs; `diagnostics.otel` handles metrics only:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "clawtails": {
+        "enabled": true,
+        "config": {
+          "endpoint": "http://localhost:3000",
+          "logs": {
+            "enabled": true,
+            "tool_calls": true,
+            "assistant_turns": true,
+            "user_messages": true,
+            "compaction_events": true
+          }
+        }
+      }
+    }
+  },
+  "diagnostics": {
+    "enabled": true,
+    "otel": {
+      "enabled": true,
+      "endpoint": "http://localhost:3000",
+      "protocol": "http/protobuf",
+      "serviceName": "openclaw-gateway",
+      "traces": false,
+      "metrics": true,
+      "logs": false,
+      "sampleRate": 1,
+      "flushIntervalMs": 30000
+    }
+  }
+}
+```
+
+This gives you the full waterfall view: `openclaw.request → openclaw.agent.turn → openclaw.tool.*` span hierarchy, token usage on each turn, and correlated logs (tool inputs/outputs, assistant messages, compaction events) inline in the span drawer.
+
+### Without the plugin
+
+If you don't want to install the plugin, point OpenClaw's built-in diagnostics directly at ClawTrace:
 
 ```json
 {
@@ -26,6 +76,10 @@ Add the following to your OpenClaw configuration file:
   }
 }
 ```
+
+This sends flat spans — each event appears as a compact card, not a waterfall. No parent-child hierarchy, no correlated logs from the agent lifecycle.
+
+---
 
 Point `endpoint` at the machine running ClawTrace. If it's on the same machine as OpenClaw, `http://localhost:3000` is correct. For a different machine on your LAN, use that machine's IP address and start ClawTrace with `CLAWTRACE_BIND=0.0.0.0 rails server`.
 
