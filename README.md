@@ -20,6 +20,64 @@ Install the companion plugin into your OpenClaw project to get the full waterfal
 openclaw plugins install @clawtrace-io/clawtails
 ```
 
+Then add both blocks to `~/.openclaw/openclaw.json`. Diagnostics sends metrics; the plugin handles traces and logs:
+
+```json
+"diagnostics": {
+  "enabled": true,
+  "otel": {
+    "enabled": true,
+    "endpoint": "http://localhost:3000",
+    "protocol": "http/protobuf",
+    "serviceName": "openclaw-gateway",
+    "traces": false,
+    "metrics": true,
+    "logs": false,
+    "sampleRate": 1,
+    "flushIntervalMs": 30000
+  }
+}
+```
+
+```json
+"plugins": {
+  "entries": {
+    "clawtails": {
+      "enabled": true,
+      "config": {
+        "endpoint": "http://localhost:3000",
+        "logs": {
+          "enabled": true,
+          "tool_calls": true,
+          "assistant_turns": true,
+          "user_messages": true,
+          "compaction_events": true
+        }
+      }
+    }
+  }
+}
+```
+
+**Or, without the plugin** — use OpenClaw's built-in diagnostics for flat spans and metrics (no waterfall view):
+
+```json
+"diagnostics": {
+  "enabled": true,
+  "otel": {
+    "enabled": true,
+    "endpoint": "http://localhost:3000",
+    "protocol": "http/protobuf",
+    "serviceName": "openclaw-gateway",
+    "traces": true,
+    "metrics": true,
+    "logs": true,
+    "sampleRate": 1,
+    "flushIntervalMs": 30000
+  }
+}
+```
+
 Then start ClawTrace:
 
 ```bash
@@ -278,7 +336,7 @@ and how to adapt it for your own project.
 <!-- CLAUDE_STATS_START -->
 #### Claude Code Stats
 
-![sessions: 43](https://img.shields.io/badge/sessions-43-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 8,928](https://img.shields.io/badge/API%20calls-8%2C928-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 829.0M](https://img.shields.io/badge/tokens-829.0M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 2.9h](https://img.shields.io/badge/thinking%20time-2.9h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 67.4h](https://img.shields.io/badge/wall%20clock-67.4h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $401.88](https://img.shields.io/badge/est.%20cost-%24401.88-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+![sessions: 45](https://img.shields.io/badge/sessions-45-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 9,814](https://img.shields.io/badge/API%20calls-9%2C814-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 924.2M](https://img.shields.io/badge/tokens-924.2M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 3.0h](https://img.shields.io/badge/thinking%20time-3.0h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 75.5h](https://img.shields.io/badge/wall%20clock-75.5h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $444.35](https://img.shields.io/badge/est.%20cost-%24444.35-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
 <!-- CLAUDE_STATS_END -->
 
 ---
