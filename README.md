@@ -154,6 +154,12 @@ For full plugin configuration options, see [docs/openclaw-plugin.md](docs/opencl
 - Daily budget alerts via `BudgetChecker` — run on a cron schedule, prints to stdout, pipes to OS notifications
 - `bin/rails spans:backfill_cost` — one-time backfill for spans ingested before cost tracking was enabled
 
+#### Trace Comparison
+- Select any two traces from the index using checkboxes and hit Compare, or use the dropdown under the stat strip on any trace show page
+- Comparison stat strip with five tiles: input tokens, output tokens, estimated cost, duration, and error count for both traces with signed deltas (green = improvement, red = regression)
+- Span diff coloring — spans shared between both traces are highlighted; spans unique to each side are dimmed with a colored left border, making structural differences immediately visible
+- Older trace is always A (left), newer is always B (right), regardless of selection order
+
 #### Analysis Engine
 - `TraceDurationCalculator` — execution duration per trace
 - `ToolCallAnalyzer` — tool call frequency and success rates
@@ -332,6 +338,7 @@ All business logic lives in `app/lib/` — never in controllers.
 | `ErrorRateAnalyzer` | Detects error spans and computes error rate |
 | `TokenAggregator` | Aggregates input/output/cache token totals and cache-hit ratio |
 | `MetricAggregator` | Upserts rolling metric totals by metric key |
+| `TraceComparator` | Computes token, cost, duration, and error deltas between two traces |
 | `MetricChartBuilder` | Builds ApexCharts option hashes and stat-strip data from `Metric` records |
 
 ---
@@ -384,3 +391,6 @@ and how to adapt it for your own project.
 - [x] Companion plugin (`@clawtrace-io/clawtails`) — full waterfall hierarchy from OpenClaw lifecycle hooks
 - [x] Log correlation — logs render inline in waterfall drawer with JSON expand
 - [x] Token usage and model metadata on agent turn spans
+- [x] Opt-in Solarized Light theme with `prefers-color-scheme` detection and localStorage persistence
+- [x] Per-span cost tracking from live LiteLLM pricing with daily budget alerts per agent
+- [x] Trace comparison — side-by-side stat strip with deltas and span diff coloring
