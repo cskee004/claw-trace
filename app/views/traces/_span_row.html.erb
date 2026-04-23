@@ -113,6 +113,12 @@
             <% if span.span_cost_usd&.> (0) %>
               <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Cost</dt>
               <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0">$<%= "%.6f" % span.span_cost_usd %></dd>
+              <% if span.span_model.present? && (rates = ModelPricingService.rates_for(span.span_model)) %>
+                <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Rate</dt>
+                <dd class="font-mono font-light text-[11px] text-[var(--color-fg-subtle)] m-0">
+                  $<%= rates[:input_per_million] %> / $<%= rates[:output_per_million] %> per 1M (in / out)
+                </dd>
+              <% end %>
             <% end %>
           </dl>
         </div>

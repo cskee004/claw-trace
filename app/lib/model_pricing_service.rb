@@ -8,6 +8,20 @@ class ModelPricingService
     new.cost_usd(model: model, input_tokens: input_tokens, output_tokens: output_tokens)
   end
 
+  # Returns { input_per_million: Float, output_per_million: Float } or nil if unknown.
+  def self.rates_for(model)
+    new.rates_for(model)
+  end
+
+  def rates_for(model)
+    prices = find_prices(model.to_s)
+    return nil unless prices
+    {
+      input_per_million:  (prices[:input]  * 1_000_000).round(4),
+      output_per_million: (prices[:output] * 1_000_000).round(4)
+    }
+  end
+
   def cost_usd(model:, input_tokens:, output_tokens:)
     prices = find_prices(model)
     return 0.0 unless prices

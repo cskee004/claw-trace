@@ -79,4 +79,22 @@ RSpec.describe ModelPricingService do
       expect(cost).to be > 0.0
     end
   end
+
+  describe "#rates_for" do
+    it "returns per-million input and output rates for a known model" do
+      rates = service.rates_for("gpt-4o")
+      expect(rates[:input_per_million]).to  eq((0.0000025 * 1_000_000).round(4))
+      expect(rates[:output_per_million]).to eq((0.00001   * 1_000_000).round(4))
+    end
+
+    it "returns nil for an unknown model" do
+      expect(service.rates_for("unknown-model-xyz")).to be_nil
+    end
+
+    it "strips version suffix to find rates" do
+      rates = service.rates_for("claude-sonnet-4-99")
+      expect(rates).not_to be_nil
+      expect(rates[:input_per_million]).to eq((0.000003 * 1_000_000).round(4))
+    end
+  end
 end
