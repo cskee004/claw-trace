@@ -29,6 +29,7 @@ class TracesController < ApplicationController
                                .where.not(trace_id: @trace.trace_id)
                                .order(start_time: :desc)
                                .limit(20)
+                               .to_a
   end
 
   def preview

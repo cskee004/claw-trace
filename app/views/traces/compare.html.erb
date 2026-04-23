@@ -10,21 +10,21 @@
 <%
   s = @comparison.stats
 
-  def delta_class(val)
-    return "text-[var(--color-fg-subtle)]" if val.nil? || val == 0
+  delta_class = ->(val) {
+    next "text-[var(--color-fg-subtle)]" if val.nil? || val == 0
     val > 0 ? "text-[var(--color-error-fg)]" : "text-[var(--color-success-fg)]"
-  end
+  }
 
-  def fmt_delta(val, unit: nil)
-    return "—" if val.nil?
+  fmt_delta = ->(val, unit: nil) {
+    next "—" if val.nil?
     prefix = val > 0 ? "+" : ""
     unit ? "#{prefix}#{val}#{unit}" : "#{prefix}#{val}"
-  end
+  }
 
-  def dur_delta(a, b)
-    return nil if a.nil? || b.nil?
+  dur_delta = ->(a, b) {
+    next nil if a.nil? || b.nil?
     (b - a).round(1)
-  end
+  }
 %>
 
 <div class="p-4">
@@ -44,7 +44,7 @@
                                     delta: cost_delta != 0 ? cost_delta : 0,
                                     fmt: ->(v) { v == 0 ? "—" : "#{ v > 0 ? '+' : '' }$#{"%.6f" % v.abs}" },
                                     delta_class_override: cost_delta == 0 ? "text-[var(--color-fg-subtle)]" : (cost_delta > 0 ? "text-[var(--color-error-fg)]" : "text-[var(--color-success-fg)]") },
-          { label: "Duration",      a: s[:duration_ms_a],   b: s[:duration_ms_b],   delta: dur_delta(s[:duration_ms_a], s[:duration_ms_b]), unit: "ms" },
+          { label: "Duration",      a: s[:duration_ms_a],   b: s[:duration_ms_b],   delta: dur_delta.call(s[:duration_ms_a], s[:duration_ms_b]), unit: "ms" },
           { label: "Errors",        a: s[:error_count_a],   b: s[:error_count_b],   delta: s[:error_count_b]   - s[:error_count_a] },
         ]
       %>
@@ -52,12 +52,12 @@
         <div class="flex-1 px-4 py-3">
           <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-1"><%= row[:label] %></p>
           <div class="flex items-baseline gap-3">
-            <span class="font-mono text-sm text-[var(--color-fg-muted)]"><%= row[:a].nil? ? "—" : row[:a] %><%= row[:unit] %></span>
+            <span class="font-mono text-sm text-[var(--color-fg-muted)]"><%= row[:a].nil? ? "—" : "#{row[:a]}#{row[:unit]}" %></span>
             <span class="text-[var(--color-fg-subtle)] text-xs">→</span>
-            <span class="font-mono text-sm text-[var(--color-fg-muted)]"><%= row[:b].nil? ? "—" : row[:b] %><%= row[:unit] %></span>
+            <span class="font-mono text-sm text-[var(--color-fg-muted)]"><%= row[:b].nil? ? "—" : "#{row[:b]}#{row[:unit]}" %></span>
           </div>
-          <p class="font-mono text-xs mt-1 <%= row[:delta_class_override] || delta_class(row[:delta]) %>">
-            <%= row[:fmt] ? row[:fmt].call(row[:delta]) : fmt_delta(row[:delta], unit: row[:unit]) %>
+          <p class="font-mono text-xs mt-1 <%= row[:delta_class_override] || delta_class.call(row[:delta]) %>">
+            <%= row[:fmt] ? row[:fmt].call(row[:delta]) : fmt_delta.call(row[:delta], unit: row[:unit]) %>
           </p>
         </div>
       <% end %>
