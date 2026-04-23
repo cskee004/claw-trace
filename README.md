@@ -14,9 +14,7 @@ This project is part of a personal portfolio and demonstrates experience with Ru
 
 ---
 
-![Waterfall span timeline with drawer metadata](docs/assets/waterfall.png)
-
-![Dashboard with error rate and trace volume charts](docs/assets/dashboard.png)
+<img src="docs/assets/trace-waterfall.png" width="700" alt="Waterfall span timeline with per-span drawer showing token usage, cost, and correlated logs"/>
 
 ---
 
@@ -135,6 +133,8 @@ For full plugin configuration options, see [docs/openclaw-plugin.md](docs/opencl
 - `openclaw.subsystem` facet filter on logs index and trace detail
 - All severity levels stored: DEBUG, INFO, WARN, ERROR, FATAL
 
+<img src="docs/assets/related-trace-logs.png" width="700" alt="Correlated logs rendered inline in the waterfall span drawer"/>
+
 #### Metrics Ingestion
 - OTLP metrics via `POST /v1/metrics` — accepts `application/json` and `application/x-protobuf`
 - Rolling aggregation: one row per metric key, updated on each ingestion
@@ -159,6 +159,8 @@ For full plugin configuration options, see [docs/openclaw-plugin.md](docs/opencl
 - Comparison stat strip with five tiles: input tokens, output tokens, estimated cost, duration, and error count for both traces with signed deltas (green = improvement, red = regression)
 - Span diff coloring — spans shared between both traces are highlighted; spans unique to each side are dimmed with a colored left border, making structural differences immediately visible
 - Older trace is always A (left), newer is always B (right), regardless of selection order
+
+<img src="docs/assets/trace-compare.png" width="700" alt="Side-by-side trace comparison with delta stat strip and span diff coloring"/>
 
 #### Analysis Engine
 - `TraceDurationCalculator` — execution duration per trace
@@ -370,6 +372,21 @@ and how to adapt it for your own project.
 
 ![sessions: 51](https://img.shields.io/badge/sessions-51-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 10,658](https://img.shields.io/badge/API%20calls-10%2C658-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 1010.3M](https://img.shields.io/badge/tokens-1010.3M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 3.2h](https://img.shields.io/badge/thinking%20time-3.2h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 82.8h](https://img.shields.io/badge/wall%20clock-82.8h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $483.73](https://img.shields.io/badge/est.%20cost-%24483.73-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
 <!-- CLAUDE_STATS_END -->
+
+---
+
+### Screenshots
+
+<table>
+<tr>
+  <td><img src="docs/assets/dashboard.png" alt="Dashboard"/></td>
+  <td><img src="docs/assets/agents.png" alt="Agents inventory"/></td>
+</tr>
+<tr>
+  <td><img src="docs/assets/metrics.png" alt="Metrics with time series charts"/></td>
+  <td><img src="docs/assets/logs.png" alt="Logs index with severity and subsystem filtering"/></td>
+</tr>
+</table>
 
 ---
 
