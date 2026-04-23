@@ -22,7 +22,8 @@
   <%= render "summary",
         trace: @trace,
         span_count: @spans.size,
-        total_duration_ms: @total_duration_ms %>
+        total_duration_ms: @total_duration_ms,
+        estimated_cost_usd: @estimated_cost_usd %>
 
   <% if @spans.size == 1 %>
     <%= render "compact_span",

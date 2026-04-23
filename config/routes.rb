@@ -8,7 +8,12 @@ Rails.application.routes.draw do
   get "/dashboard/traces_volume_chart", to: "dashboard#traces_volume_chart", as: :traces_volume_chart_dashboard_index
 
   resources :agents, only: [:index, :show], param: :agent_id,
-            constraints: { agent_id: /[^\/]+/ }, format: false
+            constraints: { agent_id: /[^\/]+/ }, format: false do
+    member do
+      post   :set_budget
+      delete :delete_budget
+    end
+  end
 
   resources :logs, only: [:index]
 

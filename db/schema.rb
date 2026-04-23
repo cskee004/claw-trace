@@ -10,7 +10,15 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_04_19_153629) do
+ActiveRecord::Schema[8.0].define(version: 2026_04_23_114729) do
+  create_table "agent_budgets", force: :cascade do |t|
+    t.string "agent_id", null: false
+    t.decimal "daily_limit_usd", precision: 10, scale: 4, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agent_id"], name: "index_agent_budgets_on_agent_id", unique: true
+  end
+
   create_table "logs", force: :cascade do |t|
     t.string "trace_id"
     t.string "span_id"
@@ -70,6 +78,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_04_19_153629) do
     t.integer "span_cache_write_tokens"
     t.integer "span_total_tokens"
     t.string "span_outcome"
+    t.decimal "span_cost_usd", precision: 10, scale: 8
     t.index ["agent_id"], name: "index_spans_on_agent_id"
     t.index ["parent_span_id"], name: "index_spans_on_parent_span_id"
     t.index ["span_type"], name: "index_spans_on_span_type"
