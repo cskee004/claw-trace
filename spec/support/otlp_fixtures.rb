@@ -1,5 +1,5 @@
 module OtlpFixtures
-  FIXTURE_DIR = Rails.root.join(".claude/json-test-files")
+  FIXTURE_DIR = Rails.root.join("spec/fixtures/otlp")
 
   def model_usage_fixture_json
     File.read(FIXTURE_DIR.join("span-openclaw-model-usage-001.json"))

@@ -1,0 +1,104 @@
+{
+  "resourceSpans": [{
+    "resource": {
+      "attributes": [
+        {"key": "service.name", "value": {"stringValue": "openclaw"}}
+      ]
+    },
+    "scopeSpans": [{
+      "spans": [
+        {
+          "traceId": "a9f3e12b4c5d6e7f0000000000000001",
+          "spanId": "a1b2c3d400000001",
+          "name": "openclaw.request",
+          "startTimeUnixNano": "1776345852000000000",
+          "endTimeUnixNano":   "1776345857600000000",
+          "attributes": [
+            {"key": "openclaw.run_id",     "value": {"stringValue": "9659acf9-468e-485b-8716-e6fe1e652ec1"}},
+            {"key": "openclaw.channel",    "value": {"stringValue": "#general"}},
+            {"key": "openclaw.space",      "value": {"stringValue": "1490399365372838140"}},
+            {"key": "openclaw.sender",     "value": {"stringValue": "moonbasepatrol"}},
+            {"key": "openclaw.message_id", "value": {"stringValue": "1494327550892183554"}}
+          ],
+          "status": {"code": 1}
+        },
+        {
+          "traceId": "a9f3e12b4c5d6e7f0000000000000001",
+          "spanId": "a1b2c3d400000002",
+          "parentSpanId": "a1b2c3d400000001",
+          "name": "openclaw.agent.turn",
+          "startTimeUnixNano": "1776345852000000000",
+          "endTimeUnixNano":   "1776345853940000000",
+          "attributes": [
+            {"key": "openclaw.run_id",                  "value": {"stringValue": "9659acf9-468e-485b-8716-e6fe1e652ec1"}},
+            {"key": "openclaw.model",                   "value": {"stringValue": "claude-haiku-4-5-20251001"}},
+            {"key": "openclaw.provider",                "value": {"stringValue": "anthropic"}},
+            {"key": "openclaw.stop_reason",             "value": {"stringValue": "toolUse"}},
+            {"key": "openclaw.response_id",             "value": {"stringValue": "msg_015QM6hWYz4HNjZFzYniwvKG"}},
+            {"key": "gen_ai.usage.input_tokens",        "value": {"stringValue": "21725"}},
+            {"key": "gen_ai.usage.output_tokens",       "value": {"stringValue": "179"}},
+            {"key": "gen_ai.usage.cache_read_tokens",   "value": {"stringValue": "20484"}},
+            {"key": "gen_ai.usage.cache_write_tokens",  "value": {"stringValue": "625"}},
+            {"key": "gen_ai.usage.total_tokens",        "value": {"stringValue": "22933"}},
+            {"key": "gen_ai.usage.cost_usd",            "value": {"stringValue": "0.0"}}
+          ],
+          "status": {"code": 1}
+        },
+        {
+          "traceId": "a9f3e12b4c5d6e7f0000000000000001",
+          "spanId": "a1b2c3d400000003",
+          "parentSpanId": "a1b2c3d400000002",
+          "name": "openclaw.tool.exec",
+          "startTimeUnixNano": "1776345853940000000",
+          "endTimeUnixNano":   "1776345855200000000",
+          "attributes": [
+            {"key": "tool.name",        "value": {"stringValue": "exec"}},
+            {"key": "tool.call_id",     "value": {"stringValue": "toolu_01Aj7Bbes6kSzrUU7RU9ppk6"}},
+            {"key": "tool.duration_ms", "value": {"stringValue": "1260"}},
+            {"key": "tool.exit_code",   "value": {"stringValue": "0"}},
+            {"key": "tool.cwd",         "value": {"stringValue": "/root/.openclaw/workspace"}}
+          ],
+          "status": {"code": 1}
+        },
+        {
+          "traceId": "a9f3e12b4c5d6e7f0000000000000001",
+          "spanId": "a1b2c3d400000004",
+          "parentSpanId": "a1b2c3d400000002",
+          "name": "openclaw.tool.read",
+          "startTimeUnixNano": "1776345855200000000",
+          "endTimeUnixNano":   "1776345855800000000",
+          "attributes": [
+            {"key": "tool.name",        "value": {"stringValue": "read"}},
+            {"key": "tool.call_id",     "value": {"stringValue": "toolu_01BcHJs6rSwM5XaNxFURZTTx"}},
+            {"key": "tool.duration_ms", "value": {"stringValue": "600"}},
+            {"key": "tool.exit_code",   "value": {"stringValue": "0"}},
+            {"key": "tool.cwd",         "value": {"stringValue": "/root/.openclaw/workspace"}}
+          ],
+          "status": {"code": 1}
+        },
+        {
+          "traceId": "a9f3e12b4c5d6e7f0000000000000001",
+          "spanId": "a1b2c3d400000005",
+          "parentSpanId": "a1b2c3d400000001",
+          "name": "openclaw.agent.turn",
+          "startTimeUnixNano": "1776345855800000000",
+          "endTimeUnixNano":   "1776345857600000000",
+          "attributes": [
+            {"key": "openclaw.run_id",                  "value": {"stringValue": "9659acf9-468e-485b-8716-e6fe1e652ec1"}},
+            {"key": "openclaw.model",                   "value": {"stringValue": "claude-haiku-4-5-20251001"}},
+            {"key": "openclaw.provider",                "value": {"stringValue": "anthropic"}},
+            {"key": "openclaw.stop_reason",             "value": {"stringValue": "stop"}},
+            {"key": "openclaw.response_id",             "value": {"stringValue": "msg_01RCNKPVbZejd8uwxHs35XaH"}},
+            {"key": "gen_ai.usage.input_tokens",        "value": {"stringValue": "23100"}},
+            {"key": "gen_ai.usage.output_tokens",       "value": {"stringValue": "57"}},
+            {"key": "gen_ai.usage.cache_read_tokens",   "value": {"stringValue": "22933"}},
+            {"key": "gen_ai.usage.cache_write_tokens",  "value": {"stringValue": "0"}},
+            {"key": "gen_ai.usage.total_tokens",        "value": {"stringValue": "23157"}},
+            {"key": "gen_ai.usage.cost_usd",            "value": {"stringValue": "0.0"}}
+          ],
+          "status": {"code": 1}
+        }
+      ]
+    }]
+  }]
+}
