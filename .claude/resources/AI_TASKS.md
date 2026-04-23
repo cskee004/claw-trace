@@ -36,6 +36,23 @@ If something unexpected comes up that is not the current task, add it to Backlog
 
 Newest first. One line per task.
 
+- **Task 164** — Replace `.github/workflows/publish-plugin.yml` — push-to-main + `paths: [plugin/package.json]` trigger; `fetch-depth: 2`, version diff via `jq`, idempotent npm publish + `gh release create`; removes manual release-tag step
+- **Task 163** — Create `.github/workflows/ci.yml` — RSpec + RuboCop + Brakeman on PRs and pushes to `main`; `bundler-cache: true`, `tailwindcss:build` + `db:schema:load RAILS_ENV=test` before rspec; moved OTLP fixtures from gitignored `.claude/json-test-files/` to `spec/fixtures/otlp/`; removed `lib/clawtrace/version.rb` (Zeitwerk naming mismatch)
+- **Task 162** — Trace comparison UI — compare page, show widget on trace show page, checkboxes on index, span diff coloring (shared vs unique spans highlighted with colored left border)
+- **Task 161** — Trace comparison route (`GET /traces/compare`), `TracesController#compare` action, and `span_diff_class` helper in `TracesHelper`
+- **Task 160** — Fix: `span_cost_usd` computed by `OtlpNormalizer` but silently dropped by `TelemetryIngester` — added to `Span.create!` column list; all new traces now have cost stored
+- **Task 159** — `TraceComparator` service: token, cost, duration, and error count deltas between two traces; five-tile comparison stat strip with signed deltas
+- **Tasks 156–158** — Solarized Light opt-in theme — CSS vars, Stimulus controller, sun/moon nav toggle; `prefers-color-scheme` detection with localStorage override; FOUC prevention via inline `<head>` script; span-type colors mapped to Solarized equivalents
+- **Task 155** — Model rate display: per-span waterfall drawer shows input/output rate per 1M tokens alongside span cost; schema reference + service docs updated
+- **Task 154** — Estimated cost on traces index and per-span cost in waterfall drawer
+- **Task 153** — README cost control section: budget alert crontab examples for macOS (`terminal-notifier`) and Linux (`notify-send`)
+- **Task 152** — Estimated cost in trace summary strip; cost computation targets spans with `span_model` set (not just `model_call` type)
+- **Task 151** — Agent show page: "Cost today" stat tile; daily budget form + CRUD (`AgentBudget` model, unique constraint per agent)
+- **Task 150** — `BudgetChecker` service: daily spend vs limit, stdout alerts; pipes cleanly to `terminal-notifier` / `notify-send`
+- **Task 149** — `bin/rails spans:backfill_cost` rake task: idempotent cost backfill for spans ingested before cost tracking was enabled
+- **Task 148** — Compute `span_cost_usd` on model_call spans during OTLP ingestion via `ModelPricingService`
+- **Task 147** — Migration: add `span_cost_usd` to spans table; create `agent_budgets` table + `AgentBudget` model
+- **Task 146** — `ModelPricingService`: fetches pricing from LiteLLM community JSON with suffix-strip model matching, 24-hour cache, and stale-cache fallback
 - **Task 136** — Published `@clawtrace-io/clawtails` to npm; renamed from `openclaw-clawtrace`; added GitHub Actions publish workflow; fixed plugin config nesting (`plugins.entries.clawtails.config`); updated all docs and banner
 - **Task 145** — Drop histogram ingestion (MetricsNormalizer drops histogram data points; migration purges existing rows); MetricStatsService adds agent.turns.total + tool.errors.total tiles with delta% to dashboard; metrics show page uses time-series line chart (hour_bucket x-axis) for sum metrics; status indicator switches from Log.maximum(:timestamp) to Metric.maximum(:updated_at) with 5-minute window
 - **Task 144** — Plugin log correlation: plugin emits OTLP logs stamped with traceId/spanId at agent_end; logs render inline in waterfall span drawer with JSON expand; index preview shows total log count; All Logs panel restored with span_id filter; tool_calls_chart span_type bug fixed; trace ID on logs page links to trace detail; log drawer body pretty-prints JSON
@@ -174,6 +191,15 @@ Sorted by shipping priority. No task numbers yet — assigned when work begins.
 ### P1 — Ship blockers
 
 - ~~**README rewrite + screenshot refresh**~~ — DONE (2026-04-20). README rewritten to lead with clawtails, screenshots refreshed with live data, Service Layer table updated.
+
+### CI/CD Pipeline (design approved 2026-04-23)
+
+Implement the two-workflow CI/CD pipeline from `chris-cicd-pipeline-design-20260423-105049.md`. Ship in order — CI first so it gates the publish workflow commit itself.
+
+- ~~**Create `.github/workflows/ci.yml`**~~ — DONE (Task 163). Green on PR #5.
+- ~~**Replace `.github/workflows/publish-plugin.yml`**~~ — DONE (Task 164). Awaiting merge.
+- ~~**Verify CI passes on first push**~~ — DONE. PR #5 CI green: rspec ✓ rubocop ✓ brakeman ✓.
+- **Smoke-test the publish workflow** — Bump `plugin/package.json` version in a PR, merge to `main`, confirm the publish workflow fires (not CI), npm package appears at new version, and a GitHub Release is created automatically. Verify a second re-run is a no-op.
 
 ### P2 — Ship soon after
 

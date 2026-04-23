@@ -1,6 +1,6 @@
 {
   "name": "@clawtrace-io/clawtails",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "OpenClaw plugin that sends traces to ClawTrace via OTLP",
   "type": "module",
   "main": "index.js",
