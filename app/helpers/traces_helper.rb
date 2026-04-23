@@ -77,6 +77,14 @@ module TracesHelper
     end
   end
 
+  # Returns a CSS class for a span row on the compare page based on name-set membership.
+  # side is :a or :b — the column this span belongs to.
+  # Green if the name exists in both traces, accent if only in this side, muted if unnamed.
+  def span_diff_class(span_name, other_names, side)
+    return "compare-span--unnamed" if span_name.blank?
+    other_names.include?(span_name) ? "compare-span--shared" : "compare-span--unique-#{side}"
+  end
+
   # Exposed as module_function so TracesController can call TracesHelper.dfs_ordered_spans
   # directly without a view context. span_depth_map is view-only and does not need this.
   module_function :dfs_ordered_spans

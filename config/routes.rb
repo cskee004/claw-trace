@@ -27,6 +27,9 @@ Rails.application.routes.draw do
   end
 
   resources :traces, only: [:index, :show] do
+    collection do
+      get :compare
+    end
     member do
       get :preview
       get :summary
