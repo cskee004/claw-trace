@@ -24,7 +24,7 @@ class ModelPricingService
 
   def cost_usd(model:, input_tokens:, output_tokens:)
     prices = find_prices(model)
-    return 0.0 unless prices
+    return nil unless prices
 
     (prices[:input] * input_tokens.to_i) + (prices[:output] * output_tokens.to_i)
   end
@@ -77,9 +77,12 @@ class ModelPricingService
     response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 3, read_timeout: 3) do |http|
       http.get(uri.path)
     end
+    unless response.code == "200"
+      Rails.logger.warn("ModelPricingService: unexpected response (code=#{response.code}) — using stale cache")
+      return nil
+    end
     data = JSON.parse(response.body)
-    unless response.code == "200" && data.is_a?(Hash) &&
-           data.any? { |_, v| v.is_a?(Hash) && v.key?("input_cost_per_token") }
+    unless data.is_a?(Hash) && data.any? { |_, v| v.is_a?(Hash) && v.key?("input_cost_per_token") }
       Rails.logger.warn("ModelPricingService: unexpected response (code=#{response.code}) — using stale cache")
       return nil
     end

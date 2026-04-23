@@ -2,7 +2,7 @@ class TracesController < ApplicationController
   def index
     @traces    = session_id.present? ? traces_for_session(session_id) : Trace.order(start_time: :desc)
     @durations = TraceDurationCalculator.call_many(@traces)
-    @costs     = Span.where(trace_id: @traces.map(&:trace_id))
+    @costs     = Span.where(trace_id: @traces.select(:trace_id))
                      .where.not(span_cost_usd: nil)
                      .group(:trace_id)
                      .sum(:span_cost_usd)

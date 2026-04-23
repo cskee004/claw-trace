@@ -34,9 +34,9 @@ RSpec.describe ModelPricingService do
       expect(cost).to be_within(0.0000001).of((0.000003 * 1000) + (0.000015 * 200))
     end
 
-    it "returns 0.0 for an unknown model" do
+    it "returns nil for an unknown model" do
       cost = service.cost_usd(model: "unknown-model-xyz", input_tokens: 1000, output_tokens: 500)
-      expect(cost).to eq(0.0)
+      expect(cost).to be_nil
     end
 
     it "returns 0.0 when token counts are zero" do
@@ -64,11 +64,11 @@ RSpec.describe ModelPricingService do
       expect(cost).to be > 0.0
     end
 
-    it "returns 0.0 when remote fails and no stale cache exists" do
+    it "returns nil when remote fails and no stale cache exists" do
       allow(service).to receive(:fetch_remote).and_return(nil)
 
       cost = service.cost_usd(model: "gpt-4o", input_tokens: 1000, output_tokens: 500)
-      expect(cost).to eq(0.0)
+      expect(cost).to be_nil
     end
   end
 
@@ -79,10 +79,10 @@ RSpec.describe ModelPricingService do
       allow(Rails).to receive(:cache).and_return(real_cache)
     end
 
-    it "returns empty hash when fetch_remote raises and no stale cache exists" do
+    it "returns nil when fetch_remote raises and no stale cache exists" do
       allow(service).to receive(:fetch_remote).and_raise(StandardError, "network error")
       cost = service.cost_usd(model: "gpt-4o", input_tokens: 1000, output_tokens: 500)
-      expect(cost).to eq(0.0)
+      expect(cost).to be_nil
     end
 
     it "returns stale cache when fetch_remote raises" do
