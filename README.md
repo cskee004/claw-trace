@@ -140,6 +140,13 @@ For full plugin configuration options, see [docs/openclaw-plugin.md](docs/opencl
 - Rolling aggregation: one row per metric key, updated on each ingestion
 - Metrics index with hourly bucket time series; dashboard tiles for agent turns, token usage, and tool errors
 
+#### Cost Control
+- Per-span cost computed from token counts × live model pricing (LiteLLM community JSON, cached 24 h)
+- Estimated cost shown on the traces index, trace summary strip, and per-span in the waterfall drawer
+- Model rate (per 1M input / output tokens) displayed alongside each span cost
+- Daily budget alerts via `BudgetChecker` — run on a cron schedule, prints to stdout, pipes to OS notifications
+- `bin/rails spans:backfill_cost` — one-time backfill for spans ingested before cost tracking was enabled
+
 #### Analysis Engine
 - `TraceDurationCalculator` — execution duration per trace
 - `ToolCallAnalyzer` — tool call frequency and success rates
@@ -188,6 +195,21 @@ All three data types default to a 30-day retention window. Adjust per-type in Se
 
 ```bash
 rails logs:prune
+```
+
+**Budget alerts**
+
+Set a daily spend limit per agent on the agent show page. Then run `BudgetChecker` on a schedule to get notified when an agent goes over budget:
+
+```bash
+# Log budget check output every hour
+0 * * * * cd /path/to/clawtrace && bin/rails runner BudgetChecker.check >> /tmp/clawtrace-budget.log 2>&1
+
+# macOS — pipe BUDGET ALERT lines to terminal-notifier
+0 * * * * cd /path/to/clawtrace && bin/rails runner BudgetChecker.check | grep "BUDGET ALERT" | terminal-notifier -title "ClawTrace"
+
+# Linux — fire notify-send if any agent is over budget
+0 * * * * cd /path/to/clawtrace && bin/rails runner BudgetChecker.check | grep -q "BUDGET ALERT" && notify-send "ClawTrace Budget Alert" "An agent is over budget"
 ```
 
 **Seed data**
