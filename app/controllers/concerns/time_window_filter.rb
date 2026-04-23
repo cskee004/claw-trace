@@ -9,8 +9,10 @@ module TimeWindowFilter
 
   private
 
+  def default_period = "30d"
+
   def set_period
-    @current_period = PERIODS.include?(params[:period]) ? params[:period] : "30d"
+    @current_period = PERIODS.include?(params[:period]) ? params[:period] : default_period
     @period_label   = {
       "12h"    => "last 12 hours",
       "24h"    => "last 24 hours",

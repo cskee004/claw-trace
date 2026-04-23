@@ -1,7 +1,12 @@
 class TracesController < ApplicationController
   def index
-    @traces = session_id.present? ? traces_for_session(session_id) : Trace.order(start_time: :desc)
+    @traces    = session_id.present? ? traces_for_session(session_id) : Trace.order(start_time: :desc)
     @durations = TraceDurationCalculator.call_many(@traces)
+    @costs     = Span.where(trace_id: @traces.select(:trace_id))
+                     .where.not(span_cost_usd: nil)
+                     .group(:trace_id)
+                     .sum(:span_cost_usd)
+                     .transform_values(&:to_f)
   end
 
   def reset
@@ -19,6 +24,12 @@ class TracesController < ApplicationController
     @total_duration_ms = TraceDurationCalculator.call(@trace)
     @spans = TracesHelper.dfs_ordered_spans(spans.to_a)
     @logs_by_span_id = Log.where(span_id: @spans.map(&:span_id)).order(:timestamp).group_by(&:span_id)
+    @estimated_cost_usd = @trace.spans.sum(:span_cost_usd).to_f
+    @compare_candidates = Trace.where(agent_id: @trace.agent_id)
+                               .where.not(trace_id: @trace.trace_id)
+                               .order(start_time: :desc)
+                               .limit(20)
+                               .to_a
   end
 
   def preview
@@ -35,10 +46,12 @@ class TracesController < ApplicationController
     @trace = Trace.find_by!(trace_id: params[:id])
     span_count = @trace.spans.count
     total_duration_ms = TraceDurationCalculator.call(@trace)
+    estimated_cost_usd = @trace.spans.sum(:span_cost_usd).to_f
     render partial: "summary", locals: {
       trace: @trace,
       span_count: span_count,
-      total_duration_ms: total_duration_ms
+      total_duration_ms: total_duration_ms,
+      estimated_cost_usd: estimated_cost_usd
     }
   end
 
@@ -73,6 +86,21 @@ class TracesController < ApplicationController
       total_duration_ms: total_duration_ms,
       logs_by_span_id: logs_by_span_id
     }
+  end
+
+  def compare
+    t1 = Trace.find_by!(trace_id: params[:a])
+    t2 = Trace.find_by!(trace_id: params[:b])
+    @trace_a, @trace_b = [t1, t2].sort_by(&:start_time)
+
+    @spans_a = TracesHelper.dfs_ordered_spans(@trace_a.spans.order(:timestamp).to_a)
+    @spans_b = TracesHelper.dfs_ordered_spans(@trace_b.spans.order(:timestamp).to_a)
+
+    @latencies_a  = compute_latencies_ms(@trace_a.spans.order(:timestamp))
+    @latencies_b  = compute_latencies_ms(@trace_b.spans.order(:timestamp))
+    @total_ms_a   = TraceDurationCalculator.call(@trace_a)
+    @total_ms_b   = TraceDurationCalculator.call(@trace_b)
+    @comparison   = TraceComparator.call(@trace_a, @trace_b)
   end
 
   def logs

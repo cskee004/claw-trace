@@ -18,7 +18,7 @@
 #                 "timestamp", "end_time", "agent_id", "metadata",
 #                 "span_model", "span_provider", "span_input_tokens", "span_output_tokens",
 #                 "span_cache_read_tokens", "span_cache_write_tokens", "span_total_tokens",
-#                 "span_outcome" }, ...]
+#                 "span_outcome", "span_cost_usd" }, ...]
 #     }, ...
 #   ]
 #
@@ -155,28 +155,44 @@ class OtlpNormalizer
   end
 
   def build_span_record(span, trace_id, resource_attrs)
-    span_attrs = attrs_to_hash(span["attributes"] || [])
-    agent_id   = resolve_agent_id(span_attrs, resource_attrs)
+    span_attrs    = attrs_to_hash(span["attributes"] || [])
+    agent_id      = resolve_agent_id(span_attrs, resource_attrs)
+    span_type     = resolve_span_type(span["name"])
+    span_model    = span_attrs["openclaw.model"]
+    input_tokens  = span_attrs["openclaw.tokens.input"]  || span_attrs["gen_ai.usage.input_tokens"]&.to_i
+    output_tokens = span_attrs["openclaw.tokens.output"] || span_attrs["gen_ai.usage.output_tokens"]&.to_i
 
     {
-      "trace_id"               => trace_id,
-      "span_id"                => span["spanId"],
-      "parent_span_id"         => span["parentSpanId"].presence,
-      "span_type"              => resolve_span_type(span["name"]),
-      "span_name"              => span["name"],
-      "timestamp"              => nano_to_iso8601(span["startTimeUnixNano"]),
-      "end_time"               => nano_to_iso8601_or_nil(span["endTimeUnixNano"]),
-      "agent_id"               => agent_id,
-      "metadata"               => span_attrs,
-      "span_model"             => span_attrs["openclaw.model"],
-      "span_provider"          => span_attrs["openclaw.provider"],
-      "span_input_tokens"      => span_attrs["openclaw.tokens.input"]       || span_attrs["gen_ai.usage.input_tokens"]&.to_i,
-      "span_output_tokens"     => span_attrs["openclaw.tokens.output"]      || span_attrs["gen_ai.usage.output_tokens"]&.to_i,
-      "span_cache_read_tokens" => span_attrs["openclaw.tokens.cache_read"]  || span_attrs["gen_ai.usage.cache_read_tokens"]&.to_i,
-      "span_cache_write_tokens"=> span_attrs["openclaw.tokens.cache_write"] || span_attrs["gen_ai.usage.cache_write_tokens"]&.to_i,
-      "span_total_tokens"      => span_attrs["openclaw.tokens.total"]       || span_attrs["gen_ai.usage.total_tokens"]&.to_i,
-      "span_outcome"           => resolve_span_outcome(span, span_attrs)
+      "trace_id"                => trace_id,
+      "span_id"                 => span["spanId"],
+      "parent_span_id"          => span["parentSpanId"].presence,
+      "span_type"               => span_type,
+      "span_name"               => span["name"],
+      "timestamp"               => nano_to_iso8601(span["startTimeUnixNano"]),
+      "end_time"                => nano_to_iso8601_or_nil(span["endTimeUnixNano"]),
+      "agent_id"                => agent_id,
+      "metadata"                => span_attrs,
+      "span_model"              => span_model,
+      "span_provider"           => span_attrs["openclaw.provider"],
+      "span_input_tokens"       => input_tokens,
+      "span_output_tokens"      => output_tokens,
+      "span_cache_read_tokens"  => span_attrs["openclaw.tokens.cache_read"]  || span_attrs["gen_ai.usage.cache_read_tokens"]&.to_i,
+      "span_cache_write_tokens" => span_attrs["openclaw.tokens.cache_write"] || span_attrs["gen_ai.usage.cache_write_tokens"]&.to_i,
+      "span_total_tokens"       => span_attrs["openclaw.tokens.total"]       || span_attrs["gen_ai.usage.total_tokens"]&.to_i,
+      "span_outcome"            => resolve_span_outcome(span, span_attrs),
+      "span_cost_usd"           => compute_cost(span_model, input_tokens, output_tokens)
     }
+  end
+
+  def compute_cost(model, input_tokens, output_tokens)
+    return nil unless model.present?
+    ModelPricingService.cost_usd(
+      model: model,
+      input_tokens: input_tokens.to_i,
+      output_tokens: output_tokens.to_i
+    )
+  rescue StandardError
+    nil
   end
 
   def resolve_span_type(name)

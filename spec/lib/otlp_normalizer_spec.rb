@@ -81,6 +81,18 @@ RSpec.describe OtlpNormalizer do
     it "span_outcome is nil (not present in this fixture)" do
       expect(span["span_outcome"]).to be_nil
     end
+
+    it "span_cost_usd is a positive float for a model_call span with known model" do
+      allow(ModelPricingService).to receive(:cost_usd).and_return(0.000041)
+      result = OtlpNormalizer.call(model_usage_fixture_json).first
+      expect(result[:spans].first["span_cost_usd"]).to eq(0.000041)
+    end
+
+    it "span_cost_usd is nil when ModelPricingService raises" do
+      allow(ModelPricingService).to receive(:cost_usd).and_raise(StandardError)
+      result = OtlpNormalizer.call(model_usage_fixture_json).first
+      expect(result[:spans].first["span_cost_usd"]).to be_nil
+    end
   end
 
   # ── Real fixture: openclaw.message.processed ───────────────────────────────
@@ -149,6 +161,10 @@ RSpec.describe OtlpNormalizer do
 
     it "span_total_tokens is nil" do
       expect(span["span_total_tokens"]).to be_nil
+    end
+
+    it "span_cost_usd is nil for a non-model_call span" do
+      expect(span["span_cost_usd"]).to be_nil
     end
   end
 

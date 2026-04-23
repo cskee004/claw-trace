@@ -1,11 +1,19 @@
 {
   "name": "@clawtrace-io/clawtails",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "OpenClaw plugin that sends traces to ClawTrace via OTLP",
   "type": "module",
   "main": "index.js",
-  "files": ["index.js"],
-  "keywords": ["openclaw", "clawtrace", "otlp", "observability"],
+  "files": [
+    "index.js",
+    "openclaw.plugin.json"
+  ],
+  "keywords": [
+    "openclaw",
+    "clawtrace",
+    "otlp",
+    "observability"
+  ],
   "license": "MIT",
   "engines": {
     "node": ">=22"
@@ -14,7 +22,9 @@
     "openclaw": "*"
   },
   "openclaw": {
-    "extensions": ["./index.js"],
+    "extensions": [
+      "./index.js"
+    ],
     "compat": {
       "pluginApi": ">=2026.3.24-beta.2"
     }

@@ -22,7 +22,31 @@
   <%= render "summary",
         trace: @trace,
         span_count: @spans.size,
-        total_duration_ms: @total_duration_ms %>
+        total_duration_ms: @total_duration_ms,
+        estimated_cost_usd: @estimated_cost_usd %>
+
+  <% if @compare_candidates.any? %>
+    <div class="mt-4 bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg overflow-hidden">
+      <div class="px-4 py-2.5 border-b border-[var(--color-surface-2)]">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Compare with another trace</h2>
+      </div>
+      <div class="px-4 py-2.5">
+        <%= form_with url: compare_traces_path, method: :get, class: "flex items-center gap-3" do |f| %>
+          <%= f.hidden_field :a, value: @trace.trace_id %>
+          <%= f.select :b,
+                options_from_collection_for_select(@compare_candidates, :trace_id, ->(t) { "#{t.trace_id[0..7]} · #{t.status} · #{t.start_time.strftime('%b %-d %H:%M:%S')}" }),
+                {},
+                class: "bg-[var(--color-surface-2)] text-[var(--color-fg)] border border-[var(--color-surface-2)]
+                        rounded px-2 py-1 text-xs font-mono flex-1 min-w-0" %>
+          <%= f.submit "Compare →",
+                class: "shrink-0 px-3 py-1 rounded text-xs font-bold
+                        bg-[var(--color-surface-2)] text-[var(--color-fg)]
+                        border border-[var(--color-surface-2)] cursor-pointer
+                        hover:bg-[color-mix(in_srgb,var(--color-surface-2)_70%,var(--color-fg))]" %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
   <% if @spans.size == 1 %>
     <%= render "compact_span",

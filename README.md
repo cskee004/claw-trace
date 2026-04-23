@@ -2,15 +2,17 @@
 
 ### Agent Observability for OpenClaw
 
-<!-- CLAUDE_STATS_START -->
-#### Claude Code Stats
+### Description
 
-![sessions: 43](https://img.shields.io/badge/sessions-43-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 8,928](https://img.shields.io/badge/API%20calls-8%2C928-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 829.0M](https://img.shields.io/badge/tokens-829.0M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 2.9h](https://img.shields.io/badge/thinking%20time-2.9h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 67.4h](https://img.shields.io/badge/wall%20clock-67.4h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $401.88](https://img.shields.io/badge/est.%20cost-%24401.88-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
-<!-- CLAUDE_STATS_END -->
+ClawTrace is a Rails 8 agent observability platform built for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs.
+
+The primary integration is the [`@clawtrace-io/clawtails`](docs/openclaw-plugin.md) companion plugin, which instruments OpenClaw's lifecycle hooks and emits OTLP spans with full parent-child hierarchy. Each agent turn becomes a waterfall: root span → agent turn → tool calls, with token usage and correlated logs on every span.
+
+Traces, spans, metrics, and logs all write to a local SQLite database and appear in the same UI. No external services required.
+
+This project is part of a personal portfolio and demonstrates experience with Ruby, Rails, OpenTelemetry-inspired design, API development, and AI-assisted development using [Claude Code](https://claude.ai/code).
 
 ---
-
-![Trace list with status badges and session filter](docs/assets/traces.png)
 
 ![Waterfall span timeline with drawer metadata](docs/assets/waterfall.png)
 
@@ -24,6 +26,64 @@ Install the companion plugin into your OpenClaw project to get the full waterfal
 
 ```bash
 openclaw plugins install @clawtrace-io/clawtails
+```
+
+Then add both blocks to `~/.openclaw/openclaw.json`. Diagnostics sends metrics; the plugin handles traces and logs:
+
+```json
+"diagnostics": {
+  "enabled": true,
+  "otel": {
+    "enabled": true,
+    "endpoint": "http://localhost:3000",
+    "protocol": "http/protobuf",
+    "serviceName": "openclaw-gateway",
+    "traces": false,
+    "metrics": true,
+    "logs": false,
+    "sampleRate": 1,
+    "flushIntervalMs": 30000
+  }
+}
+```
+
+```json
+"plugins": {
+  "entries": {
+    "clawtails": {
+      "enabled": true,
+      "config": {
+        "endpoint": "http://localhost:3000",
+        "logs": {
+          "enabled": true,
+          "tool_calls": true,
+          "assistant_turns": true,
+          "user_messages": true,
+          "compaction_events": true
+        }
+      }
+    }
+  }
+}
+```
+
+**Or, without the plugin** — use OpenClaw's built-in diagnostics for flat spans and metrics (no waterfall view):
+
+```json
+"diagnostics": {
+  "enabled": true,
+  "otel": {
+    "enabled": true,
+    "endpoint": "http://localhost:3000",
+    "protocol": "http/protobuf",
+    "serviceName": "openclaw-gateway",
+    "traces": true,
+    "metrics": true,
+    "logs": true,
+    "sampleRate": 1,
+    "flushIntervalMs": 30000
+  }
+}
 ```
 
 Then start ClawTrace:
@@ -49,18 +109,6 @@ For full plugin configuration options, see [docs/openclaw-plugin.md](docs/opencl
 * Ruby 3.2 or higher
 * Rails 8.0 or higher
 * SQLite3 (stored locally on your machine)
-
----
-
-### Description
-
-ClawTrace is a Rails 8 agent observability platform built for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs.
-
-The primary integration is the [`@clawtrace-io/clawtails`](docs/openclaw-plugin.md) companion plugin, which instruments OpenClaw's lifecycle hooks and emits OTLP spans with full parent-child hierarchy. Each agent turn becomes a waterfall: root span → agent turn → tool calls, with token usage and correlated logs on every span.
-
-Traces, spans, metrics, and logs all write to a local SQLite database and appear in the same UI. No external services required.
-
-This project is part of a personal portfolio and demonstrates experience with Ruby, Rails, OpenTelemetry-inspired design, API development, and AI-assisted development using [Claude Code](https://claude.ai/code).
 
 ---
 
@@ -91,6 +139,20 @@ This project is part of a personal portfolio and demonstrates experience with Ru
 - OTLP metrics via `POST /v1/metrics` — accepts `application/json` and `application/x-protobuf`
 - Rolling aggregation: one row per metric key, updated on each ingestion
 - Metrics index with hourly bucket time series; dashboard tiles for agent turns, token usage, and tool errors
+
+#### Solarized Light Theme
+- Opt-in light theme via a sun/moon toggle button in the nav sidebar
+- Full Solarized Light palette — 10 base vars + 8 span-type colors mapped to Solarized equivalents
+- `prefers-color-scheme` auto-detection with localStorage manual override (`clawtrace-theme`)
+- FOUC-free: theme is applied synchronously in `<head>` before stylesheets load
+- All span-type colors preserve their semantic meaning across both themes
+
+#### Cost Control
+- Per-span cost computed from token counts × live model pricing (LiteLLM community JSON, cached 24 h)
+- Estimated cost shown on the traces index, trace summary strip, and per-span in the waterfall drawer
+- Model rate (per 1M input / output tokens) displayed alongside each span cost
+- Daily budget alerts via `BudgetChecker` — run on a cron schedule, prints to stdout, pipes to OS notifications
+- `bin/rails spans:backfill_cost` — one-time backfill for spans ingested before cost tracking was enabled
 
 #### Analysis Engine
 - `TraceDurationCalculator` — execution duration per trace
@@ -140,6 +202,21 @@ All three data types default to a 30-day retention window. Adjust per-type in Se
 
 ```bash
 rails logs:prune
+```
+
+**Budget alerts**
+
+Set a daily spend limit per agent on the agent show page. Then run `BudgetChecker` on a schedule to get notified when an agent goes over budget:
+
+```bash
+# Log budget check output every hour
+0 * * * * cd /path/to/clawtrace && bin/rails runner BudgetChecker.check >> /tmp/clawtrace-budget.log 2>&1
+
+# macOS — pipe BUDGET ALERT lines to terminal-notifier
+0 * * * * cd /path/to/clawtrace && bin/rails runner BudgetChecker.check | grep "BUDGET ALERT" | terminal-notifier -title "ClawTrace"
+
+# Linux — fire notify-send if any agent is over budget
+0 * * * * cd /path/to/clawtrace && bin/rails runner BudgetChecker.check | grep -q "BUDGET ALERT" && notify-send "ClawTrace Budget Alert" "An agent is over budget"
 ```
 
 **Seed data**
@@ -280,6 +357,12 @@ The development workflow uses three files to prevent context drift across sessio
 
 See [docs/ai-development.md](docs/ai-development.md) for how the system works
 and how to adapt it for your own project.
+
+<!-- CLAUDE_STATS_START -->
+#### Claude Code Stats
+
+![sessions: 51](https://img.shields.io/badge/sessions-51-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 10,658](https://img.shields.io/badge/API%20calls-10%2C658-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 1010.3M](https://img.shields.io/badge/tokens-1010.3M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 3.2h](https://img.shields.io/badge/thinking%20time-3.2h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 82.8h](https://img.shields.io/badge/wall%20clock-82.8h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $483.73](https://img.shields.io/badge/est.%20cost-%24483.73-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+<!-- CLAUDE_STATS_END -->
 
 ---
 

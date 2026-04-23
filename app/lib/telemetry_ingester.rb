@@ -8,7 +8,7 @@
 # spans: — Array of hashes with string keys: span_id, parent_span_id, span_type,
 #           span_name, timestamp, agent_id, metadata, span_model, span_provider,
 #           span_input_tokens, span_output_tokens, span_cache_read_tokens,
-#           span_cache_write_tokens, span_total_tokens, span_outcome
+#           span_cache_write_tokens, span_total_tokens, span_outcome, span_cost_usd
 #
 # Raises TelemetryIngester::Error on invalid input or validation failure.
 # All DB writes are wrapped in a single transaction — all succeed or all roll back.
@@ -72,7 +72,8 @@ class TelemetryIngester
       span_cache_read_tokens:  data["span_cache_read_tokens"],
       span_cache_write_tokens: data["span_cache_write_tokens"],
       span_total_tokens:       data["span_total_tokens"],
-      span_outcome:            data["span_outcome"]
+      span_outcome:            data["span_outcome"],
+      span_cost_usd:           data["span_cost_usd"]
     )
   end
 
@@ -111,7 +112,8 @@ class TelemetryIngester
       locals: {
         trace: trace,
         span_count: trace.spans.count, # all spans on the trace, not just this batch
-        total_duration_ms: total_ms
+        total_duration_ms: total_ms,
+        estimated_cost_usd: trace.spans.sum(:span_cost_usd).to_f
       }
     )
   end

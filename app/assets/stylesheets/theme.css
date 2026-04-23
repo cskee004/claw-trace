@@ -158,3 +158,33 @@ turbo-frame#frame_panel {
     opacity: 0.8;
 }
 .btn--danger:hover { opacity: 1; }
+
+/* Trace comparison — span diff coloring */
+.compare-span--shared     { border-left: 3px solid color-mix(in srgb, var(--color-success-fg) 40%, transparent); }
+.compare-span--unique-a   { border-left: 3px solid color-mix(in srgb, var(--color-error-fg)   40%, transparent); opacity: 0.7; }
+.compare-span--unique-b   { border-left: 3px solid color-mix(in srgb, var(--color-accent)     40%, transparent); opacity: 0.7; }
+.compare-span--unnamed    { border-left: 3px solid transparent; }
+
+/* Theme toggle */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-fg-subtle);
+  padding: 0;
+  min-height: 32px;
+  width: 100%;
+  font-family: inherit;
+}
+.theme-toggle:hover { color: var(--color-fg); }
+.theme-toggle i { width: 15px; height: 15px; flex-shrink: 0; }
+
+/* Icon swap — sun shown in dark mode (click to go light), moon shown in light mode (click to go dark) */
+html:not([data-theme="light"]) .theme-icon--moon { display: none; }
+html[data-theme="light"]       .theme-icon--sun  { display: none; }

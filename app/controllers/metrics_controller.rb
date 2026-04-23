@@ -37,6 +37,8 @@ class MetricsController < ApplicationController
 
   private
 
+  def default_period = action_name == "show" ? "24h" : "30d"
+
   def load_chart_data
     rows = Metric.where(metric_name: @metric_name)
                  .where(hour_bucket: time_range)
@@ -66,7 +68,7 @@ class MetricsController < ApplicationController
       chart:   { type: "line", height: 280, toolbar: { show: false }, zoom: { enabled: false } },
       series:  series,
       xaxis:   { type: "datetime" },
-      yaxis:   { min: 0, labels: { formatter: "function(v){return Math.round(v).toLocaleString()}" } },
+      yaxis:   { min: 0 },
       stroke:  { curve: "smooth", width: 2 },
       colors:  %w[var(--color-accent) var(--color-success-fg) var(--color-warn-fg) var(--color-span-tool-call)],
       tooltip: { theme: "dark", x: { format: "MMM dd HH:mm" } },
@@ -84,14 +86,16 @@ class MetricsController < ApplicationController
     @chart_stats   = result[:stats]
   end
 
+  AggregatedBucket = Struct.new(:metric_attributes, :metric_type, :data_points, :updated_at)
+
   def aggregate_buckets(rows)
     rows.group_by(&:metric_key).map do |_key, buckets|
       first = buckets.first
-      OpenStruct.new(
-        metric_attributes: first.metric_attributes,
-        metric_type:       first.metric_type,
-        data_points:       { "value" => buckets.sum { |r| r.data_points["value"].to_f } },
-        updated_at:        buckets.map(&:updated_at).max
+      AggregatedBucket.new(
+        first.metric_attributes,
+        first.metric_type,
+        { "value" => buckets.sum { |r| r.data_points["value"].to_f } },
+        buckets.map(&:updated_at).max
       )
     end
   end

@@ -21,11 +21,17 @@ export default class extends Controller {
   // Merges dark-theme defaults so all charts are readable against the dark background.
   // Defaults come first — explicit keys in opts take precedence via spread.
   withTheme(opts, style) {
+    const yaxis = Array.isArray(opts.yaxis) ? opts.yaxis : (opts.yaxis ? [opts.yaxis] : [])
+    const themedYaxis = yaxis.map(y => ({
+      labels: { formatter: v => Math.round(v).toLocaleString() },
+      ...y
+    }))
     return {
       ...opts,
       chart:   { foreColor: this.resolveVar("var(--color-fg-muted)", style),   ...opts.chart },
       grid:    { borderColor: this.resolveVar("var(--color-surface-2)", style), ...opts.grid },
-      tooltip: { theme: "dark", ...opts.tooltip }
+      tooltip: { theme: "dark", ...opts.tooltip },
+      ...(themedYaxis.length ? { yaxis: themedYaxis.length === 1 ? themedYaxis[0] : themedYaxis } : {})
     }
   }
 
