@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.0] - 2026-04-23
+
+### Added
+- **Cost tracking** — `span_cost_usd` computed on every model_call span during OTLP ingestion using live pricing from the LiteLLM community JSON (cached 24h with stale fallback). Estimated cost appears on the traces index, trace summary strip, and per-span in the waterfall drawer.
+- **Model rate display** — per-span waterfall drawer shows input and output rate per 1M tokens alongside the span cost.
+- **Daily budgets** — set a daily spend limit per agent on the agent detail page. `AgentBudget` model with DB-backed unique constraint per agent.
+- **BudgetChecker** — run on a cron schedule to alert when agents exceed daily limits. Prints to stdout, pipes cleanly to `terminal-notifier` (macOS) or `notify-send` (Linux). README includes three crontab examples.
+- **Cost backfill** — `bin/rails spans:backfill_cost` idempotently backfills `span_cost_usd` for spans ingested before cost tracking was enabled.
+- **ModelPricingService** — fetches pricing from the LiteLLM community JSON with suffix-strip model matching (`claude-haiku-4-5-20251001` → `claude-haiku-4-5` → `claude-haiku`), 24-hour cache, and stale-cache fallback.
+
+### Fixed
+- `span_cost_usd` stored as `nil` (not `0.0`) for unknown models so the UI correctly shows `—` rather than `$0.000000`.
+- Traces index `@costs` query uses a subquery instead of materializing all trace IDs, avoiding SQLite's 999 bind-variable limit.
+- `ModelPricingService#fetch_remote` validates HTTP response code before parsing JSON to handle non-JSON error bodies from rate-limited CDNs.
+- `BudgetChecker#excess_pct` zero-division guard when `daily_limit_usd` is 0.
+
 ## [0.1.2] - 2026-04-20
 
 ### Added
