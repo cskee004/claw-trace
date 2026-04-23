@@ -184,8 +184,8 @@ class OtlpNormalizer
     }
   end
 
-  def compute_cost(span_type, model, input_tokens, output_tokens)
-    return nil unless span_type == "model_call" && model.present?
+  def compute_cost(_span_type, model, input_tokens, output_tokens)
+    return nil unless model.present?
     ModelPricingService.cost_usd(
       model: model,
       input_tokens: input_tokens.to_i,

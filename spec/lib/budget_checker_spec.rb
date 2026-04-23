@@ -18,8 +18,9 @@ RSpec.describe BudgetChecker do
     Span.create!(
       trace_id:       trace.trace_id,
       span_id:        SecureRandom.hex(4),
-      span_type:      "model_call",
-      span_name:      "openclaw.model.usage",
+      span_type:      "agent_turn",
+      span_name:      "openclaw.agent.turn",
+      span_model:     "claude-haiku-4-5-20251001",
       timestamp:      timestamp,
       agent_id:       agent_id,
       metadata:       {},

@@ -30,7 +30,8 @@ class BudgetChecker
 
   def daily_spend(agent_id)
     Span
-      .where(span_type: "model_call", agent_id: agent_id)
+      .where.not(span_model: nil)
+      .where(agent_id: agent_id)
       .where("timestamp >= ?", Time.current.beginning_of_day)
       .sum(:span_cost_usd)
       .to_f

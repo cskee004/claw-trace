@@ -1,7 +1,7 @@
 namespace :spans do
   desc "Backfill span_cost_usd for model_call spans that have not been costed yet"
   task backfill_cost: :environment do
-    scope   = Span.where(span_type: "model_call", span_cost_usd: nil)
+    scope   = Span.where.not(span_model: nil).where(span_cost_usd: nil)
     total   = scope.count
     updated = 0
 
