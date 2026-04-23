@@ -2,9 +2,17 @@
 
 ### Agent Observability for OpenClaw
 
----
+### Description
 
-![Trace list with status badges and session filter](docs/assets/traces.png)
+ClawTrace is a Rails 8 agent observability platform built for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs.
+
+The primary integration is the [`@clawtrace-io/clawtails`](docs/openclaw-plugin.md) companion plugin, which instruments OpenClaw's lifecycle hooks and emits OTLP spans with full parent-child hierarchy. Each agent turn becomes a waterfall: root span → agent turn → tool calls, with token usage and correlated logs on every span.
+
+Traces, spans, metrics, and logs all write to a local SQLite database and appear in the same UI. No external services required.
+
+This project is part of a personal portfolio and demonstrates experience with Ruby, Rails, OpenTelemetry-inspired design, API development, and AI-assisted development using [Claude Code](https://claude.ai/code).
+
+---
 
 ![Waterfall span timeline with drawer metadata](docs/assets/waterfall.png)
 
@@ -101,18 +109,6 @@ For full plugin configuration options, see [docs/openclaw-plugin.md](docs/opencl
 * Ruby 3.2 or higher
 * Rails 8.0 or higher
 * SQLite3 (stored locally on your machine)
-
----
-
-### Description
-
-ClawTrace is a Rails 8 agent observability platform built for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs.
-
-The primary integration is the [`@clawtrace-io/clawtails`](docs/openclaw-plugin.md) companion plugin, which instruments OpenClaw's lifecycle hooks and emits OTLP spans with full parent-child hierarchy. Each agent turn becomes a waterfall: root span → agent turn → tool calls, with token usage and correlated logs on every span.
-
-Traces, spans, metrics, and logs all write to a local SQLite database and appear in the same UI. No external services required.
-
-This project is part of a personal portfolio and demonstrates experience with Ruby, Rails, OpenTelemetry-inspired design, API development, and AI-assisted development using [Claude Code](https://claude.ai/code).
 
 ---
 
@@ -336,7 +332,7 @@ and how to adapt it for your own project.
 <!-- CLAUDE_STATS_START -->
 #### Claude Code Stats
 
-![sessions: 45](https://img.shields.io/badge/sessions-45-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 9,814](https://img.shields.io/badge/API%20calls-9%2C814-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 924.2M](https://img.shields.io/badge/tokens-924.2M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 3.0h](https://img.shields.io/badge/thinking%20time-3.0h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 75.5h](https://img.shields.io/badge/wall%20clock-75.5h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $444.35](https://img.shields.io/badge/est.%20cost-%24444.35-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+![sessions: 49](https://img.shields.io/badge/sessions-49-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 9,907](https://img.shields.io/badge/API%20calls-9%2C907-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 927.2M](https://img.shields.io/badge/tokens-927.2M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 3.0h](https://img.shields.io/badge/thinking%20time-3.0h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 76.4h](https://img.shields.io/badge/wall%20clock-76.4h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $446.49](https://img.shields.io/badge/est.%20cost-%24446.49-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
 <!-- CLAUDE_STATS_END -->
 
 ---
