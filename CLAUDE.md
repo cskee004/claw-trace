@@ -203,7 +203,10 @@ Backlog items have no task numbers. A task gets a number only when work begins, 
 
 **Completing a task:**
 1. Run `bundle exec rspec` — 0 failures required before committing
-2. If the task adds a user-facing capability, update the README Features section
+2. Update all affected documentation before opening the PR — not after, not in a follow-up:
+   - **README**: add to Features section if user-facing; add to Service Layer table if a new `app/lib/` class was added; check the Roadmap
+   - **CHANGELOG**: add an entry under the current version
+   - **docs/**: update any reference doc that describes changed behavior (API, schema, integration guide)
 3. Commit with the task number: `git commit -m "feat: description (Task N)"`
 4. Move it to `## ✅ Completed` in AI_TASKS.md — one line, newest first
 5. Never update CLAUDE.md status — AI_TASKS.md is the single source of truth

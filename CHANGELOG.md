@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.3] - 2026-04-23
+
+### Changed
+- **README screenshots** — replaced stacked hero images with a single constrained `trace-waterfall` shot (width=700), threaded `trace-compare` and `related-trace-logs` inline with their feature sections, and added a 2×2 gallery (dashboard, agents, metrics, logs) before the Roadmap. Updated all screenshot assets to reflect current UI.
+
 ## [0.2.2] - 2026-04-23
 
 ### Added

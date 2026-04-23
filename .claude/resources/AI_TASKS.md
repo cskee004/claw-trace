@@ -192,14 +192,9 @@ Sorted by shipping priority. No task numbers yet — assigned when work begins.
 
 - ~~**README rewrite + screenshot refresh**~~ — DONE (2026-04-20). README rewritten to lead with clawtails, screenshots refreshed with live data, Service Layer table updated.
 
-### CI/CD Pipeline (design approved 2026-04-23)
+### CI/CD Pipeline — COMPLETE (2026-04-23)
 
-Implement the two-workflow CI/CD pipeline from `chris-cicd-pipeline-design-20260423-105049.md`. Ship in order — CI first so it gates the publish workflow commit itself.
-
-- ~~**Create `.github/workflows/ci.yml`**~~ — DONE (Task 163). Green on PR #5.
-- ~~**Replace `.github/workflows/publish-plugin.yml`**~~ — DONE (Task 164). Awaiting merge.
-- ~~**Verify CI passes on first push**~~ — DONE. PR #5 CI green: rspec ✓ rubocop ✓ brakeman ✓.
-- **Smoke-test the publish workflow** — Bump `plugin/package.json` version in a PR, merge to `main`, confirm the publish workflow fires (not CI), npm package appears at new version, and a GitHub Release is created automatically. Verify a second re-run is a no-op.
+All four steps done. Tasks 163–164 in Completed. `NPM_TOKEN` must be an Automation-type token — classic tokens fail with EOTP on publish.
 
 ### P2 — Ship soon after
 
@@ -219,7 +214,7 @@ Implement the two-workflow CI/CD pipeline from `chris-cicd-pipeline-design-20260
 
 - **Two-path visual in README** — Empty state and README now both cover the two-path story. Remaining gap: no inline screenshot/comparison in README showing compact card vs full waterfall. Low priority post-launch.
 
-- **CLAUDE.md: add doc-update step to task completion checklist** — Add: "Update README Features section if the task adds a user-facing capability." Ten consecutive tasks (135-145) shipped without README updates, causing the current stale docs state.
+- ~~**CLAUDE.md: add doc-update step to task completion checklist**~~ — Already present as step 2 of "Completing a task". No change needed.
 
 - **OpenClaw health check in status bar** — Requires OpenClaw to expose a health endpoint. Deferred.
 
