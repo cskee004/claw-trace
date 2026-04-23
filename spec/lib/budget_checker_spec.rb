@@ -90,5 +90,38 @@ RSpec.describe BudgetChecker do
         expect(result.over_budget?).to be false
       end
     end
+
+    context "with multiple agents — mixed over/under budget" do
+      let(:other_agent_id) { "agent:secondary:bot:456" }
+
+      before do
+        AgentBudget.create!(agent_id: agent_id,       daily_limit_usd: 5.00)
+        AgentBudget.create!(agent_id: other_agent_id, daily_limit_usd: 1.00)
+        create_model_span(agent_id: agent_id,       cost: 0.50)
+        create_model_span(agent_id: other_agent_id, cost: 3.00)
+      end
+
+      it "returns one result per budget" do
+        expect(BudgetChecker.check.length).to eq(2)
+      end
+
+      it "correctly identifies which agent is over budget" do
+        results = BudgetChecker.check.index_by(&:agent_id)
+        expect(results[agent_id].over_budget?).to be false
+        expect(results[other_agent_id].over_budget?).to be true
+      end
+    end
+  end
+
+  describe "Result#excess_pct" do
+    it "returns 0 when limit_usd is zero to avoid division by zero" do
+      result = BudgetChecker::Result.new(
+        agent_id:    "bot",
+        spent_usd:   5.0,
+        limit_usd:   0.0,
+        over_budget: true
+      )
+      expect(result.excess_pct).to eq(0)
+    end
   end
 end

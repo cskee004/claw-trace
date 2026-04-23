@@ -72,6 +72,61 @@ RSpec.describe ModelPricingService do
     end
   end
 
+  describe "fetch_catalog rescue path" do
+    let(:real_cache) { ActiveSupport::Cache::MemoryStore.new }
+
+    before do
+      allow(Rails).to receive(:cache).and_return(real_cache)
+    end
+
+    it "returns empty hash when fetch_remote raises and no stale cache exists" do
+      allow(service).to receive(:fetch_remote).and_raise(StandardError, "network error")
+      cost = service.cost_usd(model: "gpt-4o", input_tokens: 1000, output_tokens: 500)
+      expect(cost).to eq(0.0)
+    end
+
+    it "returns stale cache when fetch_remote raises" do
+      real_cache.write(ModelPricingService::STALE_CACHE_KEY, catalog)
+      allow(service).to receive(:fetch_remote).and_raise(StandardError, "network error")
+      cost = service.cost_usd(model: "gpt-4o", input_tokens: 1000, output_tokens: 500)
+      expect(cost).to be > 0.0
+    end
+  end
+
+  describe "#fetch_remote (internal)" do
+    let(:fresh_service) { described_class.new }
+
+    def stub_http(svc, code:, body:)
+      response = instance_double(Net::HTTPResponse, code: code.to_s, body: body.to_json)
+      http     = instance_double(Net::HTTP)
+      allow(http).to receive(:get).and_return(response)
+      allow(Net::HTTP).to receive(:start).and_yield(http)
+    end
+
+    it "returns nil and logs a warning for a non-200 response" do
+      stub_http(fresh_service, code: "429", body: { "error" => "rate limited" })
+      allow(Rails.logger).to receive(:warn)
+      result = fresh_service.send(:fetch_remote)
+      expect(result).to be_nil
+      expect(Rails.logger).to have_received(:warn).with(/unexpected response/)
+    end
+
+    it "returns nil when the body is not a pricing hash" do
+      stub_http(fresh_service, code: "200", body: { "message" => "API rate limit exceeded" })
+      allow(Rails.logger).to receive(:warn)
+      result = fresh_service.send(:fetch_remote)
+      expect(result).to be_nil
+    end
+
+    it "returns nil and logs a warning when Net::HTTP raises" do
+      allow(Net::HTTP).to receive(:start).and_raise(Errno::ECONNREFUSED)
+      allow(Rails.logger).to receive(:warn)
+      result = fresh_service.send(:fetch_remote)
+      expect(result).to be_nil
+      expect(Rails.logger).to have_received(:warn).with(/remote fetch failed/)
+    end
+  end
+
   describe ".cost_usd (class method)" do
     it "delegates to an instance" do
       allow_any_instance_of(described_class).to receive(:fetch_remote).and_return(catalog)
