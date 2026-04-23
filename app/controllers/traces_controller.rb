@@ -19,6 +19,7 @@ class TracesController < ApplicationController
     @total_duration_ms = TraceDurationCalculator.call(@trace)
     @spans = TracesHelper.dfs_ordered_spans(spans.to_a)
     @logs_by_span_id = Log.where(span_id: @spans.map(&:span_id)).order(:timestamp).group_by(&:span_id)
+    @estimated_cost_usd = @trace.spans.sum(:span_cost_usd).to_f
   end
 
   def preview
@@ -35,10 +36,12 @@ class TracesController < ApplicationController
     @trace = Trace.find_by!(trace_id: params[:id])
     span_count = @trace.spans.count
     total_duration_ms = TraceDurationCalculator.call(@trace)
+    estimated_cost_usd = @trace.spans.sum(:span_cost_usd).to_f
     render partial: "summary", locals: {
       trace: @trace,
       span_count: span_count,
-      total_duration_ms: total_duration_ms
+      total_duration_ms: total_duration_ms,
+      estimated_cost_usd: estimated_cost_usd
     }
   end
 

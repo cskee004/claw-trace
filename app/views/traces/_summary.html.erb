@@ -1,4 +1,4 @@
-<%# Locals: trace, span_count (integer), total_duration_ms %>
+<%# Locals: trace, span_count (integer), total_duration_ms, estimated_cost_usd %>
 
 <%= turbo_frame_tag "trace-summary-#{trace.trace_id}" do %>
   <dl class="flex flex-wrap gap-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)]
@@ -32,5 +32,11 @@
       <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Spans</dt>
       <dd class="text-xs font-medium text-[var(--color-fg-muted)] m-0"><%= span_count %></dd>
     </div>
+    <% if estimated_cost_usd > 0 %>
+      <div class="flex flex-col gap-0.5">
+        <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Est. Cost</dt>
+        <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0">$<%= "%.6f" % estimated_cost_usd %></dd>
+      </div>
+    <% end %>
   </dl>
 <% end %>

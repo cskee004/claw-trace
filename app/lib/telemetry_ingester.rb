@@ -111,7 +111,8 @@ class TelemetryIngester
       locals: {
         trace: trace,
         span_count: trace.spans.count, # all spans on the trace, not just this batch
-        total_duration_ms: total_ms
+        total_duration_ms: total_ms,
+        estimated_cost_usd: trace.spans.sum(:span_cost_usd).to_f
       }
     )
   end
