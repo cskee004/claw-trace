@@ -110,6 +110,10 @@
               <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Total tokens</dt>
               <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0"><%= number_with_delimiter(span.span_total_tokens) %></dd>
             <% end %>
+            <% if span.span_cost_usd&.> (0) %>
+              <dt class="text-[11px] font-bold text-[var(--color-fg-subtle)] whitespace-nowrap">Cost</dt>
+              <dd class="font-mono font-light text-[11px] text-[var(--color-fg-muted)] m-0">$<%= "%.6f" % span.span_cost_usd %></dd>
+            <% end %>
           </dl>
         </div>
       <% end %>

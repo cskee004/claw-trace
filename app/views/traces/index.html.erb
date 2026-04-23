@@ -36,6 +36,7 @@
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Task</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Start Time</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Duration</th>
+            <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Est. Cost</th>
             <th class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] px-4 py-2.5 text-left bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]">Status</th>
             <th class="w-8 bg-[var(--color-bg)] border-b border-[var(--color-surface-2)]"></th>
           </tr>
@@ -72,6 +73,10 @@
               <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
                 <%= format_duration(@durations[trace.trace_id]) %>
               </td>
+              <td class="px-4 py-2.5 align-middle font-mono text-xs text-[var(--color-fg-muted)]">
+                <% cost = @costs[trace.trace_id] %>
+                <%= cost&.> (0) ? "$#{"%.6f" % cost}" : "—" %>
+              </td>
               <td class="px-4 py-2.5 align-middle">
                 <span class="status-badge status-badge--<%= trace.status %>
                              inline-block px-2 py-0.5 rounded text-xs font-bold tracking-wide capitalize">
@@ -95,7 +100,7 @@
             <tr id="drawer_<%= trace.trace_id %>"
                 class="trace-row-drawer border-b border-[var(--color-surface-2)] last:border-0"
                 data-trace-row-target="drawer">
-              <td colspan="7" class="p-0">
+              <td colspan="8" class="p-0">
                 <div class="trace-row-drawer__content">
                   <turbo-frame id="trace_preview_<%= trace.trace_id %>"
                                data-trace-row-target="frame">
