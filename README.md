@@ -140,6 +140,13 @@ For full plugin configuration options, see [docs/openclaw-plugin.md](docs/opencl
 - Rolling aggregation: one row per metric key, updated on each ingestion
 - Metrics index with hourly bucket time series; dashboard tiles for agent turns, token usage, and tool errors
 
+#### Solarized Light Theme
+- Opt-in light theme via a sun/moon toggle button in the nav sidebar
+- Full Solarized Light palette — 10 base vars + 8 span-type colors mapped to Solarized equivalents
+- `prefers-color-scheme` auto-detection with localStorage manual override (`clawtrace-theme`)
+- FOUC-free: theme is applied synchronously in `<head>` before stylesheets load
+- All span-type colors preserve their semantic meaning across both themes
+
 #### Cost Control
 - Per-span cost computed from token counts × live model pricing (LiteLLM community JSON, cached 24 h)
 - Estimated cost shown on the traces index, trace summary strip, and per-span in the waterfall drawer
