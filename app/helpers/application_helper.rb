@@ -2,7 +2,7 @@
 # do not sync back to the original repository.
 
 module ApplicationHelper
-  APP_VERSION = "0.1.0"
+  APP_VERSION = "0.2.1"
 
   # Formats a duration in milliseconds. Returns "—" if nil (no spans recorded).
   # Displays as "Xms" below 1000ms, or "X.Xs" at 1000ms and above.

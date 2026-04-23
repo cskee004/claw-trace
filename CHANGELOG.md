@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1] - 2026-04-23
+
+### Added
+- **Solarized Light theme** — opt-in light theme via a sun/moon toggle in the nav. Full Solarized Light palette with `prefers-color-scheme` detection and localStorage persistence. FOUC prevention via inline `<head>` script. Span-type colors map to Solarized equivalents while preserving semantic intent.
+
+### Fixed
+- Traces index `ArgumentError: comparison of Float with String failed` — `cost&.> (0)` had a spacing-induced parse error causing Ruby to pass a string to `Float#>`. Fixed to `(cost.to_f > 0)`.
+
 ## [0.2.0] - 2026-04-23
 
 ### Added
