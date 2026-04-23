@@ -1,0 +1,121 @@
+<% content_for(:title) { "Compare Traces" } %>
+<% content_for(:breadcrumbs) do %>
+  <nav class="flex items-center gap-2 text-sm">
+    <%= link_to "Traces", traces_path, class: "text-[var(--color-fg-muted)] hover:text-[var(--color-fg)]" %>
+    <span class="text-[var(--color-fg-subtle)] font-light">/</span>
+    <span class="font-bold text-[var(--color-fg)]">Compare</span>
+  </nav>
+<% end %>
+
+<%
+  s = @comparison.stats
+
+  def delta_class(val)
+    return "text-[var(--color-fg-subtle)]" if val.nil? || val == 0
+    val > 0 ? "text-[var(--color-error-fg)]" : "text-[var(--color-success-fg)]"
+  end
+
+  def fmt_delta(val, unit: nil)
+    return "—" if val.nil?
+    prefix = val > 0 ? "+" : ""
+    unit ? "#{prefix}#{val}#{unit}" : "#{prefix}#{val}"
+  end
+
+  def dur_delta(a, b)
+    return nil if a.nil? || b.nil?
+    (b - a).round(1)
+  end
+%>
+
+<div class="p-4">
+  <%# ── Stats strip ── %>
+  <div class="mb-6 bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg overflow-hidden">
+    <div class="px-4 py-2 border-b border-[var(--color-surface-2)]">
+      <h2 class="text-xs font-bold uppercase tracking-wider text-[var(--color-fg-subtle)]">Comparison — A → B</h2>
+    </div>
+    <div class="flex divide-x divide-[var(--color-surface-2)]">
+      <%
+        cost_delta = (s[:cost_usd_b] - s[:cost_usd_a]).round(6)
+        rows = [
+          { label: "Input tokens",  a: s[:input_tokens_a],  b: s[:input_tokens_b],  delta: s[:input_tokens_b]  - s[:input_tokens_a] },
+          { label: "Output tokens", a: s[:output_tokens_a], b: s[:output_tokens_b], delta: s[:output_tokens_b] - s[:output_tokens_a] },
+          { label: "Est. Cost",     a: s[:cost_usd_a] > 0 ? "$#{"%.6f" % s[:cost_usd_a]}" : "—",
+                                    b: s[:cost_usd_b] > 0 ? "$#{"%.6f" % s[:cost_usd_b]}" : "—",
+                                    delta: cost_delta != 0 ? cost_delta : 0,
+                                    fmt: ->(v) { v == 0 ? "—" : "#{ v > 0 ? '+' : '' }$#{"%.6f" % v.abs}" },
+                                    delta_class_override: cost_delta == 0 ? "text-[var(--color-fg-subtle)]" : (cost_delta > 0 ? "text-[var(--color-error-fg)]" : "text-[var(--color-success-fg)]") },
+          { label: "Duration",      a: s[:duration_ms_a],   b: s[:duration_ms_b],   delta: dur_delta(s[:duration_ms_a], s[:duration_ms_b]), unit: "ms" },
+          { label: "Errors",        a: s[:error_count_a],   b: s[:error_count_b],   delta: s[:error_count_b]   - s[:error_count_a] },
+        ]
+      %>
+      <% rows.each do |row| %>
+        <div class="flex-1 px-4 py-3">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-[var(--color-fg-subtle)] mb-1"><%= row[:label] %></p>
+          <div class="flex items-baseline gap-3">
+            <span class="font-mono text-sm text-[var(--color-fg-muted)]"><%= row[:a].nil? ? "—" : row[:a] %><%= row[:unit] %></span>
+            <span class="text-[var(--color-fg-subtle)] text-xs">→</span>
+            <span class="font-mono text-sm text-[var(--color-fg-muted)]"><%= row[:b].nil? ? "—" : row[:b] %><%= row[:unit] %></span>
+          </div>
+          <p class="font-mono text-xs mt-1 <%= row[:delta_class_override] || delta_class(row[:delta]) %>">
+            <%= row[:fmt] ? row[:fmt].call(row[:delta]) : fmt_delta(row[:delta], unit: row[:unit]) %>
+          </p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Side-by-side waterfalls ── %>
+  <div class="grid grid-cols-2 gap-4">
+
+    <%# ── Side A ── %>
+    <div>
+      <div class="mb-2 flex items-center gap-2">
+        <h2 class="text-sm font-bold text-[var(--color-fg)] truncate"><%= @trace_a.task_name %></h2>
+        <span class="font-mono text-[10px] text-[var(--color-fg-subtle)] shrink-0"><%= @trace_a.trace_id %></span>
+        <%= link_to "↗", trace_path(@trace_a), class: "text-xs text-[var(--color-accent)] shrink-0" %>
+      </div>
+      <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg overflow-hidden">
+        <% depth_map_a = span_depth_map(@spans_a) %>
+        <% @spans_a.each do |span| %>
+          <div class="<%= span_diff_class(span.span_name, @comparison.names_b, :a) %>">
+            <%= render "span_row",
+                  span: span,
+                  depth: depth_map_a[span.span_id] || 0,
+                  latency: @latencies_a[span.span_id],
+                  total_ms: @total_ms_a.to_f,
+                  trace_start_time: @trace_a.start_time %>
+          </div>
+        <% end %>
+        <% if @spans_a.empty? %>
+          <p class="px-4 py-3 text-xs italic text-[var(--color-fg-subtle)]">No spans.</p>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Side B ── %>
+    <div>
+      <div class="mb-2 flex items-center gap-2">
+        <h2 class="text-sm font-bold text-[var(--color-fg)] truncate"><%= @trace_b.task_name %></h2>
+        <span class="font-mono text-[10px] text-[var(--color-fg-subtle)] shrink-0"><%= @trace_b.trace_id %></span>
+        <%= link_to "↗", trace_path(@trace_b), class: "text-xs text-[var(--color-accent)] shrink-0" %>
+      </div>
+      <div class="bg-[var(--color-surface)] border border-[var(--color-surface-2)] rounded-lg overflow-hidden">
+        <% depth_map_b = span_depth_map(@spans_b) %>
+        <% @spans_b.each do |span| %>
+          <div class="<%= span_diff_class(span.span_name, @comparison.names_a, :b) %>">
+            <%= render "span_row",
+                  span: span,
+                  depth: depth_map_b[span.span_id] || 0,
+                  latency: @latencies_b[span.span_id],
+                  total_ms: @total_ms_b.to_f,
+                  trace_start_time: @trace_b.start_time %>
+          </div>
+        <% end %>
+        <% if @spans_b.empty? %>
+          <p class="px-4 py-3 text-xs italic text-[var(--color-fg-subtle)]">No spans.</p>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+</div>
