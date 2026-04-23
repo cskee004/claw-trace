@@ -180,11 +180,11 @@ class OtlpNormalizer
       "span_cache_write_tokens" => span_attrs["openclaw.tokens.cache_write"] || span_attrs["gen_ai.usage.cache_write_tokens"]&.to_i,
       "span_total_tokens"       => span_attrs["openclaw.tokens.total"]       || span_attrs["gen_ai.usage.total_tokens"]&.to_i,
       "span_outcome"            => resolve_span_outcome(span, span_attrs),
-      "span_cost_usd"           => compute_cost(span_type, span_model, input_tokens, output_tokens)
+      "span_cost_usd"           => compute_cost(span_model, input_tokens, output_tokens)
     }
   end
 
-  def compute_cost(_span_type, model, input_tokens, output_tokens)
+  def compute_cost(model, input_tokens, output_tokens)
     return nil unless model.present?
     ModelPricingService.cost_usd(
       model: model,

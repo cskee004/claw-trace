@@ -27,11 +27,13 @@ class AgentsController < ApplicationController
 
   def set_budget
     agent_id = params[:agent_id]
-    AgentBudget.find_or_initialize_by(agent_id: agent_id).tap do |b|
-      b.daily_limit_usd = params[:daily_limit_usd]
-      b.save!
+    budget = AgentBudget.find_or_initialize_by(agent_id: agent_id)
+    budget.daily_limit_usd = params[:daily_limit_usd]
+    if budget.save
+      redirect_to agent_path(agent_id: agent_id)
+    else
+      redirect_to agent_path(agent_id: agent_id), alert: budget.errors.full_messages.join(", ")
     end
-    redirect_to agent_path(agent_id: agent_id)
   end
 
   def delete_budget

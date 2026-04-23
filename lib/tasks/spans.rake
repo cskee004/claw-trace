@@ -14,8 +14,10 @@ namespace :spans do
           input_tokens:  span.span_input_tokens.to_i,
           output_tokens: span.span_output_tokens.to_i
         )
-        span.update_columns(span_cost_usd: cost) if cost > 0
-        updated += 1
+        if cost > 0
+          span.update_columns(span_cost_usd: cost)
+          updated += 1
+        end
       end
     end
 

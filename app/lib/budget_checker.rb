@@ -1,7 +1,7 @@
 class BudgetChecker
   Result = Struct.new(:agent_id, :spent_usd, :limit_usd, :over_budget, keyword_init: true) do
     def excess_usd    = spent_usd - limit_usd
-    def excess_pct    = ((excess_usd / limit_usd) * 100).round
+    def excess_pct    = limit_usd.zero? ? 0 : ((excess_usd / limit_usd) * 100).round
     def over_budget?  = over_budget
   end
 
@@ -10,11 +10,19 @@ class BudgetChecker
   end
 
   def check
-    budgets = AgentBudget.all
-    return [] if budgets.none?
+    budgets = AgentBudget.all.to_a
+    return [] if budgets.empty?
+
+    spends = Span
+      .where.not(span_model: nil)
+      .where(agent_id: budgets.map(&:agent_id))
+      .where("timestamp >= ?", Time.current.beginning_of_day)
+      .group(:agent_id)
+      .sum(:span_cost_usd)
+      .transform_values(&:to_f)
 
     budgets.map do |budget|
-      spent  = daily_spend(budget.agent_id)
+      spent  = spends.fetch(budget.agent_id, 0.0)
       result = Result.new(
         agent_id:    budget.agent_id,
         spent_usd:   spent,
@@ -27,15 +35,6 @@ class BudgetChecker
   end
 
   private
-
-  def daily_spend(agent_id)
-    Span
-      .where.not(span_model: nil)
-      .where(agent_id: agent_id)
-      .where("timestamp >= ?", Time.current.beginning_of_day)
-      .sum(:span_cost_usd)
-      .to_f
-  end
 
   def print_result(result)
     if result.over_budget?

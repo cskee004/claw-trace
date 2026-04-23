@@ -32,7 +32,7 @@
       <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Spans</dt>
       <dd class="text-xs font-medium text-[var(--color-fg-muted)] m-0"><%= span_count %></dd>
     </div>
-    <% if estimated_cost_usd > 0 %>
+    <% if estimated_cost_usd.to_f > 0 %>
       <div class="flex flex-col gap-0.5">
         <dt class="text-[10px] uppercase tracking-wider font-bold text-[var(--color-fg-subtle)]">Est. Cost</dt>
         <dd class="font-mono font-light text-xs text-[var(--color-fg-muted)] m-0">$<%= "%.6f" % estimated_cost_usd %></dd>

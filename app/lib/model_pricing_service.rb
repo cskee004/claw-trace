@@ -74,10 +74,16 @@ class ModelPricingService
   def fetch_remote
     require "net/http"
     uri = URI(PRICING_URL)
-    response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 10) do |http|
+    response = Net::HTTP.start(uri.host, uri.port, use_ssl: true, open_timeout: 3, read_timeout: 3) do |http|
       http.get(uri.path)
     end
-    JSON.parse(response.body)
+    data = JSON.parse(response.body)
+    unless response.code == "200" && data.is_a?(Hash) &&
+           data.any? { |_, v| v.is_a?(Hash) && v.key?("input_cost_per_token") }
+      Rails.logger.warn("ModelPricingService: unexpected response (code=#{response.code}) — using stale cache")
+      return nil
+    end
+    data
   rescue StandardError => e
     Rails.logger.warn("ModelPricingService: remote fetch failed — #{e.message}")
     nil
