@@ -18,6 +18,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 
+    <script>
+      (function() {
+        var t = localStorage.getItem('clawtrace-theme') ||
+                (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
     <%# Tailwind loads first; existing custom stylesheets can override during transition %>
     <%= stylesheet_link_tag "tailwind", "application", "base", "layout", "module", "state", "theme", "data-turbo-track": Rails.env.production? ? "reload" : "" %>
     <%= javascript_importmap_tags %>

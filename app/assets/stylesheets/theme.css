@@ -179,6 +179,6 @@ turbo-frame#frame_panel {
 .theme-toggle:hover { color: var(--color-fg); }
 .theme-toggle i { width: 15px; height: 15px; flex-shrink: 0; }
 
-/* Icon swap — sun shown in dark mode, moon shown in light mode */
+/* Icon swap — sun shown in dark mode (click to go light), moon shown in light mode (click to go dark) */
 html:not([data-theme="light"]) .theme-icon--moon { display: none; }
 html[data-theme="light"]       .theme-icon--sun  { display: none; }
