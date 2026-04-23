@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-controller="theme">
   <head>
     <title><%= content_for(:title) || "ClawTrace" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -63,6 +63,11 @@
           <%= link_to settings_path, class: "nav-link #{'nav-link--active' if controller_name == 'settings'}" do %>
             <i data-lucide="settings"></i>Settings
           <% end %>
+          <button class="theme-toggle" data-action="click->theme#toggle" aria-label="Toggle theme">
+            <i data-lucide="sun" class="theme-icon--sun"></i>
+            <i data-lucide="moon" class="theme-icon--moon"></i>
+            Theme
+          </button>
           <div class="nav-version">v<%= ApplicationHelper::APP_VERSION %></div>
         </div>
       </div>

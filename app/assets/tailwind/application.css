@@ -57,6 +57,63 @@
   --color-span-agent-turn-fg:     #f7768e;
 }
 
+/* Solarized Light — opt-in via data-theme="light" on <html> */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Backgrounds — Solarized base3/base2 */
+  --color-bg:          #fdf6e3;
+  --color-surface:     #eee8d5;
+  --color-surface-2:   #ddd8c4;
+
+  /* Foregrounds — Solarized base00/base0/base1 */
+  --color-fg:          #657b83;
+  --color-fg-muted:    #839496;
+  --color-fg-subtle:   #93a1a1;
+
+  /* Accent — Solarized blue */
+  --color-accent:      #268bd2;
+
+  /* Status */
+  --color-success-bg:  #eaf0d8;
+  --color-success-fg:  #859900;
+  --color-error-bg:    #f5e0df;
+  --color-error-fg:    #dc322f;
+  --color-warn-bg:     #f5edd8;
+  --color-warn-fg:     #b58900;
+
+  /* Danger */
+  --color-danger-bg:   #f5e0df;
+  --color-danger-fg:   #dc322f;
+
+  /* Row hover */
+  --color-row-hover:   rgb(38 139 210 / 0.06);
+
+  /* Span-type bar colors — Solarized equivalents keeping semantic intent */
+  --color-span-model-call:     #6c71c4;                 /* violet  — model_call */
+  --color-span-message-event:  #2aa198;                 /* cyan    — message_event */
+  --color-span-tool-call:      var(--color-accent);     /* blue    — tool_call */
+  --color-span-session-event:  var(--color-fg-subtle);  /* base1   — session_event */
+  --color-span-command-event:  var(--color-warn-fg);    /* yellow  — command_event */
+  --color-span-webhook-event:  #cb4b16;                 /* orange  — webhook_event */
+  --color-span-openclaw-event: var(--color-fg-subtle);  /* base1   — openclaw_event catch-all */
+  --color-span-span:           var(--color-fg-muted);   /* base0   — generic span fallback */
+  --color-span-agent-request:  #859900;                 /* green   — agent_request */
+  --color-span-agent-turn:     #d33682;                 /* magenta — agent_turn */
+
+  /* Badge foreground — same hues, readable on light surfaces */
+  --color-span-model-call-fg:     #6c71c4;
+  --color-span-message-event-fg:  #2aa198;
+  --color-span-tool-call-fg:      var(--color-accent);
+  --color-span-session-event-fg:  var(--color-fg-muted);
+  --color-span-command-event-fg:  var(--color-warn-fg);
+  --color-span-webhook-event-fg:  #cb4b16;
+  --color-span-openclaw-event-fg: var(--color-fg-muted);
+  --color-span-span-fg:           var(--color-fg-muted);
+  --color-span-agent-request-fg:  #859900;
+  --color-span-agent-turn-fg:     #d33682;
+}
+
 @theme {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
