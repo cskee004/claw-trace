@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.2] - 2026-04-23
+
+### Added
+- **Trace comparison** — compare two traces side-by-side from either the trace show page (dropdown under the stat strip) or the traces index (check any two traces, hit Compare). Older trace is always A (left), newer is always B (right), regardless of selection order.
+- **Comparison stat strip** — five tiles showing input tokens, output tokens, estimated cost, duration, and error count for both traces, with signed deltas (green = improvement, red = regression).
+- **Span diff coloring** — spans shared between both traces are highlighted; spans unique to each side are dimmed with a colored left border, making structural differences immediately visible.
+- **Cost in comparison** — estimated cost now appears in the comparison stat strip alongside token and duration deltas.
+
+### Fixed
+- `span_cost_usd` was computed correctly by `OtlpNormalizer` but silently dropped by `TelemetryIngester` — it was missing from the `Span.create!` column list. All new traces now have cost stored.
+- `@compare_candidates` dropdown showed `openclaw.request` for every entry — changed to `traceId[0..7] · status · timestamp` for meaningful differentiation.
+
 ## [0.2.1] - 2026-04-23
 
 ### Added
