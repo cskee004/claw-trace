@@ -1,0 +1,58 @@
+{
+  "resourceLogs": [
+    {
+      "resource": {
+        "attributes": [
+          {"key": "service.name", "value": {"stringValue": "openclaw-gateway"}}
+        ]
+      },
+      "scopeLogs": [
+        {
+          "logRecords": [
+            {
+              "timeUnixNano": "1776353108071000000",
+              "severityNumber": 9,
+              "severityText": "INFO",
+              "body": {"stringValue": "⇄ res ✓ agent.wait 45001ms"},
+              "attributes": [
+                {"key": "openclaw.log.level", "value": {"stringValue": "INFO"}},
+                {"key": "openclaw.subsystem", "value": {"stringValue": "gateway/ws"}}
+              ]
+            },
+            {
+              "timeUnixNano": "1776353108632000000",
+              "severityNumber": 13,
+              "severityText": "WARN",
+              "body": {"stringValue": "embedded run timeout: runId=21bae493-2993-4c54-8b48-7c90b618e76e timeoutMs=45000"},
+              "attributes": [
+                {"key": "openclaw.log.level", "value": {"stringValue": "WARN"}},
+                {"key": "openclaw.subsystem", "value": {"stringValue": "agent/embedded"}}
+              ]
+            },
+            {
+              "timeUnixNano": "1776353108671000000",
+              "severityNumber": 13,
+              "severityText": "WARN",
+              "body": {"stringValue": "embedded run failover decision"},
+              "attributes": [
+                {"key": "openclaw.log.level", "value": {"stringValue": "WARN"}},
+                {"key": "openclaw.subsystem", "value": {"stringValue": "agent/embedded"}},
+                {"key": "openclaw.log.args", "value": {"stringValue": "[{\"event\":\"embedded_run_failover_decision\",\"decision\":\"surface_error\",\"failoverReason\":\"timeout\"}]"}}
+              ]
+            },
+            {
+              "timeUnixNano": "1776353108674000000",
+              "severityNumber": 17,
+              "severityText": "ERROR",
+              "body": {"stringValue": "[agent] run ended with stopReason=toolUse"},
+              "attributes": [
+                {"key": "openclaw.log.level", "value": {"stringValue": "ERROR"}},
+                {"key": "openclaw.subsystem", "value": {"stringValue": "openclaw"}}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

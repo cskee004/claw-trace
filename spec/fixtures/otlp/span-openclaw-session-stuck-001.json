@@ -1,0 +1,36 @@
+{
+  "_synthetic": true,
+  "_note": "Hand-synthesized from docs.openclaw.ai/logging §session spans. No real capture available.",
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {"key": "host.name", "value": {"stringValue": "VM-0-5-ubuntu"}},
+          {"key": "process.executable.name", "value": {"stringValue": "openclaw-gateway"}},
+          {"key": "service.name", "value": {"stringValue": "openclaw-gateway"}}
+        ]
+      },
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "traceId": "dd38f13d10ee63018411ecfd52a0c58c",
+              "spanId": "dd6084907a79ccb4",
+              "name": "openclaw.session.stuck",
+              "startTimeUnixNano": "1776353057352000000",
+              "endTimeUnixNano": "1776353102352000000",
+              "attributes": [
+                {"key": "openclaw.sessionKey",  "value": {"stringValue": "agent:main:discord:channel:1494326249361899544"}},
+                {"key": "openclaw.sessionId",   "value": {"stringValue": "sess-abc123"}},
+                {"key": "openclaw.state",       "value": {"stringValue": "waiting"}},
+                {"key": "openclaw.ageMs",       "value": {"intValue": 45000}},
+                {"key": "openclaw.queueDepth",  "value": {"intValue": 3}}
+              ],
+              "status": {"code": 0}
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
