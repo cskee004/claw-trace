@@ -1,32 +1,55 @@
 name: Publish @clawtrace-io/clawtails
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
+    paths:
+      - plugin/package.json
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: plugin
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Verify package version matches release tag
+      - name: Check version changed
+        id: version_check
         run: |
-          PKG_VERSION="v$(node -p "require('./package.json').version")"
-          if [ "$PKG_VERSION" != "${{ github.event.release.tag_name }}" ]; then
-            echo "package.json version ($PKG_VERSION) does not match release tag (${{ github.event.release.tag_name }})"
-            exit 1
-          fi
+          PREV=$(git show HEAD~1:plugin/package.json 2>/dev/null | jq -r '.version // empty' 2>/dev/null || echo "none")
+          CURR=$(node -p "require('./package.json').version")
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+          echo "curr=$CURR" >> "$GITHUB_OUTPUT"
+          [ "$PREV" = "$CURR" ] && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
 
-      - run: npm publish --access public
+      - name: Publish to npm (idempotent)
+        if: steps.version_check.outputs.changed == 'true'
+        run: |
+          CURR="${{ steps.version_check.outputs.curr }}"
+          if npm view "@clawtrace-io/clawtails@$CURR" version 2>/dev/null | grep -q .; then
+            echo "Version $CURR already on npm — skipping publish"
+          else
+            npm publish --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release (idempotent)
+        if: steps.version_check.outputs.changed == 'true'
+        run: |
+          CURR="${{ steps.version_check.outputs.curr }}"
+          gh release view "v$CURR" 2>/dev/null && echo "Release v$CURR already exists — skipping" || gh release create "v$CURR" --generate-notes --title "v$CURR"
+        env:
+          GH_TOKEN: ${{ github.token }}
