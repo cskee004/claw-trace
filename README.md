@@ -2,6 +2,12 @@
 
 ### Agent Observability for OpenClaw
 
+<!-- CLAUDE_STATS_START -->
+#### Claude Code Stats
+
+![sessions: 56](https://img.shields.io/badge/sessions-56-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 11,485](https://img.shields.io/badge/API%20calls-11%2C485-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 1092.8M](https://img.shields.io/badge/tokens-1092.8M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 3.4h](https://img.shields.io/badge/thinking%20time-3.4h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 86.7h](https://img.shields.io/badge/wall%20clock-86.7h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $520.18](https://img.shields.io/badge/est.%20cost-%24520.18-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+<!-- CLAUDE_STATS_END -->
+
 ### Description
 
 ClawTrace is a Rails 8 agent observability platform built for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs.
@@ -365,49 +371,4 @@ The development workflow uses three files to prevent context drift across sessio
 (architecture reference), and `.claude/resources/AI_TASKS.md` (numbered task log).
 
 See [docs/ai-development.md](docs/ai-development.md) for how the system works
-and how to adapt it for your own project.
-
-<!-- CLAUDE_STATS_START -->
-#### Claude Code Stats
-
-![sessions: 51](https://img.shields.io/badge/sessions-51-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 10,658](https://img.shields.io/badge/API%20calls-10%2C658-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 1010.3M](https://img.shields.io/badge/tokens-1010.3M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 3.2h](https://img.shields.io/badge/thinking%20time-3.2h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 82.8h](https://img.shields.io/badge/wall%20clock-82.8h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $483.73](https://img.shields.io/badge/est.%20cost-%24483.73-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
-<!-- CLAUDE_STATS_END -->
-
----
-
-### Screenshots
-
-<table>
-<tr>
-  <td><img src="docs/assets/dashboard.png" alt="Dashboard"/></td>
-  <td><img src="docs/assets/agents.png" alt="Agents inventory"/></td>
-</tr>
-<tr>
-  <td><img src="docs/assets/metrics.png" alt="Metrics with time series charts"/></td>
-  <td><img src="docs/assets/logs.png" alt="Logs index with severity and subsystem filtering"/></td>
-</tr>
-</table>
-
----
-
-### Roadmap
-
-- [x] Trace → Span data model and storage
-- [x] OTLP trace ingestion (`/v1/traces`)
-- [x] OTLP metrics ingestion (`/v1/metrics`)
-- [x] OTLP log ingestion (`/v1/logs`)
-- [x] Protobuf support across all three OTLP endpoints
-- [x] Analysis engine (duration, tool calls, error rate, token aggregation)
-- [x] Trace list with waterfall span timeline
-- [x] Real-time trace updates via Turbo Streams
-- [x] Metrics dashboard with stat tiles and hourly time series charts
-- [x] Agents inventory and per-agent show page
-- [x] Logs index with severity, trace, and subsystem filtering
-- [x] Dashboard with error rate and trace volume charts
-- [x] Data retention settings (prune/delete per data type)
-- [x] Companion plugin (`@clawtrace-io/clawtails`) — full waterfall hierarchy from OpenClaw lifecycle hooks
-- [x] Log correlation — logs render inline in waterfall drawer with JSON expand
-- [x] Token usage and model metadata on agent turn spans
-- [x] Opt-in Solarized Light theme with `prefers-color-scheme` detection and localStorage persistence
-- [x] Per-span cost tracking from live LiteLLM pricing with daily budget alerts per agent
-- [x] Trace comparison — side-by-side stat strip with deltas and span diff coloring
+and how to adapt it for your own project
