@@ -2,6 +2,12 @@
 
 ### Agent Observability for OpenClaw
 
+<!-- CLAUDE_STATS_START -->
+#### Claude Code Stats
+
+![sessions: 56](https://img.shields.io/badge/sessions-56-1a1b27?style=for-the-badge&logo=anthropic&logoColor=white) ![API calls: 11,485](https://img.shields.io/badge/API%20calls-11%2C485-7aa2f7?style=for-the-badge&logo=anthropic&logoColor=white) ![tokens: 1092.8M](https://img.shields.io/badge/tokens-1092.8M-bb9af7?style=for-the-badge&logo=anthropic&logoColor=white) ![thinking time: 3.4h](https://img.shields.io/badge/thinking%20time-3.4h-7dcfff?style=for-the-badge&logo=anthropic&logoColor=white) ![wall clock: 86.7h](https://img.shields.io/badge/wall%20clock-86.7h-3d59a1?style=for-the-badge&logo=anthropic&logoColor=white) ![est. cost: $520.18](https://img.shields.io/badge/est.%20cost-%24520.18-73daca?style=for-the-badge&logo=anthropic&logoColor=white)
+<!-- CLAUDE_STATS_END -->
+
 ### Description
 
 ClawTrace is a Rails 8 agent observability platform built for [OpenClaw](https://github.com/openclaw/openclaw). It gives developers full visibility into how their agents think, act, and fail — capturing traces, spans, metrics, and logs from live agent runs.
